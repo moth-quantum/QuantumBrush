@@ -87,6 +87,7 @@ def hls_to_rgb(hlsa: np.ndarray):
 
 def dephasing(initial_angles, target_angles, strength):
     num_qubits = len(initial_angles)
+    print("initial angles",initial_angles)
 
     # We ned first to align the target angle to to z axis
 
@@ -94,7 +95,7 @@ def dephasing(initial_angles, target_angles, strength):
     rotation = 2*np.arccos(1-strength)
 
     # Prepare each qubit in the state defined by (theta, phi)
-    for i, (theta, phi) in enumerate(initial_angles):
+    for i, (phi, theta) in enumerate(initial_angles):
         qc.ry(theta, i)
         qc.rz(phi, i)
 
@@ -116,12 +117,12 @@ def dephasing(initial_angles, target_angles, strength):
     y_expectations = [sv.expectation_value(op).real for op in y_ops]
     z_expectations = [sv.expectation_value(op).real for op in z_ops]
 
-    # theta = arccos(Z)
-    theta_expectations = [np.arccos(np.clip(z, -1.0, 1.0)) for z in z_expectations]
     # phi = arctan2(Y, X)
-    phi_expectations = [np.arctan2(y, x) for x, y in zip(x_expectations, y_expectations)]
+    phi_expectations = [np.mod(np.arctan2(y,x),2*np.pi) for x, y in zip(x_expectations, y_expectations)]
+    # theta = arccos(Z)
+    theta_expectations = [np.arccos(np.clip(z,-1,1)) for z in z_expectations]
 
-    final_angles = list(zip(theta_expectations, phi_expectations))
+    final_angles = list(zip(phi_expectations, theta_expectations))
     print("final angles",final_angles)
     return final_angles
 
@@ -186,10 +187,16 @@ def run(params):
     
         h_sel = np.mean(selection_hls[..., 0], axis=0)
         l_sel = np.mean(selection_hls[..., 1], axis=0)
-        theta = np.pi * (1-l_sel)
-        phi = 2 * np.pi * h_sel
 
-        initial_angles.append((theta, phi))
+        print("before")
+        print("h_sel",np.mean(selection_hls[..., 0], axis=0))
+        print("l_sel",np.mean(selection_hls[..., 1], axis=0))
+        print("saturation",np.mean(selection_hls[..., 2], axis=0))
+
+        phi = 2 * np.pi * h_sel
+        theta = np.pi * l_sel
+
+        initial_angles.append((phi,theta))
         pixels.append((region, selection_hls))
 
     strength = params["user_input"]["Strength"]
@@ -203,7 +210,13 @@ def run(params):
 
         selection_hls[...,0] += (new_h - old_h) / (2 * np.pi)
         selection_hls[...,1] += (new_l - old_l) / np.pi
-        selection_hls[...,1] = 1- selection_hls[...,1]
+        selection_hls[...,1] = np.mod(selection_hls[...,1], 1)
+
+        print("after")
+        print("h_sel",np.mean(selection_hls[..., 0], axis=0))
+        print("l_sel",np.mean(selection_hls[..., 1], axis=0))
+        print("saturation",np.mean(selection_hls[..., 2], axis=0))
+
         #Need to change the luminoisty
         selection_hls = np.clip(selection_hls, 0, 1)
 

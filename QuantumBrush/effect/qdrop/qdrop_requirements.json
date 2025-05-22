@@ -11,8 +11,8 @@
     "user_input": {
         "Number of Drops": "int",
         "Radius": "int",
-        "Target Color": "color",
-        "Strength": "float"
+        "Strength": "float",
+        "Invert luminosity": "bool"
     },
     "stroke_input": {
         "image_rgba": "array",
