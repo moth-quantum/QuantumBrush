@@ -3,7 +3,7 @@
     "id": "qdrop", 
     "author": "Joao",
     "version": "1.0.0",
-    "description": "Paint with quantum drops",
+    "description": "This applies a change of hue and luminosity to each section of the brush. All the parts are entangled, so the color of one part will affect the color of the others. The effect is similar to a drop of paint, where the colors mix together.",
     "dependencies": {
         "numpy": ">=2.1.0",
         "colorsys": ""
@@ -12,7 +12,7 @@
         "Number of Drops": "int",
         "Radius": "int",
         "Strength": "float",
-        "Invert luminosity": "bool"
+        "Target Color": "color"
     },
     "stroke_input": {
         "image_rgba": "array",
@@ -20,6 +20,6 @@
         "clicks": "array"
     },
     "flags": {
-        "smooth": false
+        "smooth_path": true
     }
 }

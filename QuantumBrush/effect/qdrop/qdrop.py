@@ -3,7 +3,7 @@ import numpy as np
 import colorsys
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector
-import math
+
 def points_within_radius(points, radius):
     """
     Given a set of points and a radius, return all points within the radius.
@@ -85,24 +85,31 @@ def hls_to_rgb(hlsa: np.ndarray):
     return rgb
 
 
-def dephasing(initial_angles, target_angles, strength):
+def drop(initial_angles, target_angle,strength):
     num_qubits = len(initial_angles)
     print("initial angles",initial_angles)
+    print("target angles",target_angle)
+
+    target_phi, target_theta = target_angle
 
     # We ned first to align the target angle to to z axis
 
     qc = QuantumCircuit(num_qubits + 1)
-    rotation = 2*np.arccos(1-strength)
 
+    qc.x(num_qubits)
     # Prepare each qubit in the state defined by (theta, phi)
     for i, (phi, theta) in enumerate(initial_angles):
         qc.ry(theta, i)
         qc.rz(phi, i)
 
-        qc.cry(rotation,target_qubit = num_qubits,control_qubit  = i)
-        qc.cx(target_qubit = i,control_qubit  = num_qubits)
+        qc.crz(strength * (target_phi-phi),target_qubit = i,control_qubit  = num_qubits)
+        qc.cry(strength * (target_theta-theta),target_qubit = i,control_qubit  = num_qubits)
 
-    qc.reset(qubit = num_qubits)
+        #qc.rz(strength * (target_phi-phi),i)
+        #qc.ry(strength * (target_theta-theta),i)
+
+        if num_qubits > 1:
+            qc.ry(np.pi/(num_qubits-1), num_qubits)
 
     # Get statevector for expectation value calculation
     sv = Statevector.from_instruction(qc)
@@ -120,7 +127,7 @@ def dephasing(initial_angles, target_angles, strength):
     # phi = arctan2(Y, X)
     phi_expectations = [np.mod(np.arctan2(y,x),2*np.pi) for x, y in zip(x_expectations, y_expectations)]
     # theta = arccos(Z)
-    theta_expectations = [np.arccos(np.clip(z,-1,1)) for z in z_expectations]
+    theta_expectations = [np.mod(np.arctan2(np.sqrt(x**2 + y**2),z),2*np.pi) for x, y, z in zip(x_expectations, y_expectations, z_expectations)]
 
     final_angles = list(zip(phi_expectations, theta_expectations))
     print("final angles",final_angles)
@@ -156,7 +163,7 @@ def run(params):
     path = params["stroke_input"]["path"]
 
     n_drops = params["user_input"]["Number of Drops"]
-    assert n_drops > 1, "Number of drops must be greater than 1"
+    assert n_drops > 0, "Number of drops must be greater than 0"
 
     # Split a path into n_drops smaller paths
     path_length = len(path)
@@ -170,8 +177,9 @@ def run(params):
     radius = params["user_input"]["Radius"]
     assert radius > 0, "Radius must be greater than 0"
 
-    target_hls = rgb_to_hls(params["user_input"]["Target Color"])
-    target_angles = (2 * np.pi * target_hls[1], target_hls[0] * np.pi)  
+    target_color = params["user_input"]["Target Color"]
+    target_color = rgb_to_hls(np.array(target_color)/255.0)
+    target_angle = (2 * np.pi * target_color[0], np.pi * target_color[1])
 
     initial_angles = [] #(Theta,phi)
     pixels = []
@@ -183,15 +191,9 @@ def run(params):
         selection = image[region[:, 0], region[:, 1]]
         selection = selection.astype(np.float32) / 255.0
         selection_hls = rgb_to_hls(selection)
-
     
         h_sel = np.mean(selection_hls[..., 0], axis=0)
         l_sel = np.mean(selection_hls[..., 1], axis=0)
-
-        print("before")
-        print("h_sel",np.mean(selection_hls[..., 0], axis=0))
-        print("l_sel",np.mean(selection_hls[..., 1], axis=0))
-        print("saturation",np.mean(selection_hls[..., 2], axis=0))
 
         phi = 2 * np.pi * h_sel
         theta = np.pi * l_sel
@@ -202,7 +204,7 @@ def run(params):
     strength = params["user_input"]["Strength"]
     assert strength >= 0 and strength <= 1, "Strength must be between 0 and 1"
 
-    final_angles =  dephasing(initial_angles, target_angles, strength)
+    final_angles =  drop(initial_angles, target_angle, strength)
 
     for i,(region,selection_hls) in enumerate(pixels):
         new_h,new_l = final_angles[i]
@@ -211,11 +213,6 @@ def run(params):
         selection_hls[...,0] += (new_h - old_h) / (2 * np.pi)
         selection_hls[...,1] += (new_l - old_l) / np.pi
         selection_hls[...,1] = np.mod(selection_hls[...,1], 1)
-
-        print("after")
-        print("h_sel",np.mean(selection_hls[..., 0], axis=0))
-        print("l_sel",np.mean(selection_hls[..., 1], axis=0))
-        print("saturation",np.mean(selection_hls[..., 2], axis=0))
 
         #Need to change the luminoisty
         selection_hls = np.clip(selection_hls, 0, 1)
