@@ -17,7 +17,7 @@ def run(params):
     # Extract image to work from
     image = params["stroke_input"]["image_rgba"]
     # It's a good practice to check any of the request variables
-    assert image.shape[-1] == 4, "Image must be RGBA format"
+    assert image.shape[-1] == 4, "Image must have an alpha channel"
 
     # other variable that you requested are available in params["user_input"]
     # the path of the stroke as well as the clicks can be found in params["stroke_input"]

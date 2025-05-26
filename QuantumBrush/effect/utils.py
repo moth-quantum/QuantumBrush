@@ -33,7 +33,7 @@ def bresenham_line(x1, y1, x2, y2):
 
 
 def interpolate_pixels(pixel_list, numpy = True):
-    if not pixel_list:
+    if len(pixel_list) == 0:
         if numpy:
             return np.array([])
         return []
@@ -42,7 +42,7 @@ def interpolate_pixels(pixel_list, numpy = True):
     # Remove consecutive duplicate pixels
     last = pixel_list[0]
     for px in pixel_list[1:]:
-        if px != last:
+        if np.any(px != last):
             new_px = bresenham_line(*last,*px)
             interpolated_pixels.extend(new_px[1:])
             last = px

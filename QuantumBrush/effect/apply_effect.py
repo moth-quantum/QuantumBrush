@@ -113,8 +113,10 @@ def process_effect(instr: dict):
     # Process any other flags
     
     if req["flags"].get("smooth_path", False):
-        req["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
+        req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
 
+    if req["flags"].get("use_hls", False):
+        req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
 
     # Add a few flags needed to apply the effects
     req["effect_id"] = effect_id

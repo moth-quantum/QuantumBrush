@@ -1,0 +1,26 @@
+{
+    "name": "Damping",
+    "id": "damping", 
+    "author": "Joao",
+    "version": "1.0.0",
+    "description": "Each groups of pixel get encoded as a qubit undergoing an amplitude damping circuit.",
+    "dependencies": {
+        "numpy": ">=2.1.0",
+        "colorsys": "",
+        "qiskit": ""
+    },
+    "user_input": {
+        "Number of Drops": "int",
+        "Radius": "int",
+        "Strength": "float",
+        "Invert Luminosity": "bool"
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array",
+        "clicks": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}
