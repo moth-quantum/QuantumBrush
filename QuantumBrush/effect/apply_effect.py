@@ -105,10 +105,10 @@ def process_effect(instr: dict):
             
             req[input_type][key] = process_variable(req[input_type][key], instr[input_type][key])
 
-    # Process the path and clicks
+            # I need to rotate clicks and paths into (y,x) format
+            if ( key == "clicks" or key == "path" ) and input_type == "stroke_input":
+                req[input_type][key] = req[input_type][key][..., ::-1]
 
-    req["stroke_input"]["path"] = req["stroke_input"]["path"][..., ::-1]
-    req["stroke_input"]["clicks"] = req["stroke_input"]["clicks"][..., ::-1]
 
     # Process any other flags
     

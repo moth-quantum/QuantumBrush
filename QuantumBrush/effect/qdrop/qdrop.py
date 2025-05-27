@@ -2,7 +2,7 @@
 import numpy as np
 import colorsys
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector
+from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector, entropy, partial_trace
 
 def points_within_radius(points, radius):
     """
@@ -105,15 +105,16 @@ def drop(initial_angles, target_angle,strength):
         qc.crz(strength * (target_phi-phi),target_qubit = i,control_qubit  = num_qubits)
         qc.cry(strength * (target_theta-theta),target_qubit = i,control_qubit  = num_qubits)
 
-        #qc.rz(strength * (target_phi-phi),i)
-        #qc.ry(strength * (target_theta-theta),i)
+        #qc.rz(np.cos(i * np.pi/(num_qubits-1) /2) * (target_phi-phi),i)
+        #qc.ry(np.cos(i * np.pi/(num_qubits-1) /2) * (target_theta-theta),i)
 
         if num_qubits > 1:
             qc.ry(np.pi/(num_qubits-1), num_qubits)
 
+
     # Get statevector for expectation value calculation
     sv = Statevector.from_instruction(qc)
-
+    #sv = partial_trace(sv,num_qubits)
     # Define Pauli operators for X and Z for each qubit
     x_ops = [SparsePauliOp(Pauli('I'*(num_qubits-i) + 'X' + 'I'*i)) for i in range(num_qubits)]
     y_ops = [SparsePauliOp(Pauli('I'*(num_qubits-i) + 'Y' + 'I'*i)) for i in range(num_qubits)]
@@ -132,10 +133,6 @@ def drop(initial_angles, target_angle,strength):
     final_angles = list(zip(phi_expectations, theta_expectations))
     print("final angles",final_angles)
     return final_angles
-
-
-
-
 
 
 
