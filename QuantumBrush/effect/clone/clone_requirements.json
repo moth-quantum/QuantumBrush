@@ -5,7 +5,8 @@
     "version": "1.0.0",
     "description": "This effect will try to clone the first region clicked onto the other clicks but due to the no-cloning theorem, the copy will never be perfect",
     "dependencies": {
-        "numpy": ">=2.1.0"
+        "numpy": ">=2.1.0",
+        "qiskit": ""
     },
     "user_input": {
         "Radius": "int",
