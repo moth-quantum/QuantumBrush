@@ -4,11 +4,8 @@ import java.util.*;
 import java.io.*;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StrokeManager {
     private QuantumBrush app;
@@ -29,6 +26,9 @@ public class StrokeManager {
     }
     
     private java.util.List<ProcessingCallback> callbacks;
+    
+    // Add this field to the StrokeManager class
+    
     
     public StrokeManager(QuantumBrush app) {
         this.app = app;
@@ -1019,11 +1019,10 @@ public class StrokeManager {
             // Create a task to execute the Python script asynchronously
             Runnable task = () -> {
                 boolean success = false;
-                Process pythonProcess = null;
                 
                 try {
                     // Execute Python script with absolute path
-                    success = executeApplyEffectScript(instructionsFile.getAbsolutePath(), pythonProcess);
+                    success = executeApplyEffectScript(instructionsFile.getAbsolutePath());
                     
                     // Update status based on result
                     JSONObject updatedInstructions = app.loadJSONObject(instructionsPath);
@@ -1061,12 +1060,6 @@ public class StrokeManager {
                 } catch (InterruptedException e) {
                     // This exception is thrown when the thread is interrupted (e.g., when cancelling)
                     System.err.println("Python process execution interrupted");
-                    
-                    // Make sure to kill the Python process if it's still running
-                    if (pythonProcess != null && pythonProcess.isAlive()) {
-                        pythonProcess.destroyForcibly();
-                        System.out.println("Forcibly terminated Python process due to cancellation");
-                    }
                     
                     // Update the instructions file to reflect cancellation
                     try {
@@ -1117,18 +1110,27 @@ public class StrokeManager {
             SwingUtilities.invokeLater(() -> {
                 app.getUIManager().updateStrokeManagerContent(this);
                 
-                // Show a non-blocking notification
-                JOptionPane optionPane = new JOptionPane(
-                    "Effect processing started in the background.\n" +
-                    "You can continue using the application while it processes.",
-                    JOptionPane.INFORMATION_MESSAGE
-                );
-                JDialog dialog = optionPane.createDialog("Processing Started");
-                dialog.setModal(false);
-                dialog.setVisible(true);
+                // Show a simple toast notification
+                JWindow notification = new JWindow();
+                notification.setSize(250, 60);
+                notification.setLocationRelativeTo(null);
                 
-                // Auto-close the dialog after 3 seconds
-                javax.swing.Timer timer = new javax.swing.Timer(3000, e -> dialog.dispose());
+                JPanel notificationPanel = new JPanel(new BorderLayout());
+                notificationPanel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.BLUE, 2),
+                    BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                ));
+                notificationPanel.setBackground(new Color(240, 248, 255));
+                
+                JLabel messageLabel = new JLabel("Processing started...");
+                messageLabel.setHorizontalAlignment(JLabel.CENTER);
+                notificationPanel.add(messageLabel, BorderLayout.CENTER);
+                
+                notification.add(notificationPanel);
+                notification.setVisible(true);
+                
+                // Auto-close after 2 seconds
+                javax.swing.Timer timer = new javax.swing.Timer(2000, evt -> notification.dispose());
                 timer.setRepeats(false);
                 timer.start();
             });
@@ -1187,7 +1189,7 @@ public class StrokeManager {
                     dialog.setModal(false);
                     dialog.setVisible(true);
                 
-                    // Auto-close the dialog after 2 seconds
+                    // Auto-close after 2 seconds
                     javax.swing.Timer timer = new javax.swing.Timer(2000, e -> dialog.dispose());
                     timer.setRepeats(false);
                     timer.start();
@@ -1218,39 +1220,60 @@ public class StrokeManager {
      * Notifies all registered callbacks that processing has completed.
      */
     private void notifyProcessingComplete(String strokeId, boolean success) {
-        // Remove from processing map before notifying callbacks
-        processingStrokes.remove(strokeId);
-        
-        // Show a notification regardless of whether the stroke manager is open
+    // Remove from processing map before notifying callbacks
+    processingStrokes.remove(strokeId);
+    
+    // Update the UI first
+    SwingUtilities.invokeLater(() -> {
+        app.getUIManager().updateStrokeManagerContent(this);
+    });
+    
+    // Only show success notification, not failure (to avoid spam)
+    if (success) {
+        // Show a single, non-blocking success notification
         SwingUtilities.invokeLater(() -> {
-          String message = success ? 
-            "Effect processed successfully!" : 
-            "Effect processing failed. Check the error log for details.";
-          
-          JOptionPane optionPane = new JOptionPane(
-            message,
-            success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
-          );
-          JDialog dialog = optionPane.createDialog("Processing Complete");
-          dialog.setModal(false);
-          dialog.setVisible(true);
-          
-          // Auto-close the dialog after 3 seconds
-          javax.swing.Timer timer = new javax.swing.Timer(3000, evt -> dialog.dispose());
-          timer.setRepeats(false);
-          timer.start();
+            // Create a simple toast notification that doesn't block
+            JWindow notification = new JWindow();
+            notification.setSize(300, 80);
+            notification.setLocationRelativeTo(null);
+            
+            JPanel notificationPanel = new JPanel(new BorderLayout());
+            notificationPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(0, 150, 0), 2),
+                BorderFactory.createEmptyBorder(10, 15, 10, 15)
+            ));
+            notificationPanel.setBackground(new Color(240, 255, 240));
+            
+            JLabel messageLabel = new JLabel("Effect processing completed successfully!");
+            messageLabel.setHorizontalAlignment(JLabel.CENTER);
+            messageLabel.setForeground(new Color(0, 100, 0));
+            messageLabel.setFont(new Font("Arial", Font.BOLD, 12));
+            notificationPanel.add(messageLabel, BorderLayout.CENTER);
+            
+            notification.add(notificationPanel);
+            notification.setVisible(true);
+            
+            // Auto-close after 3 seconds
+            javax.swing.Timer timer = new javax.swing.Timer(3000, evt -> notification.dispose());
+            timer.setRepeats(false);
+            timer.start();
         });
-        
-        // Now notify all registered callbacks
-        for (ProcessingCallback callback : callbacks) {
+    }
+    
+    // Now notify all registered callbacks (but don't show additional dialogs)
+    for (ProcessingCallback callback : callbacks) {
+        try {
             callback.onProcessingComplete(strokeId, success);
-        }
-        
-        // Check if there are any pending strokes to process
-        if (processingStrokes.isEmpty()) {
-            processPendingStrokes();
+        } catch (Exception e) {
+            System.err.println("Error in processing callback: " + e.getMessage());
         }
     }
+    
+    // Check if there are any pending strokes to process
+    if (processingStrokes.isEmpty()) {
+        processPendingStrokes();
+    }
+}
     
     /**
      * Checks if a stroke is currently being processed.
@@ -1279,7 +1302,7 @@ public class StrokeManager {
         return "unknown";
     }
     
-    private boolean executeApplyEffectScript(String instructionsFilePath, Process processRef) throws InterruptedException, IOException {
+    private boolean executeApplyEffectScript(String instructionsFilePath) throws InterruptedException, IOException {
         Process process = null;
         try {
             // Check if we need to re-initialize Python command
@@ -1344,11 +1367,6 @@ public class StrokeManager {
             // Execute process
             process = processBuilder.start();
             
-            // Store the process reference for potential cancellation
-            if (processRef != null) {
-                processRef = process;
-            }
-            
             // Add a timeout to prevent hanging
             boolean completed = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
             
@@ -1370,13 +1388,11 @@ public class StrokeManager {
             
             // Check the effect_success flag in the JSON file
             JSONObject instructions = app.loadJSONObject(instructionsFilePath);
-            String effectSuccess = instructions.getString("effect_success", "false");
-            
-            // Check if output file exists
             String projectId = instructions.getString("project_id", "");
             String strokeId = instructions.getString("stroke_id", "");
             String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
             File outputFile = new File(outputPath);
+            String effectSuccess = instructions.getString("effect_success", "false");
             
             boolean success = exitCode == 0 && "true".equals(effectSuccess) && outputFile.exists();
             
@@ -1492,31 +1508,10 @@ public class StrokeManager {
         return !strokes.isEmpty();
     }
 
-    private boolean isOutputImageValid(String projectId, String strokeId) {
-        if (projectId == null || strokeId == null) {
-            return false;
-        }
-        
-        String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-        File outputFile = new File(outputPath);
-        
-        if (!outputFile.exists()) {
-            System.err.println("Output image does not exist: " + outputPath);
-            return false;
-        }
-        
-        // Check if the file is a valid image
-        try {
-            PImage testImage = app.loadImage(outputPath);
-            if (testImage == null || testImage.width <= 0 || testImage.height <= 0) {
-                System.err.println("Output image is invalid or corrupted: " + outputPath);
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
-            System.err.println("Error validating output image: " + e.getMessage());
-            return false;
-        }
+    // Add a method to save project state after applying an effect
+    public void saveProjectStateAfterEffect() {
+        // Save project state after applying effect (this is what we want to undo/redo)
+        app.saveProjectStateAfterImageChange();
     }
 
     public boolean applyEffectToCanvas(String strokeId) {
@@ -1600,38 +1595,31 @@ public class StrokeManager {
             outputImage = app.loadImage(outputPath);
         }
 
-        if (outputImage != null) {
-            // Set as current image
-            app.setCurrentImage(outputImage);
-            
-            // Save as new original
-            String originalPath = "project/" + projectId + "/original.png";
-            outputImage.save(originalPath);
-            
-            // Update project metadata
-            app.getFileManager().updateProjectMetadata(projectId);
-            
-            // Clear paths
-            app.getCanvasManager().clearPaths();
-            
-            JOptionPane.showMessageDialog(
-                null, 
-                "Effect applied to canvas successfully!", 
-                "Success", 
-                JOptionPane.INFORMATION_MESSAGE
-            );
-            
-            return true;
-        } else {
-            JOptionPane.showMessageDialog(
-                null, 
-                "Failed to load output image.", 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE
-            );
-            
-            return false;
-        }
+if (outputImage != null) {
+    // Set as current image
+    app.setCurrentImage(outputImage);
+    
+    // Save project state after applying effect (this is what we want to undo/redo)
+    app.saveProjectStateAfterImageChange();
+    
+    // Save as new original
+    String originalPath = "project/" + projectId + "/original.png";
+    outputImage.save(originalPath);
+    
+    // Update project metadata
+    app.getFileManager().updateProjectMetadata(projectId);
+    
+    // Clear paths (but don't save this as a project state)
+    app.getCanvasManager().clearPaths();
+    
+    // Don't show a blocking dialog, just print success
+    System.out.println("Effect applied to canvas successfully!");
+    
+    return true;
+} else {
+    System.err.println("Failed to load output image for pasting.");
+    return false;
+}
     }
     
     /**
@@ -1815,3 +1803,4 @@ public class StrokeManager {
         processingStrokes.clear();
     }
 }
+

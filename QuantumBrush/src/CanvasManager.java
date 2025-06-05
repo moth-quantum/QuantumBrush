@@ -1,4 +1,6 @@
 import processing.core.PApplet;
+import processing.core.PImage;
+
 import java.util.ArrayList;
 
 public class CanvasManager {
@@ -34,10 +36,7 @@ public class CanvasManager {
 
     public void finishCurrentPath() {
         if (currentPath != null && currentPath.hasPoints()) {
-            // Save current state for undo
-            saveHistoryState();
-            
-            // Add the path
+            // Add the path (history is now managed by main class)
             paths.add(currentPath);
             currentPath = null;
         }
@@ -58,11 +57,6 @@ public class CanvasManager {
     }
 
     public void clearPaths() {
-        // Save current state for undo
-        if (!paths.isEmpty()) {
-            saveHistoryState();
-        }
-        
         paths.clear();
         currentPath = null;
     }
@@ -115,6 +109,15 @@ public class CanvasManager {
             }
         }
     }
+
+    // Add a method to set paths from outside (needed for project undo/redo)
+    public void setPaths(ArrayList<Path> newPaths) {
+        paths = new ArrayList<>();
+        for (Path path : newPaths) {
+            paths.add(path.copy());
+        }
+        currentPath = null;
+    }
 }
 
 class Path {
@@ -151,13 +154,29 @@ class Path {
     }
 
     public void draw(PApplet app) {
-        if (points.size() < 2) return;
+        // Always draw the yellow dot first if it exists
+        if (clickPoint != null) {
+            app.pushStyle();
+            app.fill(255, 255, 0);  // Yellow
+            app.noStroke();
+            app.ellipse(clickPoint.x, clickPoint.y, 10, 10);
+            app.popStyle();
+        }
         
-        // Draw as individual line segments
-        for (int i = 0; i < points.size() - 1; i++) {
-            PVector p1 = points.get(i);
-            PVector p2 = points.get(i + 1);
-            app.line(p1.x, p1.y, p2.x, p2.y);
+        // Draw line segments only if we have at least 2 points
+        if (points.size() >= 2) {
+            app.pushStyle();
+            app.stroke(255, 0, 0); // Red brush
+            app.strokeWeight(2);
+            
+            // Draw as individual line segments
+            for (int i = 0; i < points.size() - 1; i++) {
+                PVector p1 = points.get(i);
+                PVector p2 = points.get(i + 1);
+                app.line(p1.x, p1.y, p2.x, p2.y);
+            }
+            
+            app.popStyle();
         }
     }
     
@@ -181,4 +200,3 @@ class PVector {
         this.y = y;
     }
 }
-

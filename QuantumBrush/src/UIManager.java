@@ -1,149 +1,201 @@
 import processing.core.*;
 import processing.data.JSONObject;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.*;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 
 public class UIManager {
+    private static final long serialVersionUID = 1L;
+    
     private QuantumBrush app;
     private JButton createButton;
     private Map<String, JComponent> paramComponents;
     private JFrame activeStrokeManagerFrame = null;
     private JSplitPane activeSplitPane = null;
+    private JFrame mainControlFrame = null; // Add reference to main control frame
+    private JPanel effectParameterContainer = null; // Container for effect parameters
     
     public UIManager(QuantumBrush app) {
         this.app = app;
         this.paramComponents = new HashMap<>();
     }
     
-    public void createEffectWindow(Effect effect) {
-        if (effect == null) return;
+    // Add method to set the main control frame reference
+    public void setMainControlFrame(JFrame frame) {
+        this.mainControlFrame = frame;
+    }
+    
+    // Add method to set the effect parameter container
+    public void setEffectParameterContainer(JPanel container) {
+        this.effectParameterContainer = container;
+    }
+
+// Add this method to create an embedded effect parameter panel
+public JPanel createEffectParameterPanel(Effect effect, JPanel containerPanel) {
+    if (effect == null) return new JPanel();
+    
+    // Create main panel
+    JPanel paramPanel = new JPanel(new BorderLayout(10, 10));
+    paramPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+    
+    // Add title panel
+    JPanel titlePanel = new JPanel();
+    titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+    
+    JLabel titleLabel = new JLabel("Configure " + effect.getName() + " Effect");
+    titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+    titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    // Create a scrollable description panel
+    String description = effect.getRequirements().getString("description", "");
+    JTextArea descArea = new JTextArea(description);
+    descArea.setFont(new Font("Arial", Font.ITALIC, 12));
+    descArea.setLineWrap(true);
+    descArea.setWrapStyleWord(true);
+    descArea.setEditable(false);
+    descArea.setBackground(titlePanel.getBackground());
+    descArea.setMargin(new Insets(5, 5, 5, 5));
+    
+    JScrollPane descScrollPane = new JScrollPane(descArea);
+    descScrollPane.setPreferredSize(new Dimension(400, 60));
+    descScrollPane.setBorder(BorderFactory.createEmptyBorder());
+    descScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+    
+    titlePanel.add(titleLabel);
+    titlePanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    titlePanel.add(descScrollPane);
+    
+    paramPanel.add(titlePanel, BorderLayout.NORTH);
+    
+    // Create parameters panel
+    JPanel parametersPanel = new JPanel();
+    parametersPanel.setLayout(new BoxLayout(parametersPanel, BoxLayout.Y_AXIS));
+    parametersPanel.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createEmptyBorder(15, 0, 15, 0),
+        BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        )
+    ));
+    
+    // Add parameters from effect requirements
+    JSONObject userInputReqs = effect.getUserInputRequirements();
+    paramComponents.clear();
+    
+    for (Object key : userInputReqs.keys()) {
+        String paramName = (String) key;
+        Object defaultValue = userInputReqs.get(paramName);
+        String paramType = determineParamType(paramName, defaultValue);
         
-        // Create effect configuration window
-        JFrame effectFrame = new JFrame("Effect: " + effect.getName());
-        effectFrame.setSize(450, 400);
-        effectFrame.setLocationRelativeTo(null);
+        JPanel singleParamPanel = new JPanel(new BorderLayout(10, 0));
+        singleParamPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 10, 0));
         
-        // Create main panel
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        // Parameter label
+        JLabel paramLabel = new JLabel(formatParamName(paramName) + ":");
+        paramLabel.setToolTipText("Adjust the " + paramName + " parameter");
+        singleParamPanel.add(paramLabel, BorderLayout.WEST);
         
-        // Add title panel
-        JPanel titlePanel = new JPanel();
-        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        // Create input component based on parameter type
+        JComponent inputComponent = createInputComponent(paramName, defaultValue, paramType);
+        paramComponents.put(paramName, inputComponent);
+        singleParamPanel.add(inputComponent, BorderLayout.CENTER);
         
-        JLabel titleLabel = new JLabel("Configure " + effect.getName() + " Effect");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        parametersPanel.add(singleParamPanel);
+    }
+    
+    JScrollPane paramScrollPane = new JScrollPane(parametersPanel);
+    paramScrollPane.setBorder(BorderFactory.createEmptyBorder());
+    paramPanel.add(paramScrollPane, BorderLayout.CENTER);
+    
+    // Add buttons panel
+    JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+    
+    // Cancel button
+    JButton cancelButton = new JButton("Cancel");
+    cancelButton.addActionListener(e -> {
+        // Remove the parameter panel from the container
+        containerPanel.removeAll();
+        containerPanel.revalidate();
+        containerPanel.repaint();
+    });
+    
+    // Create button
+    createButton = new JButton("Create Effect");
+    createButton.setEnabled(app.getCanvasManager().hasPath());
+    styleButton(createButton, new Color(70, 130, 180));
+    
+    final StrokeManager strokeManager = app.getStrokeManager();
+    
+    createButton.addActionListener(e -> {
+        // Collect parameter values
+        Map<String, Object> parameters = collectParameters(userInputReqs);
         
-        JLabel descLabel = new JLabel(effect.getRequirements().getString("description", ""));
-        descLabel.setFont(new Font("Arial", Font.ITALIC, 12));
-        descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        titlePanel.add(titleLabel);
-        titlePanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        titlePanel.add(descLabel);
-        
-        mainPanel.add(titlePanel, BorderLayout.NORTH);
-        
-        // Create parameters panel
-        JPanel paramPanel = new JPanel();
-        paramPanel.setLayout(new BoxLayout(paramPanel, BoxLayout.Y_AXIS));
-        paramPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(15, 0, 15, 0),
-            BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-            )
-        ));
-        
-        // Add parameters from effect requirements
-        JSONObject userInputReqs = effect.getUserInputRequirements();
-        paramComponents.clear();
-        
-        for (Object key : userInputReqs.keys()) {
-            String paramName = (String) key;
-            Object defaultValue = userInputReqs.get(paramName);
-            String paramType = determineParamType(paramName, defaultValue);
+        // Create the stroke
+        try {
+            String strokeId = strokeManager.createStroke(effect, parameters);
             
-            JPanel singleParamPanel = new JPanel(new BorderLayout(10, 0));
-            singleParamPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 10, 0));
-            
-            // Parameter label
-            JLabel paramLabel = new JLabel(formatParamName(paramName) + ":");
-            paramLabel.setToolTipText("Adjust the " + paramName + " parameter");
-            singleParamPanel.add(paramLabel, BorderLayout.WEST);
-            
-            // Create input component based on parameter type
-            JComponent inputComponent = createInputComponent(paramName, defaultValue, paramType);
-            paramComponents.put(paramName, inputComponent);
-            singleParamPanel.add(inputComponent, BorderLayout.CENTER);
-            
-            paramPanel.add(singleParamPanel);
-        }
-        
-        mainPanel.add(new JScrollPane(paramPanel), BorderLayout.CENTER);
-        
-        // Add buttons panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        
-        // Cancel button
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(e -> effectFrame.dispose());
-        
-        // Create button
-        createButton = new JButton("Create Effect");
-        createButton.setEnabled(app.getCanvasManager().hasPath());
-        styleButton(createButton, new Color(70, 130, 180));
-        
-        createButton.addActionListener(e -> {
-            // Collect parameter values
-            Map<String, Object> parameters = collectParameters(userInputReqs);
-            
-            // Create the stroke
-            try {
-                String strokeId = app.getStrokeManager().createStroke(effect, parameters);
-                
-                // Check if the stroke was saved for later processing
-                if (strokeId != null && strokeId.startsWith("pending:")) {
-                    // The stroke was saved for later processing
-                    // Just clear the canvas paths and close the effect window
-                    app.getCanvasManager().clearPaths();
-                    effectFrame.dispose();
-                    return;
-                }
-                
-                // Clear the canvas paths after creating the stroke
-                // This ensures the red stroke doesn't affect the next stroke
+            // Check if the stroke was saved for later processing
+            if (strokeId != null && strokeId.startsWith("pending:")) {
+                // The stroke was saved for later processing
+                // Just clear the canvas paths and close the effect window
                 app.getCanvasManager().clearPaths();
-                
-                effectFrame.dispose();
-                createStrokeManagerWindow(app.getStrokeManager());
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(
-                    effectFrame,
-                    "Error creating effect: " + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-                );
-                ex.printStackTrace();
+                containerPanel.removeAll();
+                containerPanel.revalidate();
+                containerPanel.repaint();
+                return;
             }
-        });
+            
+            // Clear the canvas paths after creating the stroke
+            app.getCanvasManager().clearPaths();
+            
+            // Remove the parameter panel
+            containerPanel.removeAll();
+            containerPanel.revalidate();
+            containerPanel.repaint();
+            
+            // Show the stroke manager (but don't run automatically)
+            strokeManager.showStrokeManager();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                containerPanel,
+                "Error creating effect: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            ex.printStackTrace();
+        }
+    });
+    
+    buttonPanel.add(cancelButton);
+    buttonPanel.add(createButton);
+    
+    paramPanel.add(buttonPanel, BorderLayout.SOUTH);
+    
+    return paramPanel;
+}
+
+// Modified createEffectWindow method to embed in main control panel
+    public void createEffectWindow(Effect effect) {
+        if (effect == null || effectParameterContainer == null) return;
         
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(createButton);
+        // Clear any existing effect parameters
+        effectParameterContainer.removeAll();
         
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        // Create and add the effect parameter panel directly to the main control panel
+        JPanel paramPanel = createEffectParameterPanel(effect, effectParameterContainer);
+        effectParameterContainer.add(paramPanel, BorderLayout.CENTER);
         
-        // Add panel to frame
-        effectFrame.add(mainPanel);
-        effectFrame.setVisible(true);
+        // Refresh the main control frame
+        if (mainControlFrame != null) {
+            mainControlFrame.revalidate();
+            mainControlFrame.repaint();
+        }
     }
     
     private String determineParamType(String paramName, Object defaultValue) {
@@ -536,12 +588,52 @@ public class UIManager {
         return parameters;
     }
     
-    // Modify the updateStrokeManagerContent method to handle notifications better
+    // Fixed and simplified updateStrokeManagerContent method
     public void updateStrokeManagerContent(StrokeManager strokeManager) {
         if (activeSplitPane == null || 
             activeStrokeManagerFrame == null || 
             !activeStrokeManagerFrame.isDisplayable()) {
             return;
+        }
+        
+        // Get the current stroke first
+        StrokeManager.Stroke currentStroke = strokeManager.getCurrentStroke();
+
+        // Update the title with current stroke information
+        if (activeStrokeManagerFrame != null) {
+            Component[] components = activeStrokeManagerFrame.getContentPane().getComponents();
+            for (Component c : components) {
+                if (c instanceof JPanel) {
+                    JPanel mainPanel = (JPanel) c;
+                    Component[] mainComponents = mainPanel.getComponents();
+                    for (Component mc : mainComponents) {
+                        if (mc instanceof JPanel && mc == mainPanel.getComponent(0)) { // Title panel is first component
+                            JPanel titlePanel = (JPanel) mc;
+                            for (Component tc : titlePanel.getComponents()) {
+                                if (tc instanceof JLabel) {
+                                    JLabel titleLabel = (JLabel) tc;
+                                    if (currentStroke != null) {
+                                        String effectName = currentStroke.getEffect().getName();
+                                        String strokeId = currentStroke.getId();
+                                        // Extract timestamp from stroke ID for display
+                                        String timestamp = strokeId.substring(strokeId.indexOf('_') + 1);
+                                        long timestampLong = Long.parseLong(timestamp);
+                                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, HH:mm:ss");
+                                        String timeStr = sdf.format(new java.util.Date(timestampLong));
+                                        
+                                        titleLabel.setText("Stroke: " + effectName + " (" + timeStr + ") - ID: " + strokeId);
+                                    } else {
+                                        titleLabel.setText("No stroke selected");
+                                    }
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
         }
         
         // Store the current divider location to restore it later
@@ -555,7 +647,6 @@ public class UIManager {
         activeSplitPane.setRightComponent(null);
         
         // Get the current stroke
-        StrokeManager.Stroke currentStroke = strokeManager.getCurrentStroke();
         if (currentStroke != null) {
             String projectId = app.getProjectId();
             String strokeId = currentStroke.getId();
@@ -585,6 +676,8 @@ public class UIManager {
                 // Create a custom panel that draws the input image and the paths
                 final PImage finalStrokeInputImage = strokeInputImage;
                 JPanel customImagePanel = new JPanel() {
+                    private static final long serialVersionUID = 1L;
+                    
                     @Override
                     protected void paintComponent(Graphics g) {
                         super.paintComponent(g);
@@ -645,20 +738,102 @@ public class UIManager {
                 );
             }
             
-            // Right panel - Output image (if exists)
+            // Right panel - Parameters and Output image
             JPanel rightPanel = new JPanel(new BorderLayout());
             rightPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createEmptyBorder(0, 5, 0, 0),
-                BorderFactory.createTitledBorder("Output Image")
+                BorderFactory.createTitledBorder("Effect Parameters & Output")
             ));
+
+            // Create parameter display panel
+            JPanel parameterDisplayPanel = new JPanel();
+            parameterDisplayPanel.setLayout(new BoxLayout(parameterDisplayPanel, BoxLayout.Y_AXIS));
+            parameterDisplayPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Parameters Used"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            ));
+
+            // Display the parameters for this stroke
+            System.out.println("=== DEBUG: Displaying parameters for stroke " + strokeId + " ===");
+            Map<String, Object> strokeParams = currentStroke.getParameters();
+            System.out.println("Parameters map: " + strokeParams);
+            System.out.println("Parameters map size: " + (strokeParams != null ? strokeParams.size() : "null"));
             
-            // Check if the stroke is currently being processed
+            if (strokeParams != null && !strokeParams.isEmpty()) {
+                for (Map.Entry<String, Object> entry : strokeParams.entrySet()) {
+                    System.out.println("Parameter: " + entry.getKey() + " = " + entry.getValue() + " (type: " + entry.getValue().getClass().getSimpleName() + ")");
+                    
+                    JPanel paramRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+                    JLabel paramLabel = new JLabel(formatParamName(entry.getKey()) + ":");
+                    paramLabel.setFont(new Font("Arial", Font.BOLD, 12));
+                    JLabel paramValue = new JLabel(entry.getValue().toString());
+                    paramValue.setFont(new Font("Arial", Font.PLAIN, 12));
+                    paramValue.setForeground(new Color(0, 0, 150));
+                    
+                    paramRow.add(paramLabel);
+                    paramRow.add(paramValue);
+                    parameterDisplayPanel.add(paramRow);
+                }
+            } else {
+                System.out.println("No parameters found - trying to load from JSON");
+                
+                // Try to get parameters from the JSON file as fallback
+                String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
+                File instructionsFile = new File(instructionsPath);
+                
+                if (instructionsFile.exists()) {
+                    try {
+                        JSONObject instructions = app.loadJSONObject(instructionsPath);
+                        if (instructions.hasKey("user_input")) {
+                            JSONObject userInput = instructions.getJSONObject("user_input");
+                            System.out.println("Found user_input in JSON: " + userInput);
+                            
+                            for (Object key : userInput.keys()) {
+                                String paramName = (String) key;
+                                Object value = userInput.get(paramName);
+                                System.out.println("JSON Parameter: " + paramName + " = " + value);
+                                
+                                JPanel paramRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+                                JLabel paramLabel = new JLabel(formatParamName(paramName) + ":");
+                                paramLabel.setFont(new Font("Arial", Font.BOLD, 12));
+                                JLabel paramValue = new JLabel(value.toString());
+                                paramValue.setFont(new Font("Arial", Font.PLAIN, 12));
+                                paramValue.setForeground(new Color(0, 0, 150));
+                                
+                                paramRow.add(paramLabel);
+                                paramRow.add(paramValue);
+                                parameterDisplayPanel.add(paramRow);
+                            }
+                        } else {
+                            System.out.println("No user_input found in JSON");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error reading parameters from JSON: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.println("Instructions file does not exist: " + instructionsPath);
+                }
+                
+                // If still no parameters, show default message
+                if (parameterDisplayPanel.getComponentCount() == 0) {
+                    JLabel noParamsLabel = new JLabel("No parameters found for this effect");
+                    noParamsLabel.setFont(new Font("Arial", Font.ITALIC, 12));
+                    noParamsLabel.setForeground(Color.GRAY);
+                    parameterDisplayPanel.add(noParamsLabel);
+                }
+            }
+
+            // Create a main content panel that will hold parameters and output
+            JPanel rightContentPanel = new JPanel(new BorderLayout());
+            rightContentPanel.add(parameterDisplayPanel, BorderLayout.NORTH);
+            
+            // Check processing status
             boolean isProcessing = strokeManager.isStrokeProcessing(strokeId);
             String processingStatus = strokeManager.getStrokeProcessingStatus(strokeId);
             
             // Check if effect was successful
-            String instructionsPath = "project/" + projectId + "/stroke/" + 
-                                     strokeId + "_instructions.json";
+            String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
             File instructionsFile = new File(instructionsPath);
             boolean effectSuccess = false;
             
@@ -674,13 +849,16 @@ public class UIManager {
             }
             
             // Check if output image exists
-            String outputPath = "project/" + projectId + "/stroke/" + 
-                               strokeId + "_output.png";
+            String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
             File outputFile = new File(outputPath);
-            
-            // Check if layered output exists
-            String layeredPath = "project/" + projectId + "/original_layered.png";
-            File layeredFile = new File(layeredPath);
+
+            System.out.println("=== DEBUG: Output image check ===");
+            System.out.println("Stroke ID: " + strokeId);
+            System.out.println("Effect success: " + effectSuccess);
+            System.out.println("Output file exists: " + outputFile.exists());
+            System.out.println("Output file path: " + outputPath);
+            System.out.println("Is processing: " + isProcessing);
+            System.out.println("Processing status: " + processingStatus);
             
             if (isProcessing) {
                 // Show processing indicator
@@ -701,125 +879,156 @@ public class UIManager {
                 statusPanel.add(processingPanel, BorderLayout.CENTER);
                 statusPanel.add(progressPanel, BorderLayout.SOUTH);
                 
-                rightPanel.add(statusPanel, BorderLayout.CENTER);
-                
-                // Add a status label
-                JLabel statusLabel = new JLabel("Processing in progress...");
-                statusLabel.setForeground(new Color(0, 0, 150));
-                statusLabel.setHorizontalAlignment(JLabel.CENTER);
-                statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-                rightPanel.add(statusLabel, BorderLayout.SOUTH);
+                rightContentPanel.add(statusPanel, BorderLayout.CENTER);
             }
             else if (effectSuccess && outputFile.exists()) {
+                // Simplified image loading and display
                 try {
-                    // Load the output image
-                    final PImage outputImage = app.loadImage(outputPath);
+                    System.out.println("=== Loading and displaying output image ===");
+                    
+                    // Use Processing's loadImage for simplicity
+                    PImage outputImage = app.loadImage(outputPath);
                     
                     if (outputImage != null) {
-                        // Create a panel to display the output image
-                        JPanel outputImagePanel = new JPanel() {
+                        System.out.println("Successfully loaded output image: " + outputImage.width + "x" + outputImage.height);
+                        
+                        // Create a simple image display panel
+                        JPanel imageDisplayPanel = new JPanel(new BorderLayout());
+                        imageDisplayPanel.setBorder(BorderFactory.createTitledBorder("Output Image"));
+                        
+                        // Convert PImage to displayable format
+                        final BufferedImage bufferedImage = new BufferedImage(
+                            outputImage.width, outputImage.height, BufferedImage.TYPE_INT_ARGB);
+                        
+                        outputImage.loadPixels();
+                        for (int y = 0; y < outputImage.height; y++) {
+                            for (int x = 0; x < outputImage.width; x++) {
+                                int pixel = outputImage.pixels[y * outputImage.width + x];
+                                bufferedImage.setRGB(x, y, pixel);
+                            }
+                        }
+                        
+                        // Create image panel with proper scaling
+                        JPanel imagePanel = new JPanel() {
                             @Override
                             protected void paintComponent(Graphics g) {
                                 super.paintComponent(g);
-                                g.drawImage(outputImage.getImage(), 0, 0, null);
+                                setBackground(Color.WHITE);
+                                
+                                if (bufferedImage != null) {
+                                    Graphics2D g2d = (Graphics2D) g;
+                                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
+                                                       RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                                    
+                                    // Calculate scaling to fit panel
+                                    int panelWidth = getWidth();
+                                    int panelHeight = getHeight();
+                                    
+                                    if (panelWidth > 0 && panelHeight > 0) {
+                                        double scaleX = (double) panelWidth / bufferedImage.getWidth();
+                                        double scaleY = (double) panelHeight / bufferedImage.getHeight();
+                                        double scale = Math.min(scaleX, scaleY);
+                                        scale = Math.min(scale, 1.0); // Don't upscale
+                                        
+                                        int scaledWidth = (int) (bufferedImage.getWidth() * scale);
+                                        int scaledHeight = (int) (bufferedImage.getHeight() * scale);
+                                        
+                                        // Center the image
+                                        int x = (panelWidth - scaledWidth) / 2;
+                                        int y = (panelHeight - scaledHeight) / 2;
+                                        
+                                        // Draw the scaled image
+                                        g2d.drawImage(bufferedImage, x, y, scaledWidth, scaledHeight, this);
+                                        
+                                        // Draw border
+                                        g2d.setColor(Color.LIGHT_GRAY);
+                                        g2d.drawRect(x-1, y-1, scaledWidth+1, scaledHeight+1);
+                                    }
+                                }
                             }
                             
                             @Override
                             public Dimension getPreferredSize() {
-                                return new Dimension(outputImage.width, outputImage.height);
-                            }
-                            
-                            @Override
-                            public Dimension getMinimumSize() {
-                                return getPreferredSize();
-                            }
-                            
-                            @Override
-                            public Dimension getMaximumSize() {
-                                return getPreferredSize();
+                                if (bufferedImage != null) {
+                                    // Scale down for UI if too large
+                                    int maxSize = 300;
+                                    int width = bufferedImage.getWidth();
+                                    int height = bufferedImage.getHeight();
+                                    
+                                    if (width > maxSize || height > maxSize) {
+                                        double scale = Math.min((double)maxSize / width, (double)maxSize / height);
+                                        return new Dimension((int)(width * scale), (int)(height * scale));
+                                    }
+                                    return new Dimension(width, height);
+                                }
+                                return new Dimension(200, 200);
                             }
                         };
                         
-                        // Create a scroll pane for the output image
-                        JScrollPane rightScrollPane = new JScrollPane(outputImagePanel);
-                        rightScrollPane.setBorder(BorderFactory.createEmptyBorder());
-                        rightScrollPane.setViewportBorder(null);
+                        imagePanel.setBackground(Color.WHITE);
+                        imagePanel.setOpaque(true);
                         
-                        rightPanel.add(rightScrollPane, BorderLayout.CENTER);
+                        // Add to scroll pane
+                        JScrollPane imageScrollPane = new JScrollPane(imagePanel);
+                        imageScrollPane.setPreferredSize(new Dimension(300, 300));
+                        imageScrollPane.getViewport().setBackground(Color.WHITE);
                         
-                        // Add a status label to show success
-                        String statusText = "Effect applied successfully";
-                        if (layeredFile.exists()) {
-                            statusText += " (Layered version available)";
-                        } else {
-                            // Try to create the layered image if it doesn't exist
-                            strokeManager.createLayeredImage(
-                                projectId, strokeId
-                            );
-                            if (new File(layeredPath).exists()) {
-                                statusText += " (Layered version created)";
-                            }
-                        }
-                        JLabel statusLabel = new JLabel(statusText);
+                        imageDisplayPanel.add(imageScrollPane, BorderLayout.CENTER);
+                        rightContentPanel.add(imageDisplayPanel, BorderLayout.CENTER);
+                        
+                        // Add success status
+                        JLabel statusLabel = new JLabel("Effect applied successfully!");
                         statusLabel.setForeground(new Color(0, 150, 0));
                         statusLabel.setHorizontalAlignment(JLabel.CENTER);
                         statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-                        rightPanel.add(statusLabel, BorderLayout.SOUTH);
+                        rightContentPanel.add(statusLabel, BorderLayout.SOUTH);
+                        
+                        System.out.println("Successfully displayed output image");
                     } else {
-                        // Add a message panel instead of the image
-                        rightPanel.add(
-                            createMessagePanel(
-                                "Output Image", 
-                                "Could not load output image. The file may be corrupted."
-                            ), 
+                        System.err.println("Failed to load output image");
+                        rightContentPanel.add(
+                            createMessagePanel("Output Image", "Failed to load output image"), 
                             BorderLayout.CENTER
                         );
                     }
                 } catch (Exception e) {
-                    System.err.println("Error loading output image: " + e.getMessage());
+                    System.err.println("Exception loading output image: " + e.getMessage());
                     e.printStackTrace();
-                    
-                    // Add a message panel with the error
-                    JPanel errorPanel = createMessagePanel(
-                        "Output Image Error", 
-                        "Error loading image: " + e.getMessage()
+                    rightContentPanel.add(
+                        createMessagePanel("Output Image", "Error loading image: " + e.getMessage()), 
+                        BorderLayout.CENTER
                     );
-                    errorPanel.setBackground(new Color(255, 220, 220));
-                    rightPanel.add(errorPanel, BorderLayout.CENTER);
                 }
-            } else {
-                // No output image yet, show a message
-                String message = "Output will appear here after running the effect";
+            }
+            else {
+                // No output yet or failed
+                String message = "Click 'Run' to process the effect";
                 
-                if ("running".equals(processingStatus)) {
-                    message = "Effect is currently being processed...";
-                } else if ("failed".equals(processingStatus)) {
-                    message = "Effect processing failed. Check the error log for details.";
+                if ("failed".equals(processingStatus)) {
+                    message = "Effect processing failed";
                 } else if ("canceled".equals(processingStatus)) {
-                    message = "Effect processing was canceled.";
-                } else if (!effectSuccess && "true".equals(processingStatus)) {
-                    message = "Effect processing failed. Check the error log for details.";
+                    message = "Effect processing was canceled";
+                } else if (!effectSuccess && instructionsFile.exists()) {
+                    message = "Effect processing completed but failed";
                 }
                 
-                rightPanel.add(
+                rightContentPanel.add(
                     createMessagePanel("Output Image", message), 
                     BorderLayout.CENTER
                 );
             }
             
+            // Add the right content panel to the right panel
+            rightPanel.add(rightContentPanel, BorderLayout.CENTER);
+            
             // Update the split pane components
             activeSplitPane.setLeftComponent(leftPanel);
             activeSplitPane.setRightComponent(rightPanel);
             
-            // Update paste button state
-            updatePasteButton(effectSuccess && (outputFile.exists() || layeredFile.exists()));
-            
-            // Update run/cancel button states
+            // Update button states
+            updatePasteButton(effectSuccess && outputFile.exists());
             updateButtonStates(strokeManager, strokeId, isProcessing);
             
-            // Refresh the UI
-            activeSplitPane.revalidate();
-            activeSplitPane.repaint();
         } else {
             // No current stroke to display
             JPanel leftPanel = createMessagePanel(
@@ -827,28 +1036,22 @@ public class UIManager {
                 "No stroke selected or available"
             );
             JPanel rightPanel = createMessagePanel(
-                "Output Image", 
+                "Parameters & Output", 
                 "No stroke selected or available"
             );
             
-            // Update the split pane components
             activeSplitPane.setLeftComponent(leftPanel);
             activeSplitPane.setRightComponent(rightPanel);
-            
-            // Disable the paste button
             updatePasteButton(false);
-            
-            // Refresh the UI
-            activeSplitPane.revalidate();
-            activeSplitPane.repaint();
         }
         
-        // Restore the divider location
+        // Restore the divider location and refresh
         activeSplitPane.setDividerLocation(dividerLocation);
+        activeSplitPane.revalidate();
+        activeSplitPane.repaint();
         
         // Ensure the frame size is maintained
         activeStrokeManagerFrame.setSize(frameSize);
-        
         activeStrokeManagerFrame.revalidate();
         activeStrokeManagerFrame.repaint();
     }
@@ -966,7 +1169,6 @@ public class UIManager {
         return panel;
     }
     
-    // Modify the StrokeManager.ProcessingCallback implementation to prevent multiple dialogs
     public void createStrokeManagerWindow(StrokeManager strokeManager) {
         // Close any existing Stroke Manager window
         if (activeStrokeManagerFrame != null && activeStrokeManagerFrame.isDisplayable()) {
@@ -976,10 +1178,7 @@ public class UIManager {
         JFrame strokeFrame = new JFrame("Stroke Manager");
         strokeFrame.setSize(1000, 600);
         strokeFrame.setLocationRelativeTo(null);
-        strokeFrame.setMinimumSize(new Dimension(800, 500)); // Add minimum size
-        
-        // Important: Set default close operation to DISPOSE_ON_CLOSE instead of EXIT_ON_CLOSE
-        // This ensures that closing the Stroke Manager doesn't close the entire application
+        strokeFrame.setMinimumSize(new Dimension(800, 500));
         strokeFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
         // Store reference to the active frame
@@ -990,7 +1189,7 @@ public class UIManager {
         
         // Add title panel
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel titleLabel = new JLabel("Quantum Effect Preview");
+        JLabel titleLabel = new JLabel("Loading stroke information...");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titlePanel.add(titleLabel);
         mainPanel.add(titlePanel, BorderLayout.NORTH);
@@ -1009,8 +1208,8 @@ public class UIManager {
             "Click 'Run' to process the effect and see input image"
         );
         JPanel rightPanel = createMessagePanel(
-            "Output Image", 
-            "Output will appear here after running the effect"
+            "Parameters & Output", 
+            "Parameters and output will appear here"
         );
         
         // Add panels to split pane
@@ -1026,14 +1225,12 @@ public class UIManager {
         
         JButton prevButton = new JButton("< Previous");
         JButton runButton = new JButton("Run");
-        JButton reRunButton = new JButton("Re-Run");
         JButton cancelButton = new JButton("Cancel");
         JButton pasteButton = new JButton("Paste");
         JButton nextButton = new JButton("Next >");
         
         // Style the buttons
         styleButton(runButton, new Color(70, 130, 180));
-        styleButton(reRunButton, new Color(100, 149, 237));
         styleButton(cancelButton, new Color(220, 20, 60));
         styleButton(pasteButton, new Color(46, 139, 87));
         
@@ -1050,24 +1247,6 @@ public class UIManager {
         runButton.addActionListener(e -> {
             strokeManager.runCurrentStroke();
             updateStrokeManagerContent(strokeManager);
-        });
-        
-        reRunButton.addActionListener(e -> {
-            StrokeManager.Stroke activeStroke = strokeManager.getCurrentStroke();
-            if (activeStroke != null) {
-                // Delete the output file if it exists to force re-execution
-                String projectId = app.getProjectId();
-                String outputPath = "project/" + projectId + "/stroke/" + 
-                                   activeStroke.getId() + "_output.png";
-                File outputFile = new File(outputPath);
-                if (outputFile.exists()) {
-                    outputFile.delete();
-                }
-            
-                // Run the effect
-                strokeManager.runCurrentStroke();
-                updateStrokeManagerContent(strokeManager);
-            }
         });
         
         cancelButton.addActionListener(e -> {
@@ -1098,10 +1277,7 @@ public class UIManager {
             if (activeStroke != null) {
                 boolean success = strokeManager.applyEffectToCanvas(activeStroke.getId());
                 if (success) {
-                    // Don't close the Stroke Manager, just update it
                     updateStrokeManagerContent(strokeManager);
-                
-                    // Show a success message
                     JOptionPane.showMessageDialog(
                         strokeFrame,
                         "Effect applied to canvas successfully!",
@@ -1117,62 +1293,15 @@ public class UIManager {
     
         navPanel.add(prevButton);
         navPanel.add(runButton);
-        navPanel.add(reRunButton);
         navPanel.add(cancelButton);
         navPanel.add(pasteButton);
         navPanel.add(nextButton);
     
         mainPanel.add(navPanel, BorderLayout.SOUTH);
-    
         strokeFrame.add(mainPanel);
-    
-        // Register for processing callbacks - MODIFIED TO PREVENT MULTIPLE DIALOGS
-        strokeManager.addProcessingCallback(new StrokeManager.ProcessingCallback() {
-            // Keep track of strokes we've already shown notifications for
-            private final Set<String> notifiedStrokes = new HashSet<>();
-        
-            @Override
-            public void onProcessingComplete(String strokeId, boolean success) {
-                // Only show notification once per stroke
-                if (notifiedStrokes.contains(strokeId)) {
-                    return;
-                }
-            
-                // Add to our set of notified strokes
-                notifiedStrokes.add(strokeId);
-            
-                // Update the UI
-                updateStrokeManagerContent(strokeManager);
-            
-                // Show a notification
-                String message = success ? 
-                    "Effect processed successfully!" : 
-                    "Effect processing failed. Check the error log for details.";
-            
-                JOptionPane optionPane = new JOptionPane(
-                    message,
-                    success ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
-                );
-                JDialog dialog = optionPane.createDialog("Processing Complete");
-                dialog.setModal(false);
-                dialog.setVisible(true);
-            
-                // Auto-close the dialog after 3 seconds
-                javax.swing.Timer timer = new javax.swing.Timer(3000, evt -> dialog.dispose());
-                timer.setRepeats(false);
-                timer.start();
-            
-                // Clean up our set periodically to prevent memory leaks
-                if (notifiedStrokes.size() > 100) {
-                    notifiedStrokes.clear();
-                }
-            }
-        });
-    
         strokeFrame.setVisible(true);
     
         // Update the content after the window is visible
         updateStrokeManagerContent(strokeManager);
     }
 }
-

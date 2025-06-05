@@ -21,12 +21,21 @@ public class QuantumBrush extends PApplet {
     private JMenuBar menuBar;
     private JComboBox<String> effectsDropdown;
     private JButton createButton;
+    private JPanel effectParameterContainer; // Container for effect parameters
     
     // Canvas state
     private PImage currentImage;
     private boolean isDrawing = false;
-    private final float zoom = 1.0f;
     private String projectId = null;
+    
+    // Project history for undo/redo
+    private ArrayList<ProjectState> projectHistory;
+    private int projectHistoryIndex;
+    private static final int MAX_HISTORY_SIZE = 20;
+    
+    // Drawing state
+    private int strokeColor = color(255, 0, 0); // Red
+    private float strokeWeight = 2.0f;
     
     public static void main(String[] args) {
         PApplet.main("QuantumBrush");
@@ -51,8 +60,8 @@ public class QuantumBrush extends PApplet {
         setupUI();
         
         // Set default brush color
-        stroke(255, 0, 0); // Red
-        strokeWeight(2);
+        stroke(strokeColor);
+        strokeWeight(strokeWeight);
         
         // Add shutdown hook to clean up resources
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -63,6 +72,10 @@ public class QuantumBrush extends PApplet {
         
         // Clean up any temporary files on startup
         cleanupTempFiles();
+
+        // Initialize project history
+        projectHistory = new ArrayList<>();
+        projectHistoryIndex = -1;
     }
     
     private void cleanupTempFiles() {
@@ -111,7 +124,7 @@ public class QuantumBrush extends PApplet {
         // Create control frame
         createControlFrame();
         
-        // Add keyboard shortcuts for undo/redo and zoom
+        // Add keyboard shortcuts for undo/redo
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
             @Override
             public boolean dispatchKeyEvent(KeyEvent e) {
@@ -125,11 +138,15 @@ public class QuantumBrush extends PApplet {
                         if (keyCode == KeyEvent.VK_Z) {
                             if (isShiftDown) {
                                 // Redo (Ctrl/Cmd + Shift + Z)
-                                canvas.redo();
+                                redoProject();
                             } else {
                                 // Undo (Ctrl/Cmd + Z)
-                                canvas.undo();
+                                undoProject();
                             }
+                            return true;
+                        } else if (keyCode == KeyEvent.VK_D) {
+                            // Clear drawing paths (Ctrl/Cmd + D)
+                            canvas.clearPaths();
                             return true;
                         }
                     }
@@ -144,12 +161,15 @@ public class QuantumBrush extends PApplet {
     private void createControlFrame() {
         // Create main control window
         controlFrame = new JFrame("Quantum Brush - Control Panel");
-        controlFrame.setSize(600, 200);
+        controlFrame.setSize(600, 800);
         controlFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         // Position the control frame on the left side of the screen
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         controlFrame.setLocation(screenSize.width/4, screenSize.height/4);
+        
+        // Set references for UI manager
+        ui.setMainControlFrame(controlFrame);
         
         // Create menu bar
         menuBar = new JMenuBar();
@@ -184,191 +204,487 @@ public class QuantumBrush extends PApplet {
         JMenu editMenu = new JMenu("Edit");
         JMenuItem undoItem = new JMenuItem("Undo");
         JMenuItem redoItem = new JMenuItem("Redo");
+        JMenuItem clearItem = new JMenuItem("Clear Drawing Paths");
         
-        // Add keyboard shortcuts
         undoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, 
             Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         redoItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, 
             Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | InputEvent.SHIFT_DOWN_MASK));
         
-        undoItem.addActionListener(e -> canvas.undo());
-        redoItem.addActionListener(e -> canvas.redo());
+        undoItem.addActionListener(e -> undoProject());
+        redoItem.addActionListener(e -> redoProject());
+        clearItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, 
+            Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        clearItem.addActionListener(e -> canvas.clearPaths());
         
         editMenu.add(undoItem);
         editMenu.add(redoItem);
+        editMenu.addSeparator();
+        editMenu.add(clearItem);
         
-        // Settings menu
-        JMenu settingsMenu = new JMenu("Settings");
-        JMenuItem pythonConfigItem = new JMenuItem("Configure Python");
-        JMenuItem cleanupItem = new JMenuItem("Clean Up Temporary Files");
+        // Tools menu
+        JMenu toolsMenu = new JMenu("Tools");
+        JMenuItem strokeManagerItem = new JMenuItem("Stroke Manager");
+        JMenuItem pythonConfigItem = new JMenuItem("Python Configuration");
         
+        strokeManagerItem.addActionListener(e -> strokes.showStrokeManager());
         pythonConfigItem.addActionListener(e -> strokes.showPythonConfigDialog());
-        cleanupItem.addActionListener(e -> {
-            cleanupTempFiles();
-            JOptionPane.showMessageDialog(
-                controlFrame,
-                "Temporary files have been cleaned up.",
-                "Cleanup Complete",
-                JOptionPane.INFORMATION_MESSAGE
-            );
-        });
         
-        settingsMenu.add(pythonConfigItem);
-        settingsMenu.add(cleanupItem);
+        toolsMenu.add(strokeManagerItem);
+        toolsMenu.add(pythonConfigItem);
         
-        // Help menu
-        JMenu helpMenu = new JMenu("Help");
-        JMenuItem aboutItem = new JMenuItem("About");
-        JMenuItem viewLogItem = new JMenuItem("View Error Log");
-        
-        aboutItem.addActionListener(e -> showAbout());
-        viewLogItem.addActionListener(e -> viewErrorLog());
-        
-        helpMenu.add(aboutItem);
-        helpMenu.add(viewLogItem);
-        
-        // Add menus to menu bar
         menuBar.add(fileMenu);
         menuBar.add(editMenu);
-        menuBar.add(settingsMenu);
-        menuBar.add(helpMenu);
+        menuBar.add(toolsMenu);
         
-        // Set the menu bar
         controlFrame.setJMenuBar(menuBar);
         
-        // Create main panel for controls
+        // Create main panel with BorderLayout
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         
-        // Create control panel
-        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        // Create effects panel
+        JPanel effectsPanel = new JPanel(new BorderLayout(10, 10));
+        effectsPanel.setBorder(BorderFactory.createTitledBorder("Effects"));
         
-        // Add effects dropdown
-        JLabel effectLabel = new JLabel("Quantum Effects:");
+        // Effects dropdown
         effectsDropdown = new JComboBox<>();
-        effectsDropdown.addItem("Select...");
+        effectsDropdown.addItem("Select an effect...");
         
-        // Add effects from the effect manager
+        // Populate effects dropdown
         for (String effectName : effects.getEffectNames()) {
             effectsDropdown.addItem(effectName);
         }
         
-        effectsDropdown.setPreferredSize(new Dimension(200, 25));
-        controlPanel.add(effectLabel);
-        controlPanel.add(effectsDropdown);
-        
-        // Add Create button with custom styling
-        createButton = new JButton("Create");
-        createButton.setEnabled(false); // Initially disabled
-        
-        // Custom button styling
-        createButton.setBackground(new Color(70, 130, 180)); // Steel blue
-        createButton.setForeground(Color.WHITE);
-        createButton.setFocusPainted(false);
-        createButton.setBorderPainted(true);
-        createButton.setContentAreaFilled(false);
-        createButton.setOpaque(true);
-        
-        // Add a custom UI to maintain colors when pressed
-        createButton.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
-            @Override
-            public void update(Graphics g, JComponent c) {
-                if (c.isOpaque()) {
-                    if (c.isEnabled()) {
-                        g.setColor(c.getBackground());
-                    } else {
-                        g.setColor(new Color(150, 150, 150)); // Gray for disabled
-                    }
-                    g.fillRect(0, 0, c.getWidth(), c.getHeight());
-                }
-                paint(g, c);
-            }
-        });
-        
-        // Add Stroke Manager button
-        JButton strokeManagerButton = new JButton("Stroke Manager");
-        strokeManagerButton.setBackground(new Color(46, 139, 87)); // Forest green
-        strokeManagerButton.setForeground(Color.WHITE);
-        strokeManagerButton.setFocusPainted(false);
-        strokeManagerButton.setBorderPainted(true);
-        strokeManagerButton.setContentAreaFilled(false);
-        strokeManagerButton.setOpaque(true);
-        
-        // Add a custom UI to maintain colors when pressed
-        strokeManagerButton.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
-            @Override
-            public void update(Graphics g, JComponent c) {
-                if (c.isOpaque()) {
-                    if (c.isEnabled()) {
-                        g.setColor(c.getBackground());
-                    } else {
-                        g.setColor(new Color(150, 150, 150)); // Gray for disabled
-                    }
-                    g.fillRect(0, 0, c.getWidth(), c.getHeight());
-                }
-                paint(g, c);
-            }
-        });
-        
-        strokeManagerButton.addActionListener(e -> {
-            strokes.showStrokeManager();
-        });
-
-        // Add action listener to check if all conditions are met
         effectsDropdown.addActionListener(e -> {
-            updateCreateButtonState();
-        });
-        
-        createButton.addActionListener(e -> {
             String selectedEffect = (String) effectsDropdown.getSelectedItem();
-            if (selectedEffect != null && !selectedEffect.equals("Select...")) {
+            if (selectedEffect != null && !selectedEffect.equals("Select an effect...")) {
                 Effect effect = effects.getEffect(selectedEffect);
                 if (effect != null) {
-                    // Open effect configuration window
                     ui.createEffectWindow(effect);
                 }
-            } else {
-                JOptionPane.showMessageDialog(controlFrame, 
-                    "Please select an effect first.", 
-                    "No Effect Selected", 
-                    JOptionPane.WARNING_MESSAGE);
             }
         });
         
-        controlPanel.add(createButton);
-        controlPanel.add(strokeManagerButton);
+        effectsPanel.add(effectsDropdown, BorderLayout.NORTH);
         
-        // Add to main panel
-        mainPanel.add(controlPanel, BorderLayout.NORTH);
+        // Create effect parameter container
+        effectParameterContainer = new JPanel(new BorderLayout());
+        effectParameterContainer.setBorder(BorderFactory.createTitledBorder("Effect Parameters"));
+        ui.setEffectParameterContainer(effectParameterContainer);
         
-        // Add to frame
+        effectsPanel.add(effectParameterContainer, BorderLayout.CENTER);
+        
+        // Add only the effects panel to main panel
+        mainPanel.add(effectsPanel, BorderLayout.CENTER);
+        
         controlFrame.add(mainPanel);
         controlFrame.setVisible(true);
     }
     
-    // Method to update Create button state based on all conditions
-    private void updateCreateButtonState() {
-        boolean hasImage = (currentImage != null);
-        boolean hasPath = canvas.hasPath();
-        boolean hasEffect = effectsDropdown.getSelectedIndex() > 0; // Not "Select..."
+    private void newFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".png") || 
+                       f.getName().toLowerCase().endsWith(".jpg") || f.getName().toLowerCase().endsWith(".jpeg");
+            }
+            public String getDescription() {
+                return "Image files (*.png, *.jpg, *.jpeg)";
+            }
+        });
         
-        createButton.setEnabled(hasImage && hasPath && hasEffect);
+        if (fileChooser.showOpenDialog(controlFrame) == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            PImage loadedImage = loadImage(selectedFile.getAbsolutePath());
+            
+            if (loadedImage != null) {
+                currentImage = loadedImage;
+                surface.setSize(loadedImage.width, loadedImage.height);
+                
+                // Ask user for project name
+                String defaultProjectName = selectedFile.getName();
+                // Remove file extension from default name
+                int lastDotIndex = defaultProjectName.lastIndexOf('.');
+                if (lastDotIndex > 0) {
+                    defaultProjectName = defaultProjectName.substring(0, lastDotIndex);
+                }
+                
+                String projectName = (String) JOptionPane.showInputDialog(
+                    controlFrame,
+                    "Enter a name for this project:",
+                    "New Project",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    null,
+                    defaultProjectName
+                );
+                
+                // If user cancels or enters empty name, use default
+                if (projectName == null || projectName.trim().isEmpty()) {
+                    projectName = defaultProjectName;
+                }
+                
+                // Generate new project ID
+                projectId = "project_" + System.currentTimeMillis();
+                
+                // Save project
+                files.saveProject(projectId, currentImage);
+                files.createProjectMetadata(projectId, projectName.trim());
+                
+                // Clear canvas and strokes
+                canvas.clearPaths();
+                strokes.clearStrokes();
+                
+                // Save initial project state (after loading new image)
+                saveProjectStateAfterImageChange();
+                
+                println("New project created: " + projectName + " (ID: " + projectId + ")");
+            } else {
+                JOptionPane.showMessageDialog(controlFrame, "Failed to load image.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    private void openFile() {
+        // Show enhanced project selection dialog with delete option
+        showProjectManagerDialog();
+    }
+    
+    private void showProjectManagerDialog() {
+        // Get projects metadata
+        ArrayList<JSONObject> projects = files.getProjectsMetadata();
+        
+        if (projects.isEmpty()) {
+            JOptionPane.showMessageDialog(controlFrame, "No projects found.", "No Projects", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Create a custom dialog for project management
+        JDialog projectDialog = new JDialog(controlFrame, "Project Manager", true);
+        projectDialog.setSize(500, 400);
+        projectDialog.setLocationRelativeTo(controlFrame);
+        projectDialog.setLayout(new BorderLayout(10, 10));
+        projectDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        
+        // Create project list model and JList
+        DefaultListModel<ProjectItem> listModel = new DefaultListModel<>();
+        for (JSONObject project : projects) {
+            String name = project.getString("project_name", "Unknown");
+            String id = project.getString("project_id", "");
+            long modified = project.getLong("modified_time", 0);
+            String timeStr = files.formatTimestamp(modified);
+            
+            listModel.addElement(new ProjectItem(name, id, timeStr));
+        }
+        
+        JList<ProjectItem> projectList = new JList<>(listModel);
+        projectList.setCellRenderer(new ProjectListCellRenderer());
+        projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Add list to scroll pane
+        JScrollPane scrollPane = new JScrollPane(projectList);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // Create buttons panel
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        
+        JButton openButton = new JButton("Open");
+        JButton deleteButton = new JButton("Delete");
+        JButton cancelButton = new JButton("Cancel");
+        
+        // Style delete button to indicate danger
+        deleteButton.setBackground(new Color(220, 53, 69));
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFocusPainted(false);
+        
+        // Add action listeners
+        openButton.addActionListener(e -> {
+            ProjectItem selectedItem = projectList.getSelectedValue();
+            if (selectedItem != null) {
+                String selectedProjectId = selectedItem.id;
+                
+                if (files.loadProject(selectedProjectId)) {
+                    projectId = selectedProjectId;
+                    println("Project loaded: " + selectedItem.name + " (ID: " + projectId + ")");
+                    
+                    // Save initial project state (after loading project)
+                    saveProjectStateAfterImageChange();
+                    
+                    projectDialog.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(projectDialog, 
+                        "Failed to load project.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(projectDialog, 
+                    "Please select a project to open.", "No Selection", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        
+        deleteButton.addActionListener(e -> {
+            ProjectItem selectedItem = projectList.getSelectedValue();
+            if (selectedItem != null) {
+                // Confirm deletion
+                int confirm = JOptionPane.showConfirmDialog(
+                    projectDialog,
+                    "Are you sure you want to delete the project \"" + selectedItem.name + "\"?\n" +
+                    "This action cannot be undone.",
+                    "Confirm Deletion",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+                );
+                
+                if (confirm == JOptionPane.YES_OPTION) {
+                    String selectedProjectId = selectedItem.id;
+                    
+                    // Delete the project
+                    boolean success = files.deleteProject(selectedProjectId);
+                    
+                    if (success) {
+                        // Remove from list
+                        listModel.removeElement(selectedItem);
+                        
+                        // Show success message
+                        JOptionPane.showMessageDialog(projectDialog, 
+                            "Project \"" + selectedItem.name + "\" deleted successfully.", 
+                            "Project Deleted", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                        
+                        // If no more projects, close dialog
+                        if (listModel.isEmpty()) {
+                            JOptionPane.showMessageDialog(projectDialog, 
+                                "No more projects available.", 
+                                "No Projects", 
+                                JOptionPane.INFORMATION_MESSAGE);
+                            projectDialog.dispose();
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(projectDialog, 
+                            "Failed to delete project.", 
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            } else {
+                JOptionPane.showMessageDialog(projectDialog, 
+                    "Please select a project to delete.", 
+                    "No Selection", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        
+        cancelButton.addActionListener(e -> projectDialog.dispose());
+        
+        // Enable open button on double-click
+        projectList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    openButton.doClick();
+                }
+            }
+        });
+        
+        // Add buttons to panel
+        buttonsPanel.add(openButton);
+        buttonsPanel.add(deleteButton);
+        buttonsPanel.add(cancelButton);
+        
+        // Add components to dialog
+        JLabel titleLabel = new JLabel("Select a project:");
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        
+        projectDialog.add(titleLabel, BorderLayout.NORTH);
+        projectDialog.add(scrollPane, BorderLayout.CENTER);
+        projectDialog.add(buttonsPanel, BorderLayout.SOUTH);
+        
+        // Show dialog
+        projectDialog.setVisible(true);
+    }
+    
+    // Helper class for project items in the list
+    private static class ProjectItem {
+        public final String name;
+        public final String id;
+        public final String timestamp;
+        
+        public ProjectItem(String name, String id, String timestamp) {
+            this.name = name;
+            this.id = id;
+            this.timestamp = timestamp;
+        }
+        
+        @Override
+        public String toString() {
+            return name + " (" + timestamp + ")";
+        }
+    }
+    
+    // Custom cell renderer for project list
+    private static class ProjectListCellRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, 
+                int index, boolean isSelected, boolean cellHasFocus) {
+            
+            JLabel label = (JLabel) super.getListCellRendererComponent(
+                list, value, index, isSelected, cellHasFocus);
+            
+            if (value instanceof ProjectItem) {
+                ProjectItem item = (ProjectItem) value;
+                
+                // Set text with HTML formatting
+                label.setText("<html><b>" + item.name + "</b><br>" +
+                             "<font size='2' color='gray'>Last modified: " + item.timestamp + "</font></html>");
+                
+                // Add more padding
+                label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            }
+            
+            return label;
+        }
+    }
+    
+    private void saveFile() {
+        if (currentImage != null) {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+                public boolean accept(File f) {
+                    return f.isDirectory() || f.getName().toLowerCase().endsWith(".png") || 
+                           f.getName().toLowerCase().endsWith(".jpg") || f.getName().toLowerCase().endsWith(".jpeg");
+                }
+                public String getDescription() {
+                    return "Image files (*.png, *.jpg, *.jpeg)";
+                }
+            });
+            
+            // Set default filename
+            if (projectId != null) {
+                fileChooser.setSelectedFile(new File(projectId + ".png"));
+            } else {
+                fileChooser.setSelectedFile(new File("quantum_brush_image.png"));
+            }
+            
+            if (fileChooser.showSaveDialog(controlFrame) == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                String filePath = selectedFile.getAbsolutePath();
+                
+                // Add .png extension if not present
+                if (!filePath.toLowerCase().endsWith(".png") && 
+                    !filePath.toLowerCase().endsWith(".jpg") && 
+                    !filePath.toLowerCase().endsWith(".jpeg")) {
+                    filePath += ".png";
+                    selectedFile = new File(filePath);
+                }
+                
+                try {
+                    currentImage.save(filePath);
+                    JOptionPane.showMessageDialog(controlFrame, 
+                        "Image saved successfully to: " + filePath, 
+                        "Save Successful", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                    
+                    // Also save project if we have one
+                    if (projectId != null) {
+                        files.saveProject(projectId, currentImage);
+                        files.updateProjectMetadata(projectId);
+                    }
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(controlFrame, 
+                        "Error saving image: " + e.getMessage(), 
+                        "Save Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(controlFrame, "No image to save.", "Error", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
+    // Project state management - only save when image changes, not when drawing
+    public void saveProjectStateAfterImageChange() {
+        if (projectHistory == null) return;
+        
+        // Remove any states after current index
+        while (projectHistory.size() > projectHistoryIndex + 1) {
+            projectHistory.remove(projectHistory.size() - 1);
+        }
+        
+        // Create new project state (only save image, not paths)
+        ProjectState state = new ProjectState(currentImage, new ArrayList<Path>(), projectId);
+        projectHistory.add(state);
+        projectHistoryIndex = projectHistory.size() - 1;
+        
+        // Limit history size
+        while (projectHistory.size() > MAX_HISTORY_SIZE) {
+            projectHistory.remove(0);
+            projectHistoryIndex--;
+        }
+        
+        System.out.println("Saved project state " + projectHistoryIndex + " (image changes only)");
+    }
+    
+    private void undoProject() {
+        if (projectHistoryIndex > 0) {
+            projectHistoryIndex--;
+            ProjectState state = projectHistory.get(projectHistoryIndex);
+            restoreProjectState(state);
+            println("Undo: Restored to state " + projectHistoryIndex);
+        } else {
+            println("Undo: No more states to undo");
+        }
+    }
+    
+    private void redoProject() {
+        if (projectHistoryIndex < projectHistory.size() - 1) {
+            projectHistoryIndex++;
+            ProjectState state = projectHistory.get(projectHistoryIndex);
+            restoreProjectState(state);
+            System.out.println("Redo: Restored to state " + projectHistoryIndex);
+        } else {
+            System.out.println("Redo: No more states to redo (current: " + projectHistoryIndex + ", max: " + (projectHistory.size() - 1) + ")");
+        }
+    }
+    
+    private void restoreProjectState(ProjectState state) {
+        if (state.image != null) {
+            currentImage = state.image.copy();
+            // Resize canvas to match the restored image
+            surface.setSize(currentImage.width, currentImage.height);
+        }
+        canvas.setPaths(state.paths);
+        projectId = state.projectId;
+        
+        // Force a redraw
+        redraw();
+        
+        println("Restored project state - Image: " + (currentImage != null ? "Yes" : "No") + 
+                ", Paths: " + (state.paths != null ? state.paths.size() : 0) + 
+                ", Project ID: " + projectId);
     }
     
     public void draw() {
-        background(240); // Lighter background for better contrast
-        
-        // Draw current image if exists
         if (currentImage != null) {
             image(currentImage, 0, 0);
+        } else {
+            background(240); // Light gray to indicate "no image"
+            fill(80); // Dark gray text
+            textAlign(CENTER, CENTER);
+            textSize(18);
+            text("Load the image or the project.", width/2, height/2);
         }
         
-        // Draw current paths
         canvas.draw();
     }
     
+    // Modify the mousePressed() method to track the initial position
     public void mousePressed() {
-        if (currentImage != null) {
+        if (currentImage == null) {
+            return; // Don't allow drawing if no image is loaded
+        }
+        
+        if (mouseButton == LEFT) {
             isDrawing = true;
             canvas.startNewPath();
             canvas.setClickPoint(mouseX, mouseY);
@@ -376,452 +692,43 @@ public class QuantumBrush extends PApplet {
         }
     }
     
+    // Add a flag to track if dragging occurred
+    private boolean hasDragged = false;
+
+    // Modify the mouseDragged() method to set the drag flag
     public void mouseDragged() {
-        if (isDrawing) {
+        if (currentImage == null) {
+            return; // Don't allow drawing if no image is loaded
+        }
+        
+        if (isDrawing && mouseButton == LEFT) {
+            hasDragged = true;
             canvas.addPointToCurrentPath(mouseX, mouseY);
         }
     }
-    
+
+    // Modify the mouseReleased() method to handle both drag and click cases
     public void mouseReleased() {
-        if (isDrawing) {
-            isDrawing = false;
+        if (currentImage == null) {
+            return; // Don't allow drawing if no image is loaded
+        }
+        
+        if (isDrawing && mouseButton == LEFT) {
+            // Always finish the current path
             canvas.finishCurrentPath();
+            isDrawing = false;
             
-            // Update Create button state
-            updateCreateButtonState();
+            // Reset the drag flag for next interaction
+            hasDragged = false;
+            
+            // Enable create button if there are paths
+            if (canvas.hasPath()) {
+                ui.enableCreateButton();
+            }
         }
     }
     
-    // File operations
-    private void newFile() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Select an image");
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
-            public boolean accept(File f) {
-                if (f.isDirectory()) return true;
-                String name = f.getName().toLowerCase();
-                return name.endsWith(".jpg") || name.endsWith(".jpeg") || 
-                       name.endsWith(".png") || name.endsWith(".gif");
-            }
-            public String getDescription() {
-                return "Image files (*.jpg, *.jpeg, *.png, *.gif)";
-            }
-        });
-        
-        if (fileChooser.showOpenDialog(controlFrame) == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            PImage loadedImage = loadImage(file.getAbsolutePath());
-            
-            // Prompt for project name
-            String projectName = JOptionPane.showInputDialog(controlFrame, 
-                "Enter a name for this project:", 
-                "New Project", 
-                JOptionPane.QUESTION_MESSAGE);
-            
-            if (projectName == null) {
-                // User canceled
-                return;
-            }
-            
-            if (projectName.trim().isEmpty()) {
-                projectName = "Untitled Project";
-            }
-            
-            // Generate a new project ID
-            projectId = "proj_" + System.currentTimeMillis();
-            
-            // Clear any existing strokes when creating a new project
-            if (strokes != null) {
-                strokes.clearStrokes();
-            }
-            
-            // Rescale the image to fit the window if it's too large
-            int maxWidth = 800;  // Maximum width for the canvas
-            int maxHeight = 600; // Maximum height for the canvas
-            
-            if (loadedImage.width > maxWidth || loadedImage.height > maxHeight) {
-                // Calculate scale factor to fit within max dimensions while preserving aspect ratio
-                float widthRatio = (float)maxWidth / loadedImage.width;
-                float heightRatio = (float)maxHeight / loadedImage.height;
-                float scaleFactor = Math.min(widthRatio, heightRatio);
-                
-                // Resize the image
-                int newWidth = (int)(loadedImage.width * scaleFactor);
-                int newHeight = (int)(loadedImage.height * scaleFactor);
-                
-                loadedImage.resize(newWidth, newHeight);
-                currentImage = loadedImage;
-                
-                // Resize window to match image size
-                surface.setSize(newWidth, newHeight);
-                System.out.println("Resized image to " + newWidth + "x" + newHeight);
-            } else {
-                currentImage = loadedImage;
-                // Resize window to match image size
-                surface.setSize(loadedImage.width, loadedImage.height);
-            }
-            
-            // Create project directory and save original image
-            files.saveProject(projectId, currentImage);
-            
-            // Create metadata
-            files.createProjectMetadata(projectId, projectName);
-            
-            // Clear paths
-            canvas.clearPaths();
-            
-            // Update Create button state
-            updateCreateButtonState();
-        }
-    }
-    
-    private void openFile() {
-        ArrayList<JSONObject> projects = files.getProjectsMetadata();
-        
-        if (projects.isEmpty()) {
-            JOptionPane.showMessageDialog(controlFrame, 
-                "No projects found. Create a new project first.", 
-                "No Projects", 
-                JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        
-        // Create a dialog for project selection
-        JDialog dialog = new JDialog(controlFrame, "Open Project", true);
-        dialog.setSize(500, 300);
-        dialog.setLocationRelativeTo(controlFrame);
-        
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        
-        // Create project list panel
-        JPanel listPanel = new JPanel(new BorderLayout());
-        listPanel.setBorder(BorderFactory.createTitledBorder("Available Projects"));
-        
-        // Create project list model
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        JList<String> projectList = new JList<>(listModel);
-        projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
-        // Map to store project IDs by display name
-        Map<String, String> projectIdMap = new HashMap<>();
-        
-        // Populate list with project names
-        for (JSONObject metadata : projects) {
-            String projectName = metadata.getString("project_name", "Unnamed Project");
-            String projectId = metadata.getString("project_id", "");
-            long createdTime = metadata.getLong("created_time", 0);
-            
-            String displayName = projectName + " (" + files.formatTimestamp(createdTime) + ")";
-            listModel.addElement(displayName);
-            projectIdMap.put(displayName, projectId);
-        }
-        
-        // Add list to scroll pane
-        JScrollPane scrollPane = new JScrollPane(projectList);
-        listPanel.add(scrollPane, BorderLayout.CENTER);
-        
-        // Create project details panel
-        JPanel detailsPanel = new JPanel(new GridLayout(3, 1, 5, 5));
-        detailsPanel.setBorder(BorderFactory.createTitledBorder("Project Details"));
-        
-        JLabel nameLabel = new JLabel("Name: ");
-        JLabel createdLabel = new JLabel("Created: ");
-        JLabel modifiedLabel = new JLabel("Modified: ");
-        
-        detailsPanel.add(nameLabel);
-        detailsPanel.add(createdLabel);
-        detailsPanel.add(modifiedLabel);
-        
-        // Add selection listener to update details
-        projectList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int selectedIndex = projectList.getSelectedIndex();
-                if (selectedIndex >= 0) {
-                    String displayName = listModel.getElementAt(selectedIndex);
-                    String projectId = projectIdMap.get(displayName);
-                    JSONObject metadata = files.getProjectMetadata(projectId);
-                    
-                    if (metadata != null) {
-                        nameLabel.setText("Name: " + metadata.getString("project_name", "Unnamed Project"));
-                        createdLabel.setText("Created: " + files.formatTimestamp(metadata.getLong("created_time", 0)));
-                        modifiedLabel.setText("Modified: " + files.formatTimestamp(metadata.getLong("modified_time", 0)));
-                    }
-                }
-            }
-        });
-        
-        // Create button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        
-        JButton deleteButton = new JButton("Delete");
-        deleteButton.setBackground(new Color(220, 53, 69)); // Bootstrap danger red
-        deleteButton.setForeground(Color.WHITE);
-        deleteButton.setFocusPainted(false);
-        
-        deleteButton.addActionListener(e -> {
-            int selectedIndex = projectList.getSelectedIndex();
-            if (selectedIndex >= 0) {
-                String displayName = listModel.getElementAt(selectedIndex);
-                String selectedProjectId = projectIdMap.get(displayName);
-                
-                if (selectedProjectId != null) {
-                    // Confirm deletion
-                    int confirm = JOptionPane.showConfirmDialog(
-                        dialog,
-                        "Are you sure you want to delete this project?\nThis action cannot be undone.",
-                        "Confirm Deletion",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE
-                    );
-                    
-                    if (confirm == JOptionPane.YES_OPTION) {
-                        // Delete the project
-                        boolean success = files.deleteProject(selectedProjectId);
-                        
-                        if (success) {
-                            // Remove from list
-                            listModel.remove(selectedIndex);
-                            projectIdMap.remove(displayName);
-                            
-                            // Clear details
-                            nameLabel.setText("Name: ");
-                            createdLabel.setText("Created: ");
-                            modifiedLabel.setText("Modified: ");
-                            
-                            // If current project was deleted, reset
-                            if (selectedProjectId.equals(projectId)) {
-                                projectId = null;
-                                currentImage = null;
-                                canvas.clearPaths();
-                                strokes.clearStrokes();
-                                updateCreateButtonState();
-                                surface.setSize(800, 600);
-                            }
-                            
-                            JOptionPane.showMessageDialog(
-                                dialog,
-                                "Project deleted successfully.",
-                                "Project Deleted",
-                                JOptionPane.INFORMATION_MESSAGE
-                            );
-                            
-                            // If no more projects, close dialog
-                            if (listModel.isEmpty()) {
-                                dialog.dispose();
-                                JOptionPane.showMessageDialog(
-                                    controlFrame,
-                                    "No more projects available. Create a new project.",
-                                    "No Projects",
-                                    JOptionPane.INFORMATION_MESSAGE
-                                );
-                            }
-                        } else {
-                            JOptionPane.showMessageDialog(
-                                dialog,
-                                "Failed to delete project. Please try again.",
-                                "Delete Error",
-                                JOptionPane.ERROR_MESSAGE
-                            );
-                        }
-                    }
-                }
-            } else {
-                JOptionPane.showMessageDialog(
-                    dialog,
-                    "Please select a project to delete.",
-                    "No Selection",
-                    JOptionPane.WARNING_MESSAGE
-                );
-            }
-        });
-        
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(e -> dialog.dispose());
-        
-        JButton openButton = new JButton("Open");
-        openButton.addActionListener(e -> {
-            int selectedIndex = projectList.getSelectedIndex();
-            if (selectedIndex >= 0) {
-                String displayName = listModel.getElementAt(selectedIndex);
-                String selectedProjectId = projectIdMap.get(displayName);
-                
-                if (selectedProjectId != null) {
-                    // Load the project
-                    boolean success = files.loadProject(selectedProjectId);
-                    
-                    if (success) {
-                        // Set the current project ID
-                        projectId = selectedProjectId;
-                        
-                        // Clear any existing strokes when opening a project
-                        if (strokes != null) {
-                            strokes.clearStrokes();
-                        }
-                        
-                        // Clear paths
-                        canvas.clearPaths();
-                        
-                        // Update Create button state
-                        updateCreateButtonState();
-                        
-                        dialog.dispose();
-                    } else {
-                        JOptionPane.showMessageDialog(dialog, 
-                            "Failed to load project. The project may be corrupted.", 
-                            "Load Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            } else {
-                JOptionPane.showMessageDialog(dialog, 
-                    "Please select a project to open.", 
-                    "No Selection", 
-                    JOptionPane.WARNING_MESSAGE);
-            }
-        });
-        
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(openButton);
-        
-        // Add panels to main panel
-        mainPanel.add(listPanel, BorderLayout.CENTER);
-        mainPanel.add(detailsPanel, BorderLayout.SOUTH);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        
-        // Add main panel to dialog
-        dialog.add(mainPanel);
-        dialog.setVisible(true);
-    }
-    
-    private void updateProjectMetadata() {
-        if (projectId != null) {
-            files.updateProjectMetadata(projectId);
-        }
-    }
-    
-    private void saveFile() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Save Image");
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
-            public boolean accept(File f) {
-                if (f.isDirectory()) return true;
-                String name = f.getName().toLowerCase();
-                return name.endsWith(".jpg") || name.endsWith(".jpeg") || 
-                       name.endsWith(".png");
-            }
-            public String getDescription() {
-                return "Image files (*.jpg, *.jpeg, *.png)";
-            }
-        });
-        
-        if (fileChooser.showSaveDialog(controlFrame) == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            // Make sure the file has an extension
-            String path = selectedFile.getAbsolutePath();
-            if (!path.toLowerCase().endsWith(".jpg") && 
-                !path.toLowerCase().endsWith(".jpeg") && 
-                !path.toLowerCase().endsWith(".png")) {
-                path += ".png";
-            }
-            
-            // Save the current canvas state
-            PImage canvasImage = get();
-            canvasImage.save(path);
-            
-            // Update metadata
-            updateProjectMetadata();
-            
-            JOptionPane.showMessageDialog(controlFrame, "Image saved successfully!", "Save Complete", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-    
-    private void showAbout() {
-        JOptionPane.showMessageDialog(controlFrame, 
-            "Quantum Brush\nA quantum computing visual effects application\nVersion 1.0", 
-            "About Quantum Brush", 
-            JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    private void viewErrorLog() {
-        File logFile = new File("log/error.log");
-        if (!logFile.exists()) {
-            JOptionPane.showMessageDialog(
-                controlFrame,
-                "No error log found.",
-                "No Log",
-                JOptionPane.INFORMATION_MESSAGE
-            );
-            return;
-        }
-        
-        try {
-            // Read the log file
-            StringBuilder logContent = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    logContent.append(line).append("\n");
-                }
-            }
-            
-            // Create a dialog to display the log
-            JDialog logDialog = new JDialog(controlFrame, "Error Log", true);
-            logDialog.setSize(800, 600);
-            logDialog.setLocationRelativeTo(controlFrame);
-            
-            JTextArea textArea = new JTextArea(logContent.toString());
-            textArea.setEditable(false);
-            textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-            
-            JScrollPane scrollPane = new JScrollPane(textArea);
-            logDialog.add(scrollPane);
-            
-            // Add a button to clear the log
-            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-            JButton clearButton = new JButton("Clear Log");
-            clearButton.addActionListener(e -> {
-                try {
-                    // Clear the log file
-                    new FileWriter(logFile, false).close();
-                    textArea.setText("");
-                    JOptionPane.showMessageDialog(
-                        logDialog,
-                        "Log file cleared.",
-                        "Log Cleared",
-                        JOptionPane.INFORMATION_MESSAGE
-                    );
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(
-                        logDialog,
-                        "Failed to clear log file: " + ex.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                    );
-                }
-            });
-            buttonPanel.add(clearButton);
-            
-            JButton closeButton = new JButton("Close");
-            closeButton.addActionListener(e -> logDialog.dispose());
-            buttonPanel.add(closeButton);
-            
-            logDialog.add(buttonPanel, BorderLayout.SOUTH);
-            
-            logDialog.setVisible(true);
-            
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(
-                controlFrame,
-                "Failed to read log file: " + e.getMessage(),
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
-    
-    // Getters for managers
+    // Getter methods for managers
     public CanvasManager getCanvasManager() {
         return canvas;
     }
@@ -842,36 +749,43 @@ public class QuantumBrush extends PApplet {
         return ui;
     }
     
+    // Getter methods for state
     public PImage getCurrentImage() {
         return currentImage;
     }
     
-    public void setCurrentImage(PImage img) {
-        this.currentImage = img;
-    }
-    
-    public float getZoom() {
-        return 1.0f;
-    }
-    
-    public JButton getCreateButton() {
-        return createButton;
+    public void setCurrentImage(PImage image) {
+        this.currentImage = image;
     }
     
     public String getProjectId() {
         return projectId;
     }
-
-    public PSurface getSurface() {
-        return surface;
+    
+    public void setProjectId(String id) {
+        this.projectId = id;
     }
     
+    // ProjectState inner class
+    private static class ProjectState {
+        public final PImage image;
+        public final ArrayList<Path> paths;
+        public final String projectId;
+        
+        public ProjectState(PImage image, ArrayList<Path> paths, String projectId) {
+            this.image = image != null ? image.copy() : null;
+            this.paths = new ArrayList<>();
+            if (paths != null) {
+                for (Path path : paths) {
+                    this.paths.add(path.copy());
+                }
+            }
+            this.projectId = projectId;
+        }
+    }
+
     @Override
     public void exit() {
-        // Clean up resources before exiting
-        if (strokes != null) {
-            strokes.shutdown();
-        }
-        super.exit();
+        System.exit(0);
     }
 }
