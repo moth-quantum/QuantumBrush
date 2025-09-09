@@ -23,15 +23,19 @@ def run(params):
         Image: the new numpy array of RGBA values or None if the effect failed
     """
     
-    # Extract image to work from
+    # Extract the image that we are going to work from
     image = params["stroke_input"]["image_rgba"]
     # It's a good practice to check any of the request variables
     assert image.shape[-1] == 4, "Image must be RGBA format"
-
+    # Get the shape of the imahe
     height = image.shape[0]
     width = image.shape[1]
 
+    # Extract the path chosen
     path = params["stroke_input"]["path"]
-    ex_param = params["user_input"]["Example parameter"]        
+
+    # Extract whatever other parameters have been defined for the brush
+    ex_param = params["user_input"]["Example parameter"]
+
         
     return image

@@ -1,9 +1,9 @@
 {
     "name": "Example",
     "id": "example", 
-    "author": "quantumjm",
+    "author": "Quantum Brush developers",
     "version": "1.0.0",
-    "description": "Does nothing.",
+    "description": "Does nothing very interesting, but does so with lots of comments in the code.",
     "dependencies": {
         "numpy": ">=2.1.0",
     },
