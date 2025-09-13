@@ -135,7 +135,50 @@ def apply_effect(req: dict):
     sys.modules[req["effect_id"]] = effect_module
     spec.loader.exec_module(effect_module)
 
-    new_image = effect_module.run(req)
+    # Execute the effect with enhanced error handling
+    try:
+        new_image = effect_module.run(req)
+    except AttributeError as e:
+        if "'module' object has no attribute 'run'" in str(e):
+            raise RuntimeError(f"Effect '{req['effect_id']}' is missing required run() function.\n"
+                             f"Debug tips:\n"
+                             f"- Add 'def run(params):' to your effect file\n"
+                             f"- Make sure run() returns a numpy RGBA image array\n"
+                             f"- Check existing effects like 'heisenbrush' for examples") from e
+        else:
+            raise RuntimeError(f"Effect '{req['effect_id']}' failed with AttributeError: {str(e)}\n"
+                             f"Debug tips:\n"
+                             f"- Check your effect imports quantum libraries correctly\n"
+                             f"- Verify parameter names match your requirements.json") from e
+    except KeyError as e:
+        param_name = str(e).strip("'\"")
+        raise RuntimeError(f"Effect '{req['effect_id']}' failed - missing parameter: {param_name}\n"
+                         f"Debug tips:\n"
+                         f"- Check your requirements.json defines all needed parameters\n"  
+                         f"- Verify parameter names match between effect and requirements\n"
+                         f"- Available parameters: {list(req.get('user_input', {}).keys())}") from e
+    except AssertionError as e:
+        raise RuntimeError(f"Effect '{req['effect_id']}' failed validation: {str(e)}\n"
+                         f"Debug tips:\n"
+                         f"- Check parameter ranges in your requirements.json\n"
+                         f"- Try smaller radius or different parameter values\n" 
+                         f"- Current parameters: {req.get('user_input', {})}") from e
+    except ImportError as e:
+        missing_module = str(e).split("'")[1] if "'" in str(e) else str(e)
+        raise RuntimeError(f"Effect '{req['effect_id']}' failed - missing dependency: {missing_module}\n"
+                         f"Debug tips:\n"
+                         f"- Install missing package: conda run -n quantumbrush pip install {missing_module}\n"
+                         f"- Add dependency to your requirements.json\n"
+                         f"- Check quantum computing libraries are installed") from e
+    except Exception as e:
+        error_type = type(e).__name__
+        raise RuntimeError(f"Effect '{req['effect_id']}' failed with {error_type}: {str(e)}\n"
+                         f"Debug tips:\n"
+                         f"- Test your effect with smaller parameter values first\n"
+                         f"- Check quantum circuit construction for errors\n"
+                         f"- Verify image array shapes and data types\n"
+                         f"- Look at working effects like 'heisenbrush' for reference\n"
+                         f"- Check the full error log for more details") from e
 
     # Merge the new image with the original image
     mask = np.all(new_image == input_image, axis=-1)  
