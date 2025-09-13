@@ -16,14 +16,37 @@ import contextlib
 
 app_path = Path(sys.path[0] + "/..") # Path to the app folder
 
-def process_variable(var_type: str, variable: any):
+def process_variable(var_type: str, variable: any, param_config: dict = None, param_name: str = "parameter"):
+    """
+    Process and validate a parameter value based on its type and constraints.
+    
+    Args:
+        var_type: The expected type of the variable
+        variable: The value to process
+        param_config: Optional parameter configuration with min/max constraints
+        param_name: Name of parameter for error messages
+    """
     match var_type:
         case "str":
             return str(variable)
         case "float":
-            return float(variable)
+            value = float(variable)
+            # Validate bounds if config provided
+            if param_config:
+                if "min" in param_config and value < param_config["min"]:
+                    raise ValueError(f"{param_name} must be >= {param_config['min']}, got {value}")
+                if "max" in param_config and value > param_config["max"]:
+                    raise ValueError(f"{param_name} must be <= {param_config['max']}, got {value}")
+            return value
         case "int":
-            return int(variable)
+            value = int(variable)
+            # Validate bounds if config provided
+            if param_config:
+                if "min" in param_config and value < param_config["min"]:
+                    raise ValueError(f"{param_name} must be >= {param_config['min']}, got {value}")
+                if "max" in param_config and value > param_config["max"]:
+                    raise ValueError(f"{param_name} must be <= {param_config['max']}, got {value}")
+            return value
         case "bool":
             return bool(variable)
         case "array":
@@ -94,7 +117,12 @@ def process_effect(instr: dict):
         if key not in instr["user_input"]:
             raise KeyError(f"Key '{key}' not found in user_input field of stroke instructions.")
         
-        req["user_input"][key] = process_variable(req["user_input"][key]["type"], instr["user_input"][key])
+        req["user_input"][key] = process_variable(
+            req["user_input"][key]["type"], 
+            instr["user_input"][key], 
+            req["user_input"][key],  # Pass full config for bounds checking
+            key  # Pass parameter name for better error messages
+        )
 
     for key in req["stroke_input"]:
         if key == "image_rgba":
@@ -103,7 +131,7 @@ def process_effect(instr: dict):
         if key not in instr["stroke_input"]:
             raise KeyError(f"Key '{key}' not found in stroke_input of stroke instructions.")
         
-        req["stroke_input"][key] = process_variable(req["stroke_input"][key], instr["stroke_input"][key])
+        req["stroke_input"][key] = process_variable(req["stroke_input"][key], instr["stroke_input"][key], None, key)
 
         # I need to rotate clicks and paths into (y,x) format
         if ( key == "clicks" or key == "path" ):
