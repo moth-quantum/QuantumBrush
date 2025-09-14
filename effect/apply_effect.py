@@ -74,10 +74,82 @@ def process_effect(instr: dict):
     for dependency, version in req.get("dependencies", {}).items():
         try:
             module = importlib.import_module(dependency)
-            #TODO: Check that the version is correct
+            
+            # Check that the version meets requirements
+            if version and version.strip():  # Skip empty version requirements
+                installed_version = _get_package_version(module, dependency)
+                if installed_version and not _check_version_requirement(installed_version, version):
+                    raise ImportError(f"Dependency {dependency} version mismatch: "
+                                    f"required {version}, found {installed_version}")
                 
         except ImportError as e:
             raise ImportError(f"Failed to load dependency {dependency}: {e}")
+
+
+def _get_package_version(module, package_name):
+    """Get the version of an imported package"""
+    # Method 1: Check for __version__ attribute
+    if hasattr(module, '__version__'):
+        return module.__version__
+    
+    # Method 2: Use importlib.metadata for installed packages
+    try:
+        from importlib import metadata
+        return metadata.version(package_name)
+    except (ImportError, metadata.PackageNotFoundError):
+        pass
+    
+    return None
+
+
+def _check_version_requirement(installed_version, requirement):
+    """
+    Check if installed version meets requirement.
+    Supports: >=1.0.0, <=2.0.0, ==1.5.0, >1.0.0, <2.0.0
+    """
+    requirement = requirement.strip()
+    
+    # Parse requirement
+    if requirement.startswith('>='):
+        operator, required_version = '>=', requirement[2:].strip()
+    elif requirement.startswith('<='):
+        operator, required_version = '<=', requirement[2:].strip()
+    elif requirement.startswith('=='):
+        operator, required_version = '==', requirement[2:].strip()
+    elif requirement.startswith('>'):
+        operator, required_version = '>', requirement[1:].strip()
+    elif requirement.startswith('<'):
+        operator, required_version = '<', requirement[1:].strip()
+    else:
+        # Default to >= if no operator specified
+        operator, required_version = '>=', requirement
+    
+    # Simple version comparison (handles major.minor.patch)
+    try:
+        installed_parts = [int(x) for x in installed_version.split('.')]
+        required_parts = [int(x) for x in required_version.split('.')]
+        
+        # Pad shorter version with zeros
+        max_len = max(len(installed_parts), len(required_parts))
+        installed_parts += [0] * (max_len - len(installed_parts))
+        required_parts += [0] * (max_len - len(required_parts))
+        
+        # Compare versions
+        if operator == '>=':
+            return installed_parts >= required_parts
+        elif operator == '<=':
+            return installed_parts <= required_parts
+        elif operator == '==':
+            return installed_parts == required_parts
+        elif operator == '>':
+            return installed_parts > required_parts
+        elif operator == '<':
+            return installed_parts < required_parts
+    except (ValueError, AttributeError):
+        # If version parsing fails, assume it's OK (graceful degradation)
+        return True
+    
+    return True
 
     # Process image
     image_path = project_path / f"stroke/{stroke_id}_input.png"
