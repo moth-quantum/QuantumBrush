@@ -139,7 +139,7 @@ def apply_effect(req: dict):
     try:
         new_image = effect_module.run(req)
     except AttributeError as e:
-        if "'module' object has no attribute 'run'" in str(e):
+        if "has no attribute 'run'" in str(e):
             raise RuntimeError(f"Effect '{req['effect_id']}' is missing required run() function.\n"
                              f"Debug tips:\n"
                              f"- Add 'def run(params):' to your effect file\n"
