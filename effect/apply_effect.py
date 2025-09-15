@@ -16,16 +16,17 @@ import contextlib
 
 app_path = Path(sys.path[0] + "/..") # Path to the app folder
 
-def process_variable(var_type: str, variable: any, param_config: dict = None, param_name: str = "parameter"):
+def process_variable(param_config: dict,  param_name: str, variable: any):
     """
     Process and validate a parameter value based on its type and constraints.
     
     Args:
-        var_type: The expected type of the variable
-        variable: The value to process
-        param_config: Optional parameter configuration with min/max constraints
+        param_config: Dictionary to process and validate the variable
         param_name: Name of parameter for error messages
+        variable: The value to process and validate
     """
+    var_type = param_config["type"]
+
     match var_type:
         case "str":
             return str(variable)
@@ -118,10 +119,9 @@ def process_effect(instr: dict):
             raise KeyError(f"Key '{key}' not found in user_input field of stroke instructions.")
         
         req["user_input"][key] = process_variable(
-            req["user_input"][key]["type"], 
-            instr["user_input"][key], 
-            req["user_input"][key],  # Pass full config for bounds checking
-            key  # Pass parameter name for better error messages
+            param_config = req["user_input"][key],
+            param_name = key,
+            variable = instr["user_input"][key]
         )
 
     for key in req["stroke_input"]:
@@ -131,7 +131,10 @@ def process_effect(instr: dict):
         if key not in instr["stroke_input"]:
             raise KeyError(f"Key '{key}' not found in stroke_input of stroke instructions.")
         
-        req["stroke_input"][key] = process_variable(req["stroke_input"][key], instr["stroke_input"][key], None, key)
+        req["stroke_input"][key] = process_variable(
+            param_config = req["stroke_input"][key],
+            param_name = key,
+            variable = instr["stroke_input"][key])
 
         # I need to rotate clicks and paths into (y,x) format
         if ( key == "clicks" or key == "path" ):

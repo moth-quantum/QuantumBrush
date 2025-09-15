@@ -17,9 +17,15 @@
         }
     },
     "stroke_input": {
-        "image_rgba": "array",
-        "clicks": "array",
-        "path": "array"
+        "image_rgba": {
+            "type":"array"
+        },
+        "path": {
+            "type":"array"
+        },
+        "clicks": {
+            "type":"array"
+        }
     },
     "flags": {}
 }
