@@ -7,10 +7,8 @@
     "description": "The Heisenbrush simulates color shifts through the Heisenberg spin model. Each stroke is split into segments, and each segment evolves a quantum state that transforms Hue, Lightness, and Saturation.\n\nThe quality of the effect is controlled by several parameters:\n 🔹 Radius → determines the size of the brush and the number of qubits in the simulation\n 🔹 Strength → blends between the base color and quantum-generated colors\n 🔹 Color → defines the initial state of the quantum evolution\n\nUsage:\n 🔸 Click and drag multiple times over the canvas to create multiple strokes.\n 🔸 Each stroke has a new color.\n\n ⚠️ Warning: the number of strokes is limited to 10.",
     "dependencies": {
         "numpy": ">=2.1.0",
-        "colorsys": "",
-        "qiskit": ">=1.0.0",
-        "qiskit_ibm_runtime": ">=0.20.0",
-        "qiskit_aer": ">=0.17.0"
+        "qiskit": "<2.0.0",
+        "scipy": ""
     },
     "user_input": {
         "Radius": {

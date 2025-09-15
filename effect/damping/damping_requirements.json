@@ -6,8 +6,7 @@
     "description": "The smudge brush allows the user to paint over different parts of the canvas and mix colors based on pumping/damping quantum channels.\n\nThe quality of the effect is controlled by several parameters:\n 🔹 Radius → determines the size of the brush\n 🔹 Strength → controls how strong the effect will be\n 🔹 Invert Luminosity → ON = first color light, OFF = first color dark\n\nUsage:\n 🔸 Click and drag multiple times over the canvas to create multiple strokes.\n 🔸 Each stroke has a new color.\n\n ⚠️ Warning: the number of strokes is limited to 20.",
     "dependencies": {
         "numpy": ">=2.1.0",
-        "colorsys": "",
-        "qiskit": ""
+        "qiskit": "<2.0.0"
     },
     "user_input": {
         "Radius": {

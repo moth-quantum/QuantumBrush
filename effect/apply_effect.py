@@ -51,41 +51,6 @@ def process_variable(var_type: str, variable: any):
             raise ValueError(f"Unsupported type: {var_type}")
 
 
-def process_effect(instr: dict):
-    # Extract stroke_id and project_id from instructions
-    stroke_id = instr.get("stroke_id", False)
-    project_id = instr.get("project_id", False)
-
-    if not stroke_id or not project_id:
-        raise ValueError("stroke_id and project_id must be provided in the instructions.")
-    
-    project_path = app_path / f"project/{project_id}"
-  
-    # Get effect_id and load requirements
-    effect_id = instr.get("effect_id")
-
-    effect_path = app_path / f"effect/{effect_id}"
-    req_path = effect_path / f"{effect_id}_requirements.json"
-
-    with open(req_path, 'r') as req_file:
-        req = json.load(req_file)
-
-    # Check dependencies with version control
-    for dependency, version in req.get("dependencies", {}).items():
-        try:
-            module = importlib.import_module(dependency)
-            
-            # Check that the version meets requirements
-            if version and version.strip():  # Skip empty version requirements
-                installed_version = _get_package_version(module, dependency)
-                if installed_version and not _check_version_requirement(installed_version, version):
-                    raise ImportError(f"Dependency {dependency} version mismatch: "
-                                    f"required {version}, found {installed_version}")
-                
-        except ImportError as e:
-            raise ImportError(f"Failed to load dependency {dependency}: {e}")
-
-
 def _get_package_version(module, package_name):
     """Get the version of an imported package"""
     # Method 1: Check for __version__ attribute
@@ -150,6 +115,40 @@ def _check_version_requirement(installed_version, requirement):
         return True
     
     return True
+
+def process_effect(instr: dict):
+    # Extract stroke_id and project_id from instructions
+    stroke_id = instr.get("stroke_id", False)
+    project_id = instr.get("project_id", False)
+
+    if not stroke_id or not project_id:
+        raise ValueError("stroke_id and project_id must be provided in the instructions.")
+    
+    project_path = app_path / f"project/{project_id}"
+  
+    # Get effect_id and load requirements
+    effect_id = instr.get("effect_id")
+
+    effect_path = app_path / f"effect/{effect_id}"
+    req_path = effect_path / f"{effect_id}_requirements.json"
+
+    with open(req_path, 'r') as req_file:
+        req = json.load(req_file)
+
+    # Check dependencies with version control
+    for dependency, version in req.get("dependencies", {}).items():
+        try:
+            module = importlib.import_module(dependency)
+            
+            # Check that the version meets requirements
+            if version and version.strip():  # Skip empty version requirements
+                installed_version = _get_package_version(module, dependency)
+                if installed_version and not _check_version_requirement(installed_version, version):
+                    raise ImportError(f"Dependency {dependency} version mismatch: "
+                                    f"required {version}, found {installed_version}")
+                
+        except ImportError as e:
+            raise ImportError(f"Failed to load dependency {dependency}: {e}")
 
     # Process image
     image_path = project_path / f"stroke/{stroke_id}_input.png"

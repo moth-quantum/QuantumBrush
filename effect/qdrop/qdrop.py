@@ -1,6 +1,5 @@
 #Add any dependencies but don't forget to list them in the requirements if they need to be pip installed
 import numpy as np
-import colorsys
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector, entropy, partial_trace
 import importlib.util
