@@ -77,7 +77,11 @@ def process_effect(instr: dict):
             #TODO: Check that the version is correct
                 
         except ImportError as e:
-            raise ImportError(f"Failed to load dependency {dependency}: {e}")
+            raise RuntimeError(f"Effect '{effect_id}' failed - missing dependency: {dependency}\n"
+                         f"Debug tips:\n"
+                         f"- Install missing package: conda run -n quantumbrush pip install {dependency}\n"
+                         f"- Add dependency to your requirements.json\n"
+                         f"- Check quantum computing libraries are installed") from e
 
     # Process image
     image_path = project_path / f"stroke/{stroke_id}_input.png"
@@ -144,12 +148,13 @@ def apply_effect(req: dict):
                              f"Debug tips:\n"
                              f"- Add 'def run(params):' to your effect file\n"
                              f"- Make sure run() returns a numpy RGBA image array\n"
-                             f"- Check existing effects like 'heisenbrush' for examples") from e
+                             f"- Check existing effects like 'qdrop' for examples") from e
         else:
             raise RuntimeError(f"Effect '{req['effect_id']}' failed with AttributeError: {str(e)}\n"
                              f"Debug tips:\n"
                              f"- Check your effect imports quantum libraries correctly\n"
-                             f"- Verify parameter names match your requirements.json") from e
+                             f"- Verify parameter names match your requirements.json\n"
+                             f"- Check that you are importing the 'utils' folder") from e
     except KeyError as e:
         param_name = str(e).strip("'\"")
         raise RuntimeError(f"Effect '{req['effect_id']}' failed - missing parameter: {param_name}\n"
@@ -177,7 +182,7 @@ def apply_effect(req: dict):
                          f"- Test your effect with smaller parameter values first\n"
                          f"- Check quantum circuit construction for errors\n"
                          f"- Verify image array shapes and data types\n"
-                         f"- Look at working effects like 'heisenbrush' for reference\n"
+                         f"- Look at working effects like 'qdrop' for reference\n"
                          f"- Check the full error log for more details") from e
 
     # Merge the new image with the original image
