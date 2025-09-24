@@ -128,6 +128,17 @@ def points_within_lasso(points,border = None):
 
     return result
 
+def points_within_lasso_square(points,border = None):
+    min_x = np.min(points[:,1])
+    max_x = np.max(points[:,1])+1
+    min_y = np.min(points[:,0])
+    max_y = np.max(points[:,0])+1
+
+    grid = np.array(list(product(np.arange(min_y,max_y), np.arange(min_x,max_x))))
+    
+    # Create path from polygon
+    return grid, max_x-min_x, max_y-min_y
+
 def split_path_from_clicks(path,clicks):
     split_paths = []
     # Split path into subpaths, each starting with a click

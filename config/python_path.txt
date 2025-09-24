@@ -1,1 +1,1 @@
-/Users/astrydpark/miniconda3/envs/quantumbrush/bin/python3.11
+/opt/homebrew/Caskroom/miniconda/base/envs/quantumbrush/bin/python
