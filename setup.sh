@@ -302,6 +302,8 @@ setup_python_environment() {
 
     # Create new environment
     print_step "Creating conda environment: quantumbrush"
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
     conda create -n quantumbrush python=3.11 -y
 
     # Install packages with specific version requirements
