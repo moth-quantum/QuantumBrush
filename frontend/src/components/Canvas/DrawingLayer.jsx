@@ -114,10 +114,11 @@ export default function DrawingLayer({ width, height, scale, isPanMode, onPanSta
         return d
     }
 
-    // Custom lasso cursor for selection effects
-    const customCursor = isLassoEffect
-        ? `url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 3C4.23858 3 2 5.23858 2 8C2 10.7614 4.23858 13 7 13C7.57007 13 8.11332 12.9052 8.62121 12.7314L11.7513 15.8615C10.7093 17.5954 10.8248 19.8631 12.098 21.4547C13.3713 23.0463 15.5492 23.636 17.4727 22.9103C19.3962 22.1846 20.6713 20.2794 20.6215 18.214C20.5716 16.1486 19.206 14.3317 17.2514 13.7315L14.1213 10.6014C14.2952 10.0935 14.39 9.55024 14.39 8.98017C14.39 6.21875 12.1513 3.98001 9.38983 3.98001C8.61447 3.98001 7.88417 4.15615 7.2346 4.47141L7 3Z' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 6 6, crosshair`
-        : 'crosshair'
+    // Custom cursors for drawing
+    const lassoCursor = `url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 3C4.23858 3 2 5.23858 2 8C2 10.7614 4.23858 13 7 13C7.57007 13 8.11332 12.9052 8.62121 12.7314L11.7513 15.8615C10.7093 17.5954 10.8248 19.8631 12.098 21.4547C13.3713 23.0463 15.5492 23.636 17.4727 22.9103C19.3962 22.1846 20.6713 20.2794 20.6215 18.214C20.5716 16.1486 19.206 14.3317 17.2514 13.7315L14.1213 10.6014C14.2952 10.0935 14.39 9.55024 14.39 8.98017C14.39 6.21875 12.1513 3.98001 9.38983 3.98001C8.61447 3.98001 7.88417 4.15615 7.2346 4.47141L7 3Z' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 6 6, crosshair`
+    const brushCursor = `url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2v20M2 12h20' stroke='white' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 9 9, crosshair`
+
+    const customCursor = isLassoEffect ? lassoCursor : brushCursor
 
     return (
         <svg
