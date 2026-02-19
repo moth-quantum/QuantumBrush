@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --color-brand: oklch(65% 0.22 280);
+  --color-brand-dim: oklch(55% 0.18 280);
+  --color-surface: oklch(12% 0.01 280);
+  --color-surface-2: oklch(16% 0.01 280);
+  --color-surface-3: oklch(20% 0.015 280);
+  --color-border: oklch(28% 0.015 280);
+  --color-text-muted: oklch(55% 0.01 280);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+/* custom range input */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  background: var(--color-surface-3);
+  border-radius: 999px;
+  height: 4px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px;
+  background-color: var(--color-brand);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  transition: background-color 0.15s ease;
+}
+input[type='range']:hover::-webkit-slider-thumb {
+  background-color: white;
+}
+
+/* color input */
+input[type='color'] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch {
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+}

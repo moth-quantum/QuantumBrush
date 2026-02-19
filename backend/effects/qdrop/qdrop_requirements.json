@@ -1,0 +1,43 @@
+{
+    "name": "Aquarela",
+    "id": "qdrop", 
+    "author": "Joao",
+    "version": "1.0.0",
+    "description": "The Aquarela brush allows the user to mix the color of the brush with the canvas and generate new color variations using entanglement.\n\nThe quality of the effect is controlled by several parameters:\n 🔹 Radius → determines the size of the brush\n 🔹 Strength → controls how strong the effect is (0 = no effect)\n 🔹 Target Color → the base color of the watercolor brush\n 🔹 Number of Drops → resolution of the effect\n\nUsage:\n 🔸 Click and drag on the canvas in a single motion to apply the effect.",
+    "dependencies": {
+        "numpy": ">=2.1.0",
+        "colorsys": ""
+    },
+    "user_input": {
+        "Number of Drops": {
+            "type": "int",
+            "min": 2,
+            "max": 15,
+            "default": 5 
+        },
+        "Radius": {
+            "type": "int",
+            "min": 0,
+            "max": 100,
+            "default": 20 
+        },
+        "Strength": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 1.0 
+        },
+        "Target Color": {
+            "type": "color",
+            "default": "#FF0000"
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array",
+        "clicks": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}

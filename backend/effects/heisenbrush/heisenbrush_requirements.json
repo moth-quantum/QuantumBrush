@@ -1,0 +1,40 @@
+{
+    "name": "Heisenbrush (continuous)",
+    "id": "heisenbrush",
+    "author": "Arianna",
+    "version": "1.0.0",
+    "long_description": "This brush blends artistic expression with quantum physics by simulating how quantum spins evolve in the Heisenberg model. When you paint a stroke, your selected color is converted into quantum angles, and each point on the path becomes part of a simulated quantum system.\n\nAs the brush moves, a quantum circuit models the magnetization of this system over time—how the spins of quantum particles align or shift. This magnetization data is then used to gradually modify your original color’s Hue, Lightness, and Saturation, producing a smooth, evolving color effect along the stroke.\n\nThe Strength setting controls how much the quantum-evolved colors influence your base color. At low strength, the original color dominates; at high strength, the quantum behavior takes over, leading to unexpected color transformations.\n\n -The stroke path and brush radius determine how many qubits are simulated. \n -The Heisenberg model evolves these qubits over multiple time steps. \n -The mean magnetization is measured and mapped back into visual color changes.",
+    "description": "The Heisenbrush simulates color shifts through the Heisenberg spin model. Each stroke is split into segments, and each segment evolves a quantum state that transforms Hue, Lightness, and Saturation.\n\nThe quality of the effect is controlled by several parameters:\n 🔹 Radius → determines the size of the brush and the number of qubits in the simulation\n 🔹 Strength → blends between the base color and quantum-generated colors\n 🔹 Color → defines the initial state of the quantum evolution\n\nUsage:\n 🔸 Click and drag on the canvas in a single motion to apply the effect.",
+    "dependencies": {
+        "numpy": ">=2.1.0",
+        "colorsys": "",
+        "qiskit": ">=1.0.0",
+        "qiskit_ibm_runtime": ">=0.20.0",
+        "qiskit_aer": ">=0.17.0"
+    },
+    "user_input": {
+        "Radius": {
+            "type": "int",
+            "min": 1,
+            "max": 100,
+            "default": 5
+        },
+        "Strength": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.5
+        },
+        "Color": {
+            "type": "color",
+            "default": "#FF0000"
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}

@@ -1,0 +1,41 @@
+{
+    "name": "Heisenbrush (discrete)",
+    "id": "heisenbrush2",
+    "author": "Arianna",
+    "version": "1.0.0",
+    "long_description": "This brush simulates a quantum system to generate color effects based on the Heisenberg spin model. Each stroke is composed of discrete segments (defined by user clicks), and each segment drives a quantum time evolution that computes the system’s mean magnetization. This magnetization is used to shift the original color’s Hue, Lightness, and Saturation, creating unique color changes for each stroke segment.\n\nThe quantum algorithm models interactions between spins in a closed loop of qubits. Your base color is translated into a quantum state using angular coordinates, then evolves over time steps determined by stroke geometry. Each segment produces a magnetization value, which is mapped back into HSL color space.\n\nThe Strength setting controls how much influence the quantum-generated colors have on the final result. A low strength blends more of your original color, while high strength allows the quantum behavior to fully shape the effect.\n\nEach segment is rendered with its own color derived from quantum simulation, giving your brushwork a discrete, physics-inspired variation along the stroke.\n\n To use this effect, click and drag on the canvas to create up to 10 strokes.",
+    "description": "The Heisenbrush simulates color shifts through the Heisenberg spin model. Each stroke is split into segments, and each segment evolves a quantum state that transforms Hue, Lightness, and Saturation.\n\nThe quality of the effect is controlled by several parameters:\n 🔹 Radius → determines the size of the brush and the number of qubits in the simulation\n 🔹 Strength → blends between the base color and quantum-generated colors\n 🔹 Color → defines the initial state of the quantum evolution\n\nUsage:\n 🔸 Click and drag multiple times over the canvas to create multiple strokes.\n 🔸 Each stroke has a new color.\n\n ⚠️ Warning: the number of strokes is limited to 10.",
+    "dependencies": {
+        "numpy": ">=2.1.0",
+        "colorsys": "",
+        "qiskit": ">=1.0.0",
+        "qiskit_ibm_runtime": ">=0.20.0",
+        "qiskit_aer": ">=0.17.0"
+    },
+    "user_input": {
+        "Radius": {
+            "type": "int",
+            "min": 1,
+            "max": 100,
+            "default": 5
+        },
+        "Strength": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.5
+        },
+        "Color": {
+            "type": "color",
+            "default": "#FF0000"
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array",
+        "clicks": "array"
+    },
+    "flags": {
+        "smooth_path": false
+    }
+}

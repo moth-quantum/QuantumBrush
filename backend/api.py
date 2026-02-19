@@ -1,0 +1,202 @@
+"""
+QuantumBrush pywebview API bridge.
+
+All public methods here are callable from JavaScript via:
+    window.pywebview.api.method_name(args)
+"""
+
+import json
+import os
+import sys
+import base64
+import threading
+import subprocess
+import tempfile
+import uuid
+from pathlib import Path
+
+import webview  # pywebview
+
+BACKEND_DIR = Path(__file__).parent
+EFFECTS_DIR = BACKEND_DIR / "effects"
+
+
+class Api:
+    def __init__(self):
+        self._jobs: dict[str, dict] = {}  # job_id -> {process, status, result}
+        self._lock = threading.Lock()
+
+    # ── Effects ────────────────────────────────────────────────────
+
+    def list_effects(self) -> list:
+        """Return all available effect descriptors from effects/ subdirectories."""
+        effects = []
+        for subdir in sorted(EFFECTS_DIR.iterdir()):
+            if not subdir.is_dir():
+                continue
+            req_file = subdir / f"{subdir.name}_requirements.json"
+            if not req_file.exists():
+                continue
+            try:
+                with open(req_file, "r") as f:
+                    data = json.load(f)
+                effects.append(data)
+            except Exception as e:
+                print(f"[api] Failed to load effect {subdir.name}: {e}")
+        return effects
+
+    # ── Image ──────────────────────────────────────────────────────
+
+    def open_image_dialog(self) -> dict | None:
+        """Open a native file dialog and return the image as base64 + dimensions."""
+        result = webview.windows[0].create_file_dialog(
+            webview.OPEN_DIALOG,
+            allow_multiple=False,
+            file_types=("Image files (*.png;*.jpg;*.jpeg;*.bmp;*.webp;*.tiff)",),
+        )
+        if not result:
+            return None
+        path = result[0]
+        try:
+            from PIL import Image as PILImage
+            import io
+            with PILImage.open(path) as img:
+                width, height = img.size
+                buf = io.BytesIO()
+                img.convert("RGBA").save(buf, format="PNG")
+                b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+            return {
+                "src": f"data:image/png;base64,{b64}",
+                "width": width,
+                "height": height,
+            }
+        except Exception as e:
+            print(f"[api] Error loading image: {e}")
+            return None
+
+    # ── Effect Processing ──────────────────────────────────────────
+
+    def run_effect(self, effect_id: str, stroke_input: dict, user_input: dict) -> dict:
+        """
+        Start a background subprocess to apply an effect.
+        Returns {job_id} immediately. Poll get_job_status for progress.
+        """
+        job_id = str(uuid.uuid4())
+
+        # Build the instruction dict that apply_effect.py expects
+        instruction = {
+            "stroke_id": job_id,
+            "project_id": "default",
+            "effect_id": effect_id,
+            "stroke_input": stroke_input,
+            "user_input": user_input,
+        }
+
+        # Write instruction to a temp file
+        tmp_dir = BACKEND_DIR / "tmp"
+        tmp_dir.mkdir(exist_ok=True)
+        instr_path = tmp_dir / f"{job_id}.json"
+        with open(instr_path, "w") as f:
+            json.dump(instruction, f)
+
+        with self._lock:
+            self._jobs[job_id] = {
+                "status": "running",
+                "progress": 0.0,
+                "result": None,
+                "process": None,
+            }
+
+        # Run in background thread
+        t = threading.Thread(
+            target=self._run_subprocess,
+            args=(job_id, instr_path),
+            daemon=True,
+        )
+        t.start()
+
+        return {"job_id": job_id}
+
+    def _run_subprocess(self, job_id: str, instr_path: Path):
+        script = BACKEND_DIR / "apply_effect.py"
+        try:
+            proc = subprocess.Popen(
+                [sys.executable, str(script), str(instr_path)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=str(BACKEND_DIR),
+            )
+            with self._lock:
+                if job_id in self._jobs:
+                    self._jobs[job_id]["process"] = proc
+
+            stdout, stderr = proc.communicate()
+
+            if proc.returncode == 0:
+                # Load result PNG as base64
+                output_path = BACKEND_DIR / "tmp" / f"{job_id}_output.png"
+                if output_path.exists():
+                    b64 = base64.b64encode(output_path.read_bytes()).decode("utf-8")
+                else:
+                    b64 = None
+
+                with self._lock:
+                    if job_id in self._jobs:
+                        self._jobs[job_id]["status"] = "done"
+                        self._jobs[job_id]["progress"] = 1.0
+                        self._jobs[job_id]["result"] = b64
+            else:
+                print(f"[api] Job {job_id} failed:\n{stderr.decode()}")
+                with self._lock:
+                    if job_id in self._jobs:
+                        self._jobs[job_id]["status"] = "error"
+
+        except Exception as e:
+            print(f"[api] Exception in job {job_id}: {e}")
+            with self._lock:
+                if job_id in self._jobs:
+                    self._jobs[job_id]["status"] = "error"
+
+    def get_job_status(self, job_id: str) -> dict:
+        with self._lock:
+            job = self._jobs.get(job_id)
+        if not job:
+            return {"status": "error", "progress": 0, "result": None}
+        return {
+            "status": job["status"],
+            "progress": job["progress"],
+            "result": job["result"],
+        }
+
+    def abort_job(self, job_id: str) -> dict:
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job and job.get("process"):
+                try:
+                    job["process"].kill()
+                except Exception:
+                    pass
+            if job:
+                job["status"] = "aborted"
+        return {"ok": True}
+
+    # ── Export ─────────────────────────────────────────────────────
+
+    def export_image(self, merged_base64: str) -> dict:
+        """Open a native save dialog and write the merged PNG."""
+        result = webview.windows[0].create_file_dialog(
+            webview.SAVE_DIALOG,
+            save_filename="quantumbrush_export.png",
+            file_types=("PNG image (*.png)",),
+        )
+        if not result:
+            return {"ok": False}
+        save_path = result if isinstance(result, str) else result[0]
+        try:
+            data = base64.b64decode(merged_base64)
+            with open(save_path, "wb") as f:
+                f.write(data)
+            return {"ok": True}
+        except Exception as e:
+            print(f"[api] Export error: {e}")
+            return {"ok": False}
