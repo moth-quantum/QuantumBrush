@@ -16,7 +16,8 @@ def prep(s0,s1=None): #s0 is the final state and s1 is the initial state
         #print(f"s0 {s0}")
         #print(f"s1 {s1}")
     assert s0**2 + s1**2 + s0*s1 - s0 -s1 <= 10**(-10), "Coefs must satisfy the ellipse inequality"
-    return StatePreparation([np.sqrt((s0 + s1) / 2), np.sqrt((1 - s0) / 2), 0, np.sqrt((1 - s1) / 2)])
+    amps = np.array([np.sqrt((s0 + s1) / 2), np.sqrt((1 - s0) / 2), 0, np.sqrt((1 - s1) / 2)])
+    return StatePreparation(amps / np.linalg.norm(amps))
 
 def ua_cloning(intial_angles, s0=2/3):
     '''

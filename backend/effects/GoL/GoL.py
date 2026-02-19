@@ -139,9 +139,13 @@ def SCGOL(nhood):
 def game_of_life(nhood):
     qr = QuantumRegister(9,'qr')
     qc = QuantumCircuit(qr,name='conway')
-    v = np.array(nhood).reshape(9,2)
-    for qubit,state in enumerate(v):
-        qc.initialize(state,qubit)
+    v = np.array(nhood).reshape(9, 2)
+    for qubit, state in enumerate(v):
+        # Normalize to avoid QiskitError due to floating point precision
+        norm = np.linalg.norm(state)
+        if norm > 0:
+            state = state / norm
+        qc.initialize(state, qubit)
     for q in [0,1,2,3,4,5,6,7,8]:
         pass
         if q!=4:

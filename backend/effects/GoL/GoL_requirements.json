@@ -3,8 +3,11 @@
     "id": "GoL",
     "author": "Daniel",
     "version": "1.0.0",
-    "long_description": "This brush/lasso tool implements N iterations of a quantum cellular automata with a nearest neighbour neighbourhood with the result being the new state of the cell.\n Runtime is linear with the number of iterations and number of pixels.\nMapping refers to which color parameters (hue, luminosity and saturation) are mapped to which function in the game of life, as such there are 6 permutations to choose from.\nRadius determines the width of the stroke, if it is 0 then it behaves as a lasso.",
-    "description": "This brush/lasso implements N iterations of a quantum cellular automata with a nearest neighbour neighbourhood with the result being the new state of the cell.\n 🔸 Runtime is proportional to (number of iterations)x(number of pixels).\n 🔹 Radius determines the width of the stroke, if it is 0 then it behaves as a lasso.\n 🔹 Mapping refers to which color parameters (hue, saturation and value) are mapped to which function in the game of life, as such there are 6 permutations to choose from. The labelling is 0:'hsv',1:'hvs',2:'shv',3:'svh',4:'vhs',5:'vsh'. The interaction of the various parameters is unpredictable, and as such one should pick by taste. Generally the last letter will have the strongest effect.\n 🔹 Iterations is the number of steps of the cellular automata takes.",
+    "description": "This brush/lasso implements N iterations of a quantum cellular automata with a nearest neighbour neighbourhood.",
+    "usage_instructions": "Draw a path (brush) or a closed loop (lasso if Radius is 0) to apply the cellular automata to the area.",
+    "min_strokes": 1,
+    "max_strokes": null,
+    "selection_mode": "brush",
     "dependencies": {
         "numpy": ">=2.1.0",
         "colorsys": "",
