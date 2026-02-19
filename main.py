@@ -47,9 +47,10 @@ def main():
         height=900,
         min_size=(900, 600),
         background_color="#0a0a0f",
+        frameless=True,
     )
 
-    webview.start(expose_functions, window, debug=True, gui="qtk")
+    webview.start(expose_functions, window, debug=True, gui="gtk")
 
 
 if __name__ == "__main__":

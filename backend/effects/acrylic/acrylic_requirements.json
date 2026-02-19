@@ -3,7 +3,7 @@
     "id": "acrylic",
     "author": "MOTH",
     "version": "1.0.0",
-    "description": "The Basic brush paints a consistent, uniform color across the canvas.",
+    "description": "The Basic brush paints a consistent, uniform color across the canvas.\n\nThe effect is controlled by several parameters:\n 🔹 Radius → determines the size of the brush\n 🔹 Color → sets the base color of the brush\n 🔹 Alpha → controls the opacity of the brush strokes\n 🔹 Blur Edges → ON = smooth, feathered edges; OFF = hard edges\n\nUsage:\n 🔸 Click and drag on the canvas to paint with the selected color.",
     "usage_instructions": "Click and drag on the canvas to paint with the selected color.",
     "min_strokes": 1,
     "max_strokes": null,

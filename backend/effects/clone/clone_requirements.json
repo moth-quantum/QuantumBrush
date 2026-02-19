@@ -3,7 +3,7 @@
     "id": "clone",
     "author": "Joao",
     "version": "1.0.0",
-    "description": "The collage brush allows the user to copy and paste regions of the image, subject to the limitations of quantum mechanics.",
+    "description": "The collage brush allows the user to copy and paste regions of the image, subject to the limitations of quantum mechanics.\n\nThe quality of the copy is controlled by the strength parameter:\n 🔹 Strength = 1 → perfect copy, zero paste fidelity\n 🔹 Strength = 0 → perfect paste, zero copy fidelity\n 🔹 Strength = 0.66 → balanced trade-off (symmetric case)\n\nIntermediate values represent different trade-offs between copy and paste fidelity.\n\nUsage:\n 🔸 Click and drag on the canvas to select the copy region.\n 🔸 Click once to select the position of the pasted region.",
     "usage_instructions": "1. Draw a lasso to select the copy region. 2. Click once on the canvas to select the position of the pasted region.",
     "min_strokes": 2,
     "max_strokes": 2,

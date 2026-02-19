@@ -226,3 +226,19 @@ class Api:
         except Exception as e:
             print(f"[api] Export error: {e}")
             return {"ok": False}
+
+    # ── Window Controls ──────────────────────────────────────────
+
+    def close_window(self):
+        webview.windows[0].destroy()
+
+    def minimize_window(self):
+        webview.windows[0].minimize()
+
+    def toggle_maximize(self):
+        # pywebview doesn't have a direct 'is_maximized' check in all versions, 
+        # but we can try to resize/maximize
+        # For simplicity, we just toggle or call maximize
+        # webview.windows[0].maximize() is usually enough
+        # Some versions support state checks, but let's keep it simple
+        webview.windows[0].maximize() if not hasattr(webview.windows[0], 'maximized') or not webview.windows[0].maximized else webview.windows[0].restore()
