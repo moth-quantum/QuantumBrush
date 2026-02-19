@@ -2,11 +2,6 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import { useAppStore } from '../../store/appStore.js'
 import DrawingLayer from './DrawingLayer.jsx'
 
-/**
- * CanvasView — renders the base image and all visible effect overlays.
- * Supports zoom (wheel), pan (middle-click drag, Space+drag, or Ctrl+drag),
- * and reset zoom/position button.
- */
 export default function CanvasView() {
     const image = useAppStore((s) => s.image)
     const layers = useAppStore((s) => s.layers)
@@ -16,10 +11,10 @@ export default function CanvasView() {
     const containerRef = useRef(null)
     const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 })
     const [fitTransform, setFitTransform] = useState(null)
+    const [isPanMode, setIsPanMode] = useState(false)
+    const [isActivePan, setIsActivePan] = useState(false)
     const isPanning = useRef(false)
     const lastPan = useRef({ x: 0, y: 0 })
-    const spaceHeld = useRef(false)
-    const ctrlHeld = useRef(false)
 
     // Draw image + overlays on canvas
     useEffect(() => {
@@ -51,7 +46,7 @@ export default function CanvasView() {
         })
     }, [image, layers])
 
-    // Fit image to viewport on load — store it so reset can return here
+    // Fit image to viewport on load
     useEffect(() => {
         if (!image || !containerRef.current) return
         const { clientWidth: cw, clientHeight: ch } = containerRef.current
@@ -93,15 +88,20 @@ export default function CanvasView() {
         return () => el.removeEventListener('wheel', onWheel)
     }, [onWheel])
 
-    // Track Ctrl and Space keys
+    // Track Ctrl and Space keys — use state so cursor re-renders
     useEffect(() => {
         const onKeyDown = (e) => {
-            if (e.code === 'Space') { e.preventDefault(); spaceHeld.current = true }
-            if (e.key === 'Control') ctrlHeld.current = true
+            if (e.code === 'Space' || e.key === 'Control') {
+                e.preventDefault()
+                setIsPanMode(true)
+            }
         }
         const onKeyUp = (e) => {
-            if (e.code === 'Space') spaceHeld.current = false
-            if (e.key === 'Control') { ctrlHeld.current = false; isPanning.current = false }
+            if (e.code === 'Space' || e.key === 'Control') {
+                setIsPanMode(false)
+                setIsActivePan(false)
+                isPanning.current = false
+            }
         }
         window.addEventListener('keydown', onKeyDown)
         window.addEventListener('keyup', onKeyUp)
@@ -111,24 +111,41 @@ export default function CanvasView() {
         }
     }, [])
 
-    // Pan via middle mouse, Space+drag, or Ctrl+drag
-    const onMouseDown = useCallback((e) => {
-        if (e.button === 1 || spaceHeld.current || ctrlHeld.current) {
-            e.preventDefault()
-            isPanning.current = true
-            lastPan.current = { x: e.clientX, y: e.clientY }
-        }
+    // Called by DrawingLayer when pan mode pointer events fire
+    const onPanStart = useCallback((clientX, clientY) => {
+        isPanning.current = true
+        setIsActivePan(true)
+        lastPan.current = { x: clientX, y: clientY }
     }, [])
 
-    const onMouseMove = useCallback((e) => {
+    const onPanMove = useCallback((clientX, clientY) => {
         if (!isPanning.current) return
-        const dx = e.clientX - lastPan.current.x
-        const dy = e.clientY - lastPan.current.y
-        lastPan.current = { x: e.clientX, y: e.clientY }
+        const dx = clientX - lastPan.current.x
+        const dy = clientY - lastPan.current.y
+        lastPan.current = { x: clientX, y: clientY }
         setTransform((t) => ({ ...t, x: t.x + dx, y: t.y + dy }))
     }, [])
 
-    const onMouseUp = useCallback(() => { isPanning.current = false }, [])
+    const onPanEnd = useCallback(() => {
+        isPanning.current = false
+        setIsActivePan(false)
+    }, [])
+
+    // Middle-mouse pan on the container itself (outside image area)
+    const onMouseDown = useCallback((e) => {
+        if (e.button === 1) {
+            e.preventDefault()
+            onPanStart(e.clientX, e.clientY)
+        }
+    }, [onPanStart])
+
+    const onMouseMove = useCallback((e) => {
+        onPanMove(e.clientX, e.clientY)
+    }, [onPanMove])
+
+    const onMouseUp = useCallback(() => {
+        onPanEnd()
+    }, [onPanEnd])
 
     // Drag-and-drop image loading
     const onDragOver = (e) => e.preventDefault()
@@ -146,8 +163,7 @@ export default function CanvasView() {
         reader.readAsDataURL(file)
     }, [setImage])
 
-    const isPanMode = spaceHeld.current || ctrlHeld.current
-    const cursor = isPanMode ? (isPanning.current ? 'grabbing' : 'grab') : 'default'
+    const cursor = isPanMode ? (isActivePan ? 'grabbing' : 'grab') : 'default'
 
     return (
         <div
@@ -165,8 +181,7 @@ export default function CanvasView() {
             <div
                 className="absolute inset-0 opacity-30"
                 style={{
-                    backgroundImage:
-                        'repeating-conic-gradient(#1a1a2e 0% 25%, #111128 0% 50%)',
+                    backgroundImage: 'repeating-conic-gradient(#1a1a2e 0% 25%, #111128 0% 50%)',
                     backgroundSize: '24px 24px',
                 }}
             />
@@ -179,21 +194,21 @@ export default function CanvasView() {
                         transformOrigin: '0 0',
                     }}
                 >
-                    {/* Base rendered canvas */}
                     <canvas
                         ref={canvasRef}
                         style={{ display: 'block', imageRendering: transform.scale > 4 ? 'pixelated' : 'auto' }}
                     />
-
-                    {/* Drawing overlay for capturing strokes */}
                     <DrawingLayer
                         width={image.width}
                         height={image.height}
                         scale={transform.scale}
+                        isPanMode={isPanMode}
+                        onPanStart={onPanStart}
+                        onPanMove={onPanMove}
+                        onPanEnd={onPanEnd}
                     />
                 </div>
             ) : (
-                /* Empty state drop zone */
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">
                     <div className="rounded-2xl border-2 border-dashed border-[var(--color-border)] px-16 py-14 flex flex-col items-center gap-4 pointer-events-auto">
                         <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-[var(--color-text-muted)]">
@@ -208,15 +223,18 @@ export default function CanvasView() {
                 </div>
             )}
 
-            {/* Bottom-right HUD: zoom indicator + reset button */}
             {image && (
-                <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                <div className="absolute bottom-3 right-3 flex items-center gap-3">
+                    {/* Context hint — swap message here for other modes in the future */}
+                    <span className="text-xs text-[var(--color-text-muted)]/50 pointer-events-none select-none">
+                        {isPanMode ? 'Panning…' : 'Hold Ctrl to pan'}
+                    </span>
                     <button
                         onClick={resetTransform}
                         className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)]/80 backdrop-blur px-2 py-1 rounded-md hover:text-white hover:bg-[var(--color-surface)] transition-colors"
                         title="Reset zoom and position"
                     >
-                        Reset view
+                        Reset Zoom
                     </button>
                     <div className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)]/80 backdrop-blur px-2 py-1 rounded-md pointer-events-none">
                         {Math.round(transform.scale * 100)}%

@@ -1,3 +1,4 @@
+# main.py
 """
 QuantumBrush — pywebview desktop entry point.
 
@@ -14,6 +15,12 @@ import webview
 
 from backend.api import Api
 
+def expose_functions(window):
+    try:
+        window.evaluate_js('console.log("pywebview API ready:", window.pywebview !== undefined)')
+    except Exception as e:
+        print(f"JS eval error: {e}")
+    print("Window created, API should be available")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -31,7 +38,8 @@ def main():
             sys.exit(1)
         url = dist_path.resolve().as_uri()
 
-    webview.create_window(
+    # Create window with js_api
+    window = webview.create_window(
         "QuantumBrush",
         url=url,
         js_api=api,
@@ -41,7 +49,7 @@ def main():
         background_color="#0a0a0f",
     )
 
-    webview.start(debug=args.dev)
+    webview.start(expose_functions, window, debug=True, gui="qtk")
 
 
 if __name__ == "__main__":

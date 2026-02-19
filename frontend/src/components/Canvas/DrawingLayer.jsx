@@ -1,15 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import { useAppStore } from '../../store/appStore.js'
 
-/**
- * DrawingLayer — transparent SVG overlay that captures pointer events
- * and converts them to stroke paths in image coordinates.
- *
- * Props:
- *   width, height  — image dimensions in pixels
- *   scale          — current canvas scale factor (used only for stroke width display)
- */
-export default function DrawingLayer({ width, height, scale }) {
+export default function DrawingLayer({ width, height, scale, isPanMode, onPanStart, onPanMove, onPanEnd }) {
     const addStroke = useAppStore((s) => s.addStroke)
     const undoLastStroke = useAppStore((s) => s.undoLastStroke)
     const selectedEffectId = useAppStore((s) => s.selectedEffectId)
@@ -35,9 +27,6 @@ export default function DrawingLayer({ width, height, scale }) {
     const getImageCoords = useCallback(
         (e) => {
             const rect = svgRef.current.getBoundingClientRect()
-            // rect.width/height is the rendered size (natural size * CSS scale).
-            // Dividing by rect dimensions and multiplying by image dimensions
-            // gives us true image-space coordinates regardless of zoom or pan.
             return [
                 Math.round((e.clientX - rect.left) / rect.width * width),
                 Math.round((e.clientY - rect.top) / rect.height * height),
@@ -48,19 +37,29 @@ export default function DrawingLayer({ width, height, scale }) {
 
     const onPointerDown = useCallback(
         (e) => {
-            if (!selectedEffectId) return
             if (e.button !== 0) return
             e.preventDefault()
             e.currentTarget.setPointerCapture(e.pointerId)
+
+            if (isPanMode) {
+                onPanStart(e.clientX, e.clientY)
+                return
+            }
+
+            if (!selectedEffectId) return
             drawing.current = true
             const pt = getImageCoords(e)
             setCurrentPath([pt])
         },
-        [selectedEffectId, getImageCoords]
+        [isPanMode, selectedEffectId, getImageCoords, onPanStart]
     )
 
     const onPointerMove = useCallback(
         (e) => {
+            if (isPanMode) {
+                onPanMove(e.clientX, e.clientY)
+                return
+            }
             if (!drawing.current) return
             const pt = getImageCoords(e)
             setCurrentPath((prev) => {
@@ -70,11 +69,15 @@ export default function DrawingLayer({ width, height, scale }) {
                 return [...prev, pt]
             })
         },
-        [getImageCoords]
+        [isPanMode, getImageCoords, onPanMove]
     )
 
     const onPointerUp = useCallback(
         (e) => {
+            if (isPanMode) {
+                onPanEnd()
+                return
+            }
             if (!drawing.current) return
             drawing.current = false
             const finalPath = currentPath
@@ -84,7 +87,7 @@ export default function DrawingLayer({ width, height, scale }) {
             }
             setCurrentPath([])
         },
-        [currentPath, addStroke]
+        [isPanMode, currentPath, addStroke, onPanEnd]
     )
 
     // Sync preview paths with undo
@@ -99,8 +102,6 @@ export default function DrawingLayer({ width, height, scale }) {
         })
     }, [layers])
 
-    // Paths are stored in image coords. SVG viewBox matches image dimensions,
-    // so no manual coordinate scaling needed at all — SVG handles it via viewBox.
     const pathToD = (pts) => {
         if (pts.length === 0) return ''
         return pts
@@ -111,23 +112,20 @@ export default function DrawingLayer({ width, height, scale }) {
     return (
         <svg
             ref={svgRef}
-            // Natural image size — the parent CSS transform scales it visually
             width={width}
             height={height}
-            // viewBox matches so coordinates == image pixels, no math needed
             viewBox={`0 0 ${width} ${height}`}
             style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                cursor: selectedEffectId ? 'crosshair' : 'default',
+                cursor: 'inherit',
                 touchAction: 'none',
             }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
         >
-            {/* Committed preview paths (dashed) */}
             {previewPaths.map((pts, i) => (
                 <path
                     key={i}
@@ -140,7 +138,6 @@ export default function DrawingLayer({ width, height, scale }) {
                     strokeLinejoin="round"
                 />
             ))}
-            {/* Current in-progress stroke */}
             {currentPath.length > 1 && (
                 <path
                     d={pathToD(currentPath)}

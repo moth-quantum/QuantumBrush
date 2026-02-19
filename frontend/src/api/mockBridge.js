@@ -95,7 +95,6 @@ export async function list_effects() {
 export async function open_image_dialog() {
     // In browser, we can't open a native dialog, so we return null
     // The UI handles the null case gracefully and falls back to the drag-drop
-    await delay(50)
     return null
 }
 

@@ -28,7 +28,7 @@ class Api:
 
     # ── Effects ────────────────────────────────────────────────────
 
-    def list_effects(self) -> list:
+    def list_effects(self):
         """Return all available effect descriptors from effects/ subdirectories."""
         effects = []
         for subdir in sorted(EFFECTS_DIR.iterdir()):
@@ -47,7 +47,7 @@ class Api:
 
     # ── Image ──────────────────────────────────────────────────────
 
-    def open_image_dialog(self) -> dict | None:
+    def open_image_dialog(self):
         """Open a native file dialog and return the image as base64 + dimensions."""
         result = webview.windows[0].create_file_dialog(
             webview.OPEN_DIALOG,
@@ -76,7 +76,7 @@ class Api:
 
     # ── Effect Processing ──────────────────────────────────────────
 
-    def run_effect(self, effect_id: str, stroke_input: dict, user_input: dict) -> dict:
+    def run_effect(self, effect_id: str, stroke_input: dict, user_input: dict):
         """
         Start a background subprocess to apply an effect.
         Returns {job_id} immediately. Poll get_job_status for progress.
@@ -146,10 +146,15 @@ class Api:
                         self._jobs[job_id]["progress"] = 1.0
                         self._jobs[job_id]["result"] = b64
             else:
-                print(f"[api] Job {job_id} failed:\n{stderr.decode()}")
+                error_msg = stderr.decode()
+                stdout_msg = stdout.decode()
+                if stdout_msg:
+                    print(f"[api] Job {job_id} stdout:\n{stdout_msg}")
+                print(f"[api] Job {job_id} failed:\n{error_msg}")
                 with self._lock:
                     if job_id in self._jobs:
                         self._jobs[job_id]["status"] = "error"
+                        self._jobs[job_id]["result"] = error_msg  # ← send error to UI too
 
         except Exception as e:
             print(f"[api] Exception in job {job_id}: {e}")
@@ -157,7 +162,7 @@ class Api:
                 if job_id in self._jobs:
                     self._jobs[job_id]["status"] = "error"
 
-    def get_job_status(self, job_id: str) -> dict:
+    def get_job_status(self, job_id: str):
         with self._lock:
             job = self._jobs.get(job_id)
         if not job:
@@ -168,7 +173,7 @@ class Api:
             "result": job["result"],
         }
 
-    def abort_job(self, job_id: str) -> dict:
+    def abort_job(self, job_id: str):
         with self._lock:
             job = self._jobs.get(job_id)
             if job and job.get("process"):
@@ -182,7 +187,7 @@ class Api:
 
     # ── Export ─────────────────────────────────────────────────────
 
-    def export_image(self, merged_base64: str) -> dict:
+    def export_image(self, merged_base64: str):
         """Open a native save dialog and write the merged PNG."""
         result = webview.windows[0].create_file_dialog(
             webview.SAVE_DIALOG,
