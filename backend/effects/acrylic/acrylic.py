@@ -2,7 +2,8 @@ import numpy as np
 import time  # Added proper import for sleep functionality
 import importlib.util
 
-spec = importlib.util.spec_from_file_location("utils", "effect/utils.py")
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("utils", Path(__file__).parents[2] / "utils.py")
 utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 

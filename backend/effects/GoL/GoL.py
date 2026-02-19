@@ -9,7 +9,8 @@ from qiskit_aer import Aer, statevector_simulator
 from qiskit.quantum_info import partial_trace
 import colorsys
 
-spec = importlib.util.spec_from_file_location("utils", "effect/utils.py")
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("utils", Path(__file__).parents[2] / "utils.py")
 utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 #%%

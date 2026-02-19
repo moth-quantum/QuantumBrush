@@ -152,10 +152,28 @@ export const useAppStore = create((set, get) => ({
         }))
 
         try {
+            const adjustedStrokes = [...layer.strokes]
+            // For effects that use a lasso (like Collage/clone), ensure the first stroke is closed
+            // to avoid straight-line artifacts from the last to first point being handled roughly by the backend.
+            if (layer.effectId === 'clone' || (layer.effectId === 'GoL' && layer.settings.Radius === 0)) {
+                if (adjustedStrokes.length > 0) {
+                    const first = adjustedStrokes[0]
+                    if (first.length > 2) {
+                        const start = first[0]
+                        const end = first[first.length - 1]
+                        if (start[0] !== end[0] || start[1] !== end[1]) {
+                            adjustedStrokes[0] = [...first, start]
+                        }
+                    }
+                }
+            }
+
             const strokeInput = {
-                strokes: layer.strokes,
+                path: adjustedStrokes.flat(),
+                clicks: adjustedStrokes.map((s) => s[0]),
                 image_width: image?.width ?? 800,
                 image_height: image?.height ?? 600,
+                image_b64: image?.src?.split(',')[1],
             }
             const { job_id } = await api.runEffect(layer.effectId, strokeInput, layer.settings)
 

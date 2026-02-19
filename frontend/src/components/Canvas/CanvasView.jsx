@@ -163,6 +163,10 @@ export default function CanvasView() {
         reader.readAsDataURL(file)
     }, [setImage])
 
+    const selectedEffectId = useAppStore((s) => s.selectedEffectId)
+    const effects = useAppStore((s) => s.effects)
+    const selectedEffect = effects.find((e) => e.id === selectedEffectId)
+
     const cursor = isPanMode ? (isActivePan ? 'grabbing' : 'grab') : 'default'
 
     return (
@@ -223,22 +227,35 @@ export default function CanvasView() {
                 </div>
             )}
 
+            {/* Zoom level indicator */}
+            <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl transition-all duration-300 pointer-events-none">
+                <span className="text-[10px] font-bold text-white/50 tracking-wider">ZOOM</span>
+                <span className="text-xs font-mono font-medium text-[var(--color-brand)]">{Math.round(transform.scale * 100)}%</span>
+            </div>
+
+            {/* Effect Instructions Hint */}
+            {selectedEffect?.usage_instructions && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-700 pointer-events-none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[var(--color-brand)]">
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <span className="text-xs font-medium text-white/90">{selectedEffect.usage_instructions}</span>
+                </div>
+            )}
+
             {image && (
                 <div className="absolute bottom-3 right-3 flex items-center gap-3">
-                    {/* Context hint — swap message here for other modes in the future */}
+                    {/* Context hint */}
                     <span className="text-xs text-[var(--color-text-muted)]/50 pointer-events-none select-none">
                         {isPanMode ? 'Panning…' : 'Hold Ctrl to pan'}
                     </span>
                     <button
                         onClick={resetTransform}
-                        className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)]/80 backdrop-blur px-2 py-1 rounded-md hover:text-white hover:bg-[var(--color-surface)] transition-colors"
+                        className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)]/80 backdrop-blur px-2.5 py-1.5 rounded-lg border border-white/5 hover:text-white hover:bg-[var(--color-surface)] transition-all active:scale-95"
                         title="Reset zoom and position"
                     >
-                        Reset Zoom
+                        Reset View
                     </button>
-                    <div className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)]/80 backdrop-blur px-2 py-1 rounded-md pointer-events-none">
-                        {Math.round(transform.scale * 100)}%
-                    </div>
                 </div>
             )}
         </div>

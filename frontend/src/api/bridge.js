@@ -10,7 +10,7 @@ let isPywebviewReady = false;
 let pendingCalls = [];
 
 window.addEventListener('pywebviewready', function () {
-    console.log("readyyyyy")
+    console.log("ready")
     testApiConnection();
 })
 

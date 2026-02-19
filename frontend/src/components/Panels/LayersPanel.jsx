@@ -197,13 +197,49 @@ function LayerCard({ layer }) {
                 </div>
 
                 {/* Action buttons */}
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex flex-col gap-2">
+                    {(() => {
+                        const effect = useAppStore.getState().effects.find(e => e.id === layer.effectId)
+                        if (!effect || layer.status !== 'idle') return null
+
+                        const count = layer.strokes.length
+                        const min = effect.min_strokes ?? 1
+                        const max = effect.max_strokes
+
+                        let warning = null
+                        if (count < min) {
+                            warning = `Requires at least ${min} stroke${min === 1 ? '' : 's'}`
+                        } else if (max && count > max) {
+                            warning = `Max ${max} stroke${max === 1 ? '' : 's'} allowed`
+                        }
+
+                        if (!warning) return null
+
+                        return (
+                            <div className="text-[10px] bg-red-500/10 text-red-400 p-2 rounded border border-red-500/20 leading-tight">
+                                ⚠️ {warning}. You have {count}.
+                            </div>
+                        )
+                    })()}
+
                     {(layer.status === 'idle' || layer.status === 'aborted' || layer.status === 'error') && (
                         <button
                             onClick={() => runLayer(layer.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium
-                bg-[var(--color-brand)]/20 text-[var(--color-brand)] border border-[var(--color-brand)]/30
-                hover:bg-[var(--color-brand)]/30 transition-colors"
+                            disabled={(() => {
+                                const effect = useAppStore.getState().effects.find(e => e.id === layer.effectId)
+                                if (!effect) return false
+                                const count = layer.strokes.length
+                                return count < (effect.min_strokes ?? 1) || (effect.max_strokes && count > effect.max_strokes)
+                            })()}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors
+                                ${(() => {
+                                    const effect = useAppStore.getState().effects.find(e => e.id === layer.effectId)
+                                    const count = layer.strokes.length
+                                    const disabled = effect && (count < (effect.min_strokes ?? 1) || (effect.max_strokes && count > effect.max_strokes))
+                                    return disabled
+                                        ? 'bg-neutral-800 text-neutral-600 border border-neutral-700 cursor-not-allowed'
+                                        : 'bg-[var(--color-brand)]/20 text-[var(--color-brand)] border border-[var(--color-brand)]/30 hover:bg-[var(--color-brand)]/30'
+                                })()}`}
                         >
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                                 <polygon points="5,3 19,12 5,21" />

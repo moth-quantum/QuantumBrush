@@ -95,6 +95,13 @@ class Api:
         # Write instruction to a temp file
         tmp_dir = BACKEND_DIR / "tmp"
         tmp_dir.mkdir(exist_ok=True)
+
+        # Save the input image for apply_effect.py to pick up
+        if "image_b64" in stroke_input:
+            img_data = base64.b64decode(stroke_input.pop("image_b64"))
+            with open(tmp_dir / f"{job_id}_input.png", "wb") as f:
+                f.write(img_data)
+
         instr_path = tmp_dir / f"{job_id}.json"
         with open(instr_path, "w") as f:
             json.dump(instruction, f)
@@ -137,8 +144,17 @@ class Api:
                 output_path = BACKEND_DIR / "tmp" / f"{job_id}_output.png"
                 if output_path.exists():
                     b64 = base64.b64encode(output_path.read_bytes()).decode("utf-8")
+                    try:
+                        os.remove(output_path)
+                    except: pass
                 else:
                     b64 = None
+
+                # Cleanup input files
+                try:
+                    os.remove(instr_path)
+                    os.remove(BACKEND_DIR / "tmp" / f"{job_id}_input.png")
+                except: pass
 
                 with self._lock:
                     if job_id in self._jobs:
@@ -151,6 +167,11 @@ class Api:
                 if stdout_msg:
                     print(f"[api] Job {job_id} stdout:\n{stdout_msg}")
                 print(f"[api] Job {job_id} failed:\n{error_msg}")
+                # Cleanup input files
+                try:
+                    os.remove(instr_path)
+                    os.remove(BACKEND_DIR / "tmp" / f"{job_id}_input.png")
+                except: pass
                 with self._lock:
                     if job_id in self._jobs:
                         self._jobs[job_id]["status"] = "error"
