@@ -1,5 +1,28 @@
-DS_Store
-metadata
-project
-log
-config
+# OS
+.DS_Store
+
+# Data directories
+metadata/
+project/
+log/
+config/
+
+# Node
+node_modules/
+dist/
+
+# Rust/Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+.metals/
+*.swp
+
+.venv/

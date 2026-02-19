@@ -1,0 +1,19 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for QuantumBrush",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:event:allow-emit",
+    "core:event:allow-listen",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "fs:default",
+    "fs:allow-read",
+    "fs:allow-write",
+    "shell:default",
+    "shell:allow-open"
+  ]
+}
