@@ -30,6 +30,9 @@ class Api:
     def __init__(self):
         self._jobs: dict[str, dict] = {}  # job_id -> {process, status, result}
         self._lock = threading.Lock()
+        self._maximized = False
+        self._window = None
+        self._original_size = None
 
     # ── Effects ────────────────────────────────────────────────────
 
@@ -242,9 +245,13 @@ class Api:
         webview.windows[0].minimize()
 
     def toggle_maximize(self):
-        # pywebview doesn't have a direct 'is_maximized' check in all versions, 
-        # but we can try to resize/maximize
-        # For simplicity, we just toggle or call maximize
-        # webview.windows[0].maximize() is usually enough
-        # Some versions support state checks, but let's keep it simple
-        webview.windows[0].maximize() if not hasattr(webview.windows[0], 'maximized') or not webview.windows[0].maximized else webview.windows[0].restore()
+        self._maximized = not self._maximized
+        if self._maximized:
+            print("[api] Maximizing window...")
+            webview.windows[0].maximize()
+        else:
+            print("[api] Restoring window...")
+            if self._original_size:
+                width, height = self._original_size
+                webview.window[0].restore()
+                webview.windows[0].resize(width, height, fix_point=webview.window.FixPoint.NORTH | webview.window.FixPoint.WEST)

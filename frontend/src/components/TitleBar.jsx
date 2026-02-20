@@ -1,24 +1,21 @@
 import { useAppStore } from '../store/appStore'
 
 export default function TitleBar() {
-    const closeWindow = () => window.pywebview?.api?.close_window?.()
-    const minimizeWindow = () => window.pywebview?.api?.minimize_window?.()
-    const maximizeWindow = () => window.pywebview?.api?.maximize_window?.()
-
     return (
-        <div className="h-8 flex items-center justify-between bg-[var(--color-surface)] border-b border-[var(--color-border)] select-none">
-            {/* Drag Region */}
-            <div className="flex-1 h-full flex items-center px-3 pywebview-drag-region cursor-default">
-                <div className="flex items-center gap-2">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
-                    <span className="text-[10px] font-bold tracking-widest text-[var(--color-text-muted)] uppercase">QuantumBrush</span>
-                </div>
+        <div
+            className="pywebview-drag-region h-8 flex items-center justify-between bg-[var(--color-surface)] border-b border-[var(--color-border)] cursor-move z-50 select-none"
+            onDoubleClick={() => window.pywebview?.api?.toggle_maximize()}
+        >
+            {/* Logo area */}
+            <div className="flex items-center gap-2 px-3 pointer-events-none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+                <span className="text-[10px] font-bold tracking-widest text-[var(--color-text-muted)] uppercase">QuantumBrush</span>
             </div>
 
             {/* Window Controls */}
-            <div className="flex h-full">
+            <div className="flex h-full no-drag pointer-events-auto">
                 <button
                     onClick={() => window.pywebview?.api?.minimize_window()}
                     className="w-10 h-full flex items-center justify-center hover:bg-white/5 text-[var(--color-text-muted)] transition-colors"

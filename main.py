@@ -71,9 +71,13 @@ def main():
         min_size=(900, 600),
         background_color="#0a0a0f",
         frameless=True,
+        easy_drag=False,
     )
 
-    # Debug mode is enabled if --dev is passed OR QB_DEBUG environment variable is set
+    api._window = window
+    api._maximized = False
+    api._original_size = (1400, 900)
+
     debug = args.dev or os.getenv("QB_DEBUG", "false").lower() in ("true", "1", "yes")
     
     icon_path = str(BASE_DIR / "assets/icon.png")

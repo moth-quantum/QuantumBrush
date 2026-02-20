@@ -7,4 +7,4 @@ VITE_BACKEND=native bun run build
 cd ..
 
 echo "Starting QuantumBrush (Native Backend)..."
-QB_DEBUG=true python3 main.py
+QB_DEBUG=false python3 main.py
