@@ -1,0 +1,44 @@
+{
+    "name": "Superposition",
+    "id": "superposition",
+    "author": "Antigravity",
+    "version": "1.0.0",
+    "long_description": "The Superposition brush visualizes the quantum mechanical principle of superposition, where a particle can exist in multiple states simultaneously until observed. When you draw a stroke, the brush uses a quantum circuit with Hadamard gates to generate multiple simultaneous brush traces, spread out probabilistically. The stroke is split into 'ghost' states, representing the quantum probability distribution.",
+    "description": "Visualizes quantum superposition by scattering the brush path into multiple simultaneous probabilistic ghost paths.\n\nParameters:\n \ud83d\udd39 Radius \u2192 sets the size of each ghost stroke\n \ud83d\udd39 Strength \u2192 controls the opacity of the ghost strokes\n \ud83d\udd39 Spread \u2192 defines how far apart the superposition states are distributed\n \ud83d\udd39 Color \u2192 sets the base color of the brush",
+    "dependencies": {
+        "numpy": ">=1.20.0",
+        "qiskit": ">=1.0.0",
+        "qiskit_aer": ">=0.17.0"
+    },
+    "user_input": {
+        "Radius": {
+            "type": "int",
+            "min": 1,
+            "max": 50,
+            "default": 10
+        },
+        "Strength": {
+            "type": "float",
+            "min": 0.1,
+            "max": 1.0,
+            "default": 0.5
+        },
+        "Spread": {
+            "type": "int",
+            "min": 1,
+            "max": 100,
+            "default": 30
+        },
+        "Color": {
+            "type": "color",
+            "default": "#00FFFF"
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}
