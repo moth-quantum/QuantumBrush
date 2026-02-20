@@ -2,7 +2,6 @@ import numpy as np
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 import importlib.util
-import os
 
 spec = importlib.util.spec_from_file_location("utils", "effect/utils.py")
 utils = importlib.util.module_from_spec(spec)
