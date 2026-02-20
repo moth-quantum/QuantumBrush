@@ -50,3 +50,4 @@ pnpm-debug.log*
 
 build/*
 dist/*
+backend/tmp/*

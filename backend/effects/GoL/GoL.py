@@ -8,11 +8,7 @@ from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 from qiskit_aer import Aer, statevector_simulator
 from qiskit.quantum_info import partial_trace
 import colorsys
-
-from pathlib import Path
-spec = importlib.util.spec_from_file_location("utils", Path(__file__).parents[2] / "utils.py")
-utils = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(utils)
+from backend import utils
 #%%
 mapping = ['hsv','hvs','shv','svh','vhs','vsh']
 

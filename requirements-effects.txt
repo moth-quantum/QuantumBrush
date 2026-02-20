@@ -1,0 +1,8 @@
+# Auto-generated from effect JSONs
+colorsys
+matplotlib
+numpy>=2.1.0
+qiskit>=1.0.0
+qiskit_aer>=0.17.0
+qiskit_ibm_runtime>=0.20.0
+scipy

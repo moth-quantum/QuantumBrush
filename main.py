@@ -14,6 +14,16 @@ from pathlib import Path
 
 import webview
 
+# Handle path resolution for development and frozen (PyInstaller) modes
+if hasattr(sys, '_MEIPASS'):
+    BASE_DIR = Path(sys._MEIPASS)
+else:
+    BASE_DIR = Path(__file__).resolve().parent
+
+# Ensure the base directory is in sys.path for absolute imports to work
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 from backend.api import Api
 
 def expose_functions(window):
@@ -24,22 +34,18 @@ def expose_functions(window):
     print("Window created, API should be available")
 
 def main():
-    # PyInstaller Worker Dispatcher
-    # When bundled, sys.executable is the app itself. We need to handle 
-    # the case where the app is called to run a backend script as a subprocess.
-    if len(sys.argv) > 1 and "apply_effect.py" in sys.argv[1]:
-        # We are being called as a worker process.
-        # Shift args to remove the script path and pass the rest to the worker handler.
-        worker_script = sys.argv[1]
-        json_path = sys.argv[2] if len(sys.argv) > 2 else None
+    # Silent Module Dispatcher (Fixes PyInstaller background workers)
+    # If the app is launched with "-m backend.apply_effect", we run that module and exit.
+    if len(sys.argv) > 2 and sys.argv[1] == "-m":
+        import runpy
+        module_name = sys.argv[2]
+        # Ensure the base directory is in sys.path
+        if str(BASE_DIR) not in sys.path:
+            sys.path.insert(0, str(BASE_DIR))
         
-        # Load and execute apply_effect logic manually
-        # This avoids the "unrecognized arguments" error from the main argparse
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("worker", worker_script)
-        worker_module = importlib.util.module_from_spec(spec)
-        sys.argv = [sys.argv[0], json_path] # Mock sys.argv for the worker
-        spec.loader.exec_module(worker_module)
+        # Shift remaining args so the target module sees its own arguments correctly
+        sys.argv = sys.argv[2:] 
+        runpy.run_module(module_name, run_name="__main__")
         return
 
     parser = argparse.ArgumentParser(description="QuantumBrush Desktop App")
@@ -50,12 +56,8 @@ def main():
     if args.dev:
         url = "http://localhost:5173"
     else:
-        # Use local file if not in dev mode
-        dist_path = Path(__file__).parent / "frontend/dist/index.html"
-        if not dist_path.exists():
-            # Fallback for PyInstaller bundle context
-            dist_path = Path(sys._MEIPASS) / "frontend/dist/index.html" if hasattr(sys, '_MEIPASS') else dist_path
-        url = str(dist_path)
+        # Use bundled dist in production
+        url = str(BASE_DIR / "frontend/dist/index.html")
 
     api = Api()
 
@@ -74,7 +76,8 @@ def main():
     # Debug mode is enabled if --dev is passed OR QB_DEBUG environment variable is set
     debug = args.dev or os.getenv("QB_DEBUG", "false").lower() in ("true", "1", "yes")
     
-    webview.start(expose_functions, window, debug=debug, gui="gtk", icon="assets/icon.png")
+    icon_path = str(BASE_DIR / "assets/icon.png")
+    webview.start(expose_functions, window, debug=debug, gui="gtk", icon=icon_path)
 
 
 if __name__ == "__main__":

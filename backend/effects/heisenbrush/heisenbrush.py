@@ -2,12 +2,7 @@ import numpy as np
 import colorsys
 from qiskit import QuantumCircuit, QuantumRegister, generate_preset_pass_manager
 from qiskit.quantum_info import SparsePauliOp
-import importlib.util
-
-from pathlib import Path
-spec = importlib.util.spec_from_file_location("utils", Path(__file__).parents[2] / "utils.py")
-utils = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(utils)
+from backend import utils
 
 
 def scale_to_range(x, in_min=1, in_max=100, out_min=2, out_max=10):

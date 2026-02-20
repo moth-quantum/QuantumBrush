@@ -17,7 +17,12 @@ from pathlib import Path
 
 import webview  # pywebview
 
-BACKEND_DIR = Path(__file__).parent
+if hasattr(sys, '_MEIPASS'):
+    BASE_DIR = Path(sys._MEIPASS)
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
+BACKEND_DIR = BASE_DIR / "backend"
 EFFECTS_DIR = BACKEND_DIR / "effects"
 
 
@@ -92,9 +97,8 @@ class Api:
             "user_input": user_input,
         }
 
-        # Write instruction to a temp file
-        tmp_dir = BACKEND_DIR / "tmp"
-        tmp_dir.mkdir(exist_ok=True)
+        # Write instruction to a temp file in the system temp directory
+        tmp_dir = Path(tempfile.gettempdir())
 
         # Save the input image for apply_effect.py to pick up
         if "image_b64" in stroke_input:
@@ -125,13 +129,13 @@ class Api:
         return {"job_id": job_id}
 
     def _run_subprocess(self, job_id: str, instr_path: Path):
-        script = BACKEND_DIR / "apply_effect.py"
         try:
+            # Execute as a module to handle imports correctly
             proc = subprocess.Popen(
-                [sys.executable, str(script), str(instr_path)],
+                [sys.executable, "-m", "backend.apply_effect", str(instr_path)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=str(BACKEND_DIR),
+                cwd=str(BASE_DIR),
             )
             with self._lock:
                 if job_id in self._jobs:
@@ -141,7 +145,8 @@ class Api:
 
             if proc.returncode == 0:
                 # Load result PNG as base64
-                output_path = BACKEND_DIR / "tmp" / f"{job_id}_output.png"
+                tmp_dir = Path(tempfile.gettempdir())
+                output_path = tmp_dir / f"{job_id}_output.png"
                 if output_path.exists():
                     b64 = base64.b64encode(output_path.read_bytes()).decode("utf-8")
                     try:
@@ -153,7 +158,7 @@ class Api:
                 # Cleanup input files
                 try:
                     os.remove(instr_path)
-                    os.remove(BACKEND_DIR / "tmp" / f"{job_id}_input.png")
+                    os.remove(tmp_dir / f"{job_id}_input.png")
                 except: pass
 
                 with self._lock:
@@ -169,8 +174,9 @@ class Api:
                 print(f"[api] Job {job_id} failed:\n{error_msg}")
                 # Cleanup input files
                 try:
+                    tmp_dir = Path(tempfile.gettempdir())
                     os.remove(instr_path)
-                    os.remove(BACKEND_DIR / "tmp" / f"{job_id}_input.png")
+                    os.remove(tmp_dir / f"{job_id}_input.png")
                 except: pass
                 with self._lock:
                     if job_id in self._jobs:

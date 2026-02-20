@@ -2,12 +2,7 @@ import numpy as np
 from qiskit import QuantumCircuit, generate_preset_pass_manager
 from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector,partial_trace
 from qiskit.circuit.library import RXGate, RZGate,XGate,ZGate,IGate,StatePreparation
-import importlib.util
-
-from pathlib import Path
-spec = importlib.util.spec_from_file_location("utils", Path(__file__).parents[2] / "utils.py")
-utils = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(utils)
+from backend import utils
 
 def prep(s0,s1=None): #s0 is the final state and s1 is the initial state
     if s1 is None:

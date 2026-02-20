@@ -1,21 +1,18 @@
+import sys
+from pathlib import Path
 from copy import copy
 import json
 import importlib
 import importlib.util
-from pathlib import Path
 import traceback
 import numpy as np
 from PIL import Image
-import numpy as np
-import sys 
 import argparse
 import os
 import time
-from utils import *
+from backend.utils import *
+import tempfile
 import contextlib
-
-backend_path = Path(__file__).parent  # Path to the backend folder
-app_path = backend_path.parent         # Path to the project root
 
 def process_variable(var_type: str, variable: any):
     match var_type:
@@ -52,6 +49,8 @@ def process_variable(var_type: str, variable: any):
             raise ValueError(f"Unsupported type: {var_type}")
 
 
+from backend.effects.registry import EFFECT_REGISTRY
+
 def process_effect(instr: dict):
     # Extract stroke_id and project_id from instructions
     stroke_id = instr.get("stroke_id", False)
@@ -60,40 +59,27 @@ def process_effect(instr: dict):
     if not stroke_id or not project_id:
         raise ValueError("stroke_id and project_id must be provided in the instructions.")
     
-    project_path = app_path / f"project/{project_id}"
-  
-    # Get effect_id and load requirements
+    # Get effect_id and look it up in the registry
     effect_id = instr.get("effect_id")
+    if effect_id not in EFFECT_REGISTRY:
+        raise ValueError(f"Effect '{effect_id}' not found in registry.")
+    
+    # Deep copy the config to avoid mutating global registry state
+    req = copy(EFFECT_REGISTRY[effect_id]["config"])
 
-    effect_path = backend_path / f"effects/{effect_id}"
-    req_path = effect_path / f"{effect_id}_requirements.json"
-
-    with open(req_path, 'r') as req_file:
-        req = json.load(req_file)
-
-    # Check dependencies with version control
-    for dependency, version in req.get("dependencies", {}).items():
-        try:
-            module = importlib.import_module(dependency)
-            #TODO: Check that the version is correct
-                
-        except ImportError as e:
-            raise ImportError(f"Failed to load dependency {dependency}: {e}")
-
-    # Process image — the api.py sends image as base64 in stroke_input["image_b64"]
-    # or falls back to a file path for legacy compatibility
+    # Process image
     if "image_b64" in instr.get("stroke_input", {}):
         import base64, io
         img_data = base64.b64decode(instr["stroke_input"]["image_b64"])
         with Image.open(io.BytesIO(img_data)) as img:
             req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA"))
     else:
-        image_path = backend_path / f"tmp/{stroke_id}_input.png"
+        # Fallback to system temp folder
+        image_path = Path(tempfile.gettempdir()) / f"{stroke_id}_input.png"
         if not image_path.is_file():
             raise FileNotFoundError(f"Image file not found at {image_path}")
         with Image.open(image_path) as img:
             req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA"))
-
 
     # Process user_input and stroke_input
     for key in req["user_input"]:
@@ -104,30 +90,26 @@ def process_effect(instr: dict):
 
     for key in req["stroke_input"]:
         if key == "image_rgba":
-            continue # Skip image_rgba as it's already processed
+            continue
 
         if key not in instr["stroke_input"]:
             raise KeyError(f"Key '{key}' not found in stroke_input of stroke instructions.")
         
         req["stroke_input"][key] = process_variable(req["stroke_input"][key], instr["stroke_input"][key])
 
-        # I need to rotate clicks and paths into (y,x) format
-        if ( key == "clicks" or key == "path" ):
+        if key == "clicks" or key == "path":
             req["stroke_input"][key] = req["stroke_input"][key][..., ::-1]
 
-
     # Process any other flags
-    
-    if req["flags"].get("smooth_path", False):
+    if req.get("flags", {}).get("smooth_path", False):
         req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
 
-    if req["flags"].get("use_hls", False):
+    if req.get("flags", {}).get("use_hls", False):
         req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
 
-    # Add a few flags needed to apply the effects
+    # Add execution metadata
     req["effect_id"] = effect_id
-    req["effect_script_path"] = effect_path / f"{effect_id}.py"
-    req["stroke_output_path"] = backend_path / f"tmp/{stroke_id}_output.png"
+    req["stroke_output_path"] = Path(tempfile.gettempdir()) / f"{stroke_id}_output.png"
 
     return req
 
@@ -135,11 +117,9 @@ def apply_effect(req: dict):
     # Save the input image to apply mask
     input_image = copy(req["stroke_input"]["image_rgba"])
 
-    # Load and execute the effect
-    spec = importlib.util.spec_from_file_location(req["effect_id"], req["effect_script_path"])
-    effect_module = importlib.util.module_from_spec(spec)
-    sys.modules[req["effect_id"]] = effect_module
-    spec.loader.exec_module(effect_module)
+    # Execute the effect using the registry module
+    effect_id = req["effect_id"]
+    effect_module = EFFECT_REGISTRY[effect_id]["module"]
 
     new_image = effect_module.run(req)
 
@@ -147,15 +127,17 @@ def apply_effect(req: dict):
     mask = np.all(new_image == input_image, axis=-1)  
     new_image[mask] = [0, 0, 0, 0]  # Set differing pixels to [0, 0, 0, 0]
     
-    output_path = req["stroke_output_path"]
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
+    output_path = Path(req["stroke_output_path"])
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
 
     return True
 
+    return True
+
 def record_error(error):
-    log_file = app_path / "log/error.log"
-    log_file.parent.mkdir(parents=True, exist_ok=True)  # Ensure log directory exists
+    log_file = Path(tempfile.gettempdir()) / "quantum_brush_error.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
 
     error_message = traceback.format_exc()
     
@@ -197,19 +179,18 @@ class Tee:
 
 
 if __name__ == "__main__":
-    
-    log_output_file = app_path / "log/console_output.log"
+    # Standard entry point for standalone execution
+    parser = argparse.ArgumentParser(description="Apply an effect to a stroke in a project.")
+    parser.add_argument("stroke_path", type=str, help="The ID of the stroke.")
+    args = parser.parse_args()
+
+    log_output_file = Path(tempfile.gettempdir()) / "quantum_brush_console.log"
     log_output_file.parent.mkdir(parents=True, exist_ok=True)
     log_fh = open(log_output_file, "a")
 
     sys.stdout = Tee(sys.stdout, log_fh)
     sys.stderr = Tee(sys.stderr, log_fh)
     
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Apply an effect to a stroke in a project.")
-    parser.add_argument("stroke_path", type=str, help="The ID of the stroke.")
-    args = parser.parse_args()
-
     success = False
     instructions = {}
 
@@ -217,7 +198,7 @@ if __name__ == "__main__":
         if not Path(args.stroke_path).is_file():
             raise FileNotFoundError(f"Stroke file not found at {args.stroke_path}")
 
-        #Read the stroke instructions from the provided path
+        # Read the stroke instructions from the provided path
         with open(args.stroke_path, 'r') as stroke_file:
             instructions = json.load(stroke_file)
 
@@ -225,13 +206,13 @@ if __name__ == "__main__":
         dump_json(instructions, args.stroke_path)
 
         try:
-            #Process the effect
+            # Process the effect
             data = process_effect(instructions)
 
             instructions["effect_processed"] = True
             dump_json(instructions, args.stroke_path)
 
-            #Apply the effect
+            # Apply the effect
             success = apply_effect(data)
 
             instructions["effect_success"] = success
@@ -255,9 +236,7 @@ if __name__ == "__main__":
             instructions["effect_success"] = False
             dump_json(instructions, args.stroke_path)
         success = False
-        # Redirect stdout and stderr to a log file
 
-    
     if success:
         print("Effect applied successfully.")
         sys.exit(0)

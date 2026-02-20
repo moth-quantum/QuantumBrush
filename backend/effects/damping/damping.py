@@ -3,13 +3,8 @@ import numpy as np
 import colorsys
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector
-import importlib.util
 from scipy.stats import circmean
-
-from pathlib import Path
-spec = importlib.util.spec_from_file_location("utils", Path(__file__).parents[2] / "utils.py")
-utils = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(utils)
+from backend import utils
 
 
 def damping(initial_angles, strength,invert = False):

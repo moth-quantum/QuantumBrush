@@ -5,11 +5,7 @@ from qiskit import QuantumCircuit
 from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector, entropy, partial_trace
 import importlib.util
 from scipy.stats import circmean
-
-from pathlib import Path
-spec = importlib.util.spec_from_file_location("utils", Path(__file__).parents[2] / "utils.py")
-utils = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(utils)
+from backend import utils
 
 
 def drop(initial_angles, target_angle,strength):
