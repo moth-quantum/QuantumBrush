@@ -15,8 +15,7 @@ window.addEventListener('pywebviewready', function () {
 })
 
 export const isPywebview = () => {
-    // Check for pywebview global object (not window.pywebview as per docs)
-    return true
+    return import.meta.env.VITE_BACKEND === 'native'
 };
 
 async function testApiConnection() {
