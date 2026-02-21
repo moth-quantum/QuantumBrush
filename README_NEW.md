@@ -1,4 +1,4 @@
-# QuantumBrush Architectual Overhaul
+# QuantumBrush Refactored App
 
 This document outlines the technical improvements and architectural changes introduced in this implementation. The primary objective was to transition the legacy Java-based stack into a modernized, high-performance ecosystem using React and Python, while ensuring robust distribution and extensibility.
 

@@ -25,3 +25,12 @@ pyinstaller main.py \
     --exclude-module PySide2 \
     --exclude-module PySide6 \
     $EXTRA_FLAGS
+
+# 1. Build Frontend
+# cd frontend
+# VITE_BACKEND=native bun run build
+# cd ..
+
+# # 2. Build using spec
+# echo "Running PyInstaller..."
+# pyinstaller QuantumBrush.spec --clean --noconfirm

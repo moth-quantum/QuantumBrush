@@ -4,6 +4,7 @@
  */
 
 import * as mock from './mockBridge.js'
+import * as jsBridge from './jsBridge.js'
 
 // State for pywebview readiness
 let isPywebviewReady = false;
@@ -16,6 +17,10 @@ window.addEventListener('pywebviewready', function () {
 
 export const isPywebview = () => {
     return import.meta.env.VITE_BACKEND === 'native'
+};
+
+export const isJsBackend = () => {
+    return import.meta.env.VITE_BACKEND === 'js'
 };
 
 async function testApiConnection() {
@@ -53,6 +58,11 @@ async function testApiConnection() {
 }
 
 async function callApi(method, ...args) {
+    if (isJsBackend()) {
+        console.log(`[js] ${method}`, args);
+        return await jsBridge[method](...args);
+    }
+
     // If not in pywebview, use mock immediately
     if (!isPywebview()) {
         console.log(`[mock] ${method}`, args);

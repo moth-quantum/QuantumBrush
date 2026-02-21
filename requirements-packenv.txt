@@ -1,0 +1,10 @@
+pywebview[gtk]==6.1.0
+Pillow>=10.0.0
+numpy>=2.1.0
+numpy>=2.1.0
+qiskit>=1.0.0
+qiskit_aer>=0.17.0
+qiskit_ibm_runtime>=0.20.0
+matplotlib
+scipy
+argparse
