@@ -29,61 +29,66 @@ export default function BrushPanel() {
             </div>
 
             {/* Effect list */}
-            <div className="flex flex-col gap-1 p-2">
-                {!effectsLoaded && (
-                    <p className="text-xs text-[var(--color-text-muted)] px-2 py-4 text-center">Loading effects…</p>
-                )}
-                {effects.map((effect) => (
-                    <button
-                        key={effect.id}
-                        onClick={() => selectEffect(effect.id)}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg transition-all text-sm ${selectedEffectId === effect.id
-                            ? 'bg-[var(--color-brand)]/20 text-white border border-[var(--color-brand)]/40'
-                            : 'text-neutral-400 hover:text-white hover:bg-[var(--color-surface-3)]'
-                            }`}
-                    >
-                        <div className="flex justify-between items-center">
-                            <span className="font-medium">{effect.name}</span>
-                            {selectedEffectId === effect.id && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand)]" />
-                            )}
-                        </div>
-                        <span className="text-xs text-[var(--color-text-muted)] block truncate">{effect.author}</span>
-                    </button>
-                ))}
+            <div className={`${selectedEffect ? 'flex-[0.4]' : 'flex-1'} flex flex-col min-h-0 transition-all duration-300`}>
+                <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
+                    {!effectsLoaded && (
+                        <p className="text-xs text-[var(--color-text-muted)] px-2 py-4 text-center">Loading effects…</p>
+                    )}
+                    {effects.map((effect) => (
+                        <button
+                            key={effect.id}
+                            onClick={() => selectEffect(effect.id)}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg transition-all text-sm ${selectedEffectId === effect.id
+                                ? 'bg-[var(--color-brand)]/20 text-white border border-[var(--color-brand)]/40'
+                                : 'text-neutral-400 hover:text-white hover:bg-[var(--color-surface-3)]'
+                                }`}
+                        >
+                            <div className="flex justify-between items-center">
+                                <span className="font-medium">{effect.name}</span>
+                                {selectedEffectId === effect.id && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand)]" />
+                                )}
+                            </div>
+                            <span className="text-xs text-[var(--color-text-muted)] block truncate">{effect.author}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Settings & Description */}
             {selectedEffect && (
                 <>
-                    <div className="px-4 py-2.5 border-t border-[var(--color-border)] mt-1 flex justify-between items-center">
-                        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Settings</p>
-                        <button
-                            onClick={() => setShowInfo(true)}
-                            className="p-1 rounded text-[var(--color-text-muted)] hover:text-white transition-colors"
-                            title="Learn more about this effect"
-                        >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-                            </svg>
-                        </button>
+                    {/* Settings (40%) */}
+                    <div className="flex-[0.4] flex flex-col min-h-0 border-t border-[var(--color-border)]">
+                        <div className="px-4 py-2.5 border-t border-[var(--color-border)] mt-1 flex justify-between items-center">
+                            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Settings</p>
+                            <button
+                                onClick={() => setShowInfo(true)}
+                                className="p-1 rounded text-[var(--color-text-muted)] hover:text-white transition-colors"
+                                title="Learn more about this effect"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-4 scrollbar-thin">
+                            {Object.entries(selectedEffect.user_input).map(([key, spec]) => (
+                                <SettingControl
+                                    key={key}
+                                    label={key}
+                                    spec={spec}
+                                    value={activeSettings[key]}
+                                    onChange={(v) => updateSetting(key, v)}
+                                />
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-4">
-                        {Object.entries(selectedEffect.user_input).map(([key, spec]) => (
-                            <SettingControl
-                                key={key}
-                                label={key}
-                                spec={spec}
-                                value={activeSettings[key]}
-                                onChange={(v) => updateSetting(key, v)}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Scrollable Mini Description */}
-                    <div className="px-4 py-3 border-t border-[var(--color-border)] mt-auto bg-black/10">
-                        <div className="max-h-24 overflow-y-auto pr-1 scrollbar-thin">
+                    {/* Scrollable Mini Description (20%) */}
+                    <div className="flex-[0.2] flex flex-col min-h-0 px-4 py-3 border-t border-[var(--color-border)] bg-black/10">
+                        <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin">
                             <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed text-pretty">
                                 {selectedEffect.description}
                             </p>
@@ -98,13 +103,7 @@ export default function BrushPanel() {
                 </>
             )}
 
-            {!selectedEffect && (
-                <div className="flex-1 flex items-center justify-center px-4">
-                    <p className="text-xs text-[var(--color-text-muted)] text-center">
-                        Select an effect above to begin drawing
-                    </p>
-                </div>
-            )}
+
 
             {showInfo && selectedEffect && (
                 <InfoModal effect={selectedEffect} onClose={() => setShowInfo(false)} />

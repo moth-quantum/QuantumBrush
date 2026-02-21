@@ -6,9 +6,11 @@ import LayersPanel from './components/Panels/LayersPanel.jsx'
 import CanvasView from './components/Canvas/CanvasView.jsx'
 
 export default function App() {
+  const showTitleBar = import.meta.env.VITE_BACKEND === 'native'
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[var(--color-surface)]">
-      <TitleBar />
+      {showTitleBar && <TitleBar />}
       <Toolbar />
       <div className="flex flex-1 overflow-hidden">
         <BrushPanel />

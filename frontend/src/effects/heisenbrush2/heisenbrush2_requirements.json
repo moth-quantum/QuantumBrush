@@ -25,8 +25,8 @@
         },
         "Strength": {
             "type": "float",
-            "min": 0.0,
-            "max": 1.0,
+            "min": 0,
+            "max": 1,
             "default": 0.5
         },
         "Color": {
@@ -41,5 +41,6 @@
     },
     "flags": {
         "smooth_path": false
-    }
+    },
+    "autorun": true
 }

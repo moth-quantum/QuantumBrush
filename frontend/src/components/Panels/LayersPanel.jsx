@@ -266,17 +266,28 @@ function LayerCard({ layer }) {
                     )}
 
                     {layer.status === 'done' && layer.resultSrc && (
-                        <button
-                            onClick={() => mergeLayer(layer.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium
-                bg-emerald-500/15 text-emerald-400 border border-emerald-500/25
-                hover:bg-emerald-500/25 transition-colors"
-                        >
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <polyline points="20,6 9,17 4,12" />
-                            </svg>
-                            Merge to Canvas
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    // Let runLayer automatically reset layer status and progress
+                                    runLayer(layer.id)
+                                }}
+                                className="flex-[0.4] flex items-center justify-center py-1.5 rounded-lg text-xs font-medium bg-neutral-500/15 text-neutral-400 border border-neutral-500/25 hover:bg-neutral-500/25 transition-colors"
+                            >
+                                Rerun
+                            </button>
+                            <button
+                                onClick={() => mergeLayer(layer.id)}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium
+                    bg-emerald-500/15 text-emerald-400 border border-emerald-500/25
+                    hover:bg-emerald-500/25 transition-colors"
+                            >
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <polyline points="20,6 9,17 4,12" />
+                                </svg>
+                                Merge to Canvas
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>

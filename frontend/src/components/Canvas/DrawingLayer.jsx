@@ -11,6 +11,10 @@ export default function DrawingLayer({ width, height, scale, isPanMode, onPanSta
     const drawing = useRef(false)
     const svgRef = useRef(null)
 
+    // Clone/stamp mode state
+    const [cloneSourcePath, setCloneSourcePath] = useState(null)
+    const [cloneMousePos, setCloneMousePos] = useState(null)
+
     // Undo keyboard shortcut
     useEffect(() => {
         const handle = (e) => {
@@ -47,11 +51,33 @@ export default function DrawingLayer({ width, height, scale, isPanMode, onPanSta
             }
 
             if (!selectedEffectId) return
-            drawing.current = true
             const pt = getImageCoords(e)
+
+            if (selectedEffectId === 'clone' && cloneSourcePath) {
+                // We are in placement mode. A click here drops the stamp!
+                const dx = pt[0] - cloneSourcePath[0][0]
+                const dy = pt[1] - cloneSourcePath[0][1]
+                const destPath = cloneSourcePath.map(p => [p[0] + dx, p[1] + dy])
+
+                // Add first stroke (source) secretly and second stroke (dest)
+                addStroke(cloneSourcePath)
+                addStroke(destPath)
+                setPreviewPaths(p => [...p, cloneSourcePath, destPath])
+
+                const latestLayer = useAppStore.getState().layers.findLast(l => l.status === 'idle')
+                if (latestLayer) {
+                    useAppStore.getState().runLayer(latestLayer.id)
+                }
+
+                setCloneSourcePath(null)
+                setCloneMousePos(null)
+                return
+            }
+
+            drawing.current = true
             setCurrentPath([pt])
         },
-        [isPanMode, selectedEffectId, getImageCoords, onPanStart]
+        [isPanMode, selectedEffectId, getImageCoords, onPanStart, cloneSourcePath, addStroke]
     )
 
     const onPointerMove = useCallback(
@@ -60,16 +86,44 @@ export default function DrawingLayer({ width, height, scale, isPanMode, onPanSta
                 onPanMove(e.clientX, e.clientY)
                 return
             }
-            if (!drawing.current) return
+
             const pt = getImageCoords(e)
+
+            if (selectedEffectId === 'clone' && cloneSourcePath) {
+                setCloneMousePos(pt)
+                return
+            }
+
+            if (!drawing.current) return
+
             setCurrentPath((prev) => {
                 if (prev.length === 0) return [pt]
                 const last = prev[prev.length - 1]
                 if (last[0] === pt[0] && last[1] === pt[1]) return prev
-                return [...prev, pt]
+
+                // Bresenham interpolation immediately so the path is contiguous
+                let dx = Math.abs(pt[0] - last[0])
+                let dy = Math.abs(pt[1] - last[1])
+                let sx = last[0] < pt[0] ? 1 : -1
+                let sy = last[1] < pt[1] ? 1 : -1
+                let err = (dx > dy ? dx : -dy) / 2.0
+
+                let interpolated = []
+                let x1 = last[0], y1 = last[1]
+
+                while (x1 !== pt[0] || y1 !== pt[1]) {
+                    interpolated.push([x1, y1])
+                    let e2 = err
+                    if (e2 > -dx) { err -= dy; x1 += sx; }
+                    if (e2 < dy) { err += dx; y1 += sy; }
+                }
+                interpolated.push([pt[0], pt[1]])
+
+                // We drop the first point of interpolated because it equals `last`
+                return [...prev, ...interpolated.slice(1)]
             })
         },
-        [isPanMode, getImageCoords, onPanMove]
+        [isPanMode, getImageCoords, onPanMove, cloneSourcePath]
     )
 
     const onPointerUp = useCallback(
@@ -81,13 +135,33 @@ export default function DrawingLayer({ width, height, scale, isPanMode, onPanSta
             if (!drawing.current) return
             drawing.current = false
             const finalPath = currentPath
+            setCurrentPath([])
+
             if (finalPath.length >= 1) {
+                if (selectedEffectId === 'clone') {
+                    // Enter placement mode
+                    setCloneSourcePath(finalPath)
+                    return
+                }
+
                 addStroke(finalPath)
                 setPreviewPaths((p) => [...p, finalPath])
+                // Must extract exactly what addStroke returns, which is the layer ID.
+                // However, our addStroke action in appStore doesn't return the layer Id.
+                // But the newly added stroke belongs to the most recent 'idle' layer for this effect.
+                addStroke(finalPath)
+                setPreviewPaths((p) => [...p, finalPath])
+
+                const effect = useAppStore.getState().effects.find(e => e.id === selectedEffectId)
+                if (effect?.autorun) {
+                    const latestLayer = useAppStore.getState().layers.findLast(l => l.status === 'idle')
+                    if (latestLayer) {
+                        useAppStore.getState().runLayer(latestLayer.id)
+                    }
+                }
             }
-            setCurrentPath([])
         },
-        [isPanMode, currentPath, addStroke, onPanEnd]
+        [isPanMode, currentPath, addStroke, selectedEffectId, onPanEnd]
     )
 
     // Sync preview paths with undo
@@ -182,6 +256,23 @@ export default function DrawingLayer({ width, height, scale, isPanMode, onPanSta
                     fill="rgba(220,180,255,1)"
                 />
             ) : null}
+
+            {/* Clone placement floating preview */}
+            {cloneSourcePath && cloneMousePos && (
+                <path
+                    d={pathToD(cloneSourcePath.map(p => [
+                        p[0] + (cloneMousePos[0] - cloneSourcePath[0][0]),
+                        p[1] + (cloneMousePos[1] - cloneSourcePath[0][1])
+                    ]), true)}
+                    fill="rgba(160,120,255,0.15)"
+                    stroke="rgba(160,120,255,0.9)"
+                    strokeWidth={2 / scale}
+                    strokeDasharray={`${5 / scale},${4 / scale}`}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="pointer-events-none"
+                />
+            )}
         </svg>
     )
 }

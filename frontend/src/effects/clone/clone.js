@@ -116,15 +116,18 @@ export async function run(params, reportProgress) {
     let offset = [clicks[1][0] - clicks[0][0], clicks[1][1] - clicks[0][1]];
     let path = params.stroke_input.path;
 
-    // Remove leftover points until last click
-    // Equivalent of python logic: 
-    // while np.all(path[-1] != clicks[-1]): path = path[:-1]
-    // path = path[:-1]
-    const arraysEqual = (a, b) => a[0] === b[0] && a[1] === b[1];
-    while (path.length > 0 && !arraysEqual(path[path.length - 1], clicks[clicks.length - 1])) {
-        path.pop();
+    // Filter out the second stroke entirely, relying only on the first source lasso.
+    // The DrawingLayer appends the duplicated translated path to act as visual confirmation, but we only care about the source selection for `path`. We split it by looking where the gap is.
+    let split_idx = path.length;
+    for (let i = 1; i < path.length; i++) {
+        const dx = Math.abs(path[i][0] - path[i - 1][0]);
+        const dy = Math.abs(path[i][1] - path[i - 1][1]);
+        if (dx > 100 || dy > 100) {  // heuristic for a jump to the second paste path
+            split_idx = i;
+            break;
+        }
     }
-    if (path.length > 0) path.pop();
+    path = path.slice(0, split_idx);
 
     let copy_region = utils.pointsWithinLasso(path, [height, width]);
 

@@ -7,10 +7,12 @@ export default function CanvasView() {
     const layers = useAppStore((s) => s.layers)
     const setImage = useAppStore((s) => s.setImage)
 
+    // Compute a primitive string to track only visual state changes for the canvas compositor
+    const drawRenderKey = layers.map(l => `${l.id}-${l.visible}-${Boolean(l.resultSrc)}`).join(',')
+
     const canvasRef = useRef(null)
     const containerRef = useRef(null)
     const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 })
-    const [fitTransform, setFitTransform] = useState(null)
     const [isPanMode, setIsPanMode] = useState(false)
     const [isActivePan, setIsActivePan] = useState(false)
     const isPanning = useRef(false)
@@ -32,7 +34,9 @@ export default function CanvasView() {
         })
 
         drawBase.then(async () => {
-            for (const layer of layers) {
+            // Fetch fresh layers from store without tying them to the dependency array
+            const currentLayers = useAppStore.getState().layers
+            for (const layer of currentLayers) {
                 if (!layer.visible || !layer.resultSrc) continue
                 await new Promise((resolve) => {
                     const overlay = new Image()
@@ -44,23 +48,26 @@ export default function CanvasView() {
                 })
             }
         })
-    }, [image, layers])
+    }, [image, drawRenderKey]) // Use primitive string to prevent unnecessary clearing/flickering on progress ticks
 
-    // Fit image to viewport on load
-    useEffect(() => {
+    // Fit image exactly to current viewport bounds
+    const fitView = useCallback(() => {
         if (!image || !containerRef.current) return
         const { clientWidth: cw, clientHeight: ch } = containerRef.current
         const scale = Math.min(cw / image.width, ch / image.height, 1) * 0.92
         const x = (cw - image.width * scale) / 2
         const y = (ch - image.height * scale) / 2
-        const fit = { scale, x, y }
-        setFitTransform(fit)
-        setTransform(fit)
+        setTransform({ scale, x, y })
     }, [image])
 
-    const resetTransform = useCallback(() => {
-        if (fitTransform) setTransform(fitTransform)
-    }, [fitTransform])
+    // Fit image to viewport on load
+    const [lastFittedSrc, setLastFittedSrc] = useState(null)
+    useEffect(() => {
+        if (image && image.src !== lastFittedSrc) {
+            fitView()
+            setLastFittedSrc(image.src)
+        }
+    }, [image, fitView, lastFittedSrc])
 
     // Zoom on wheel
     const onWheel = useCallback((e) => {
@@ -250,11 +257,14 @@ export default function CanvasView() {
                         {isPanMode ? 'Panning…' : 'Hold Ctrl to pan'}
                     </span>
                     <button
-                        onClick={resetTransform}
-                        className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)]/80 backdrop-blur px-2.5 py-1.5 rounded-lg border border-white/5 hover:text-white hover:bg-[var(--color-surface)] transition-all active:scale-95"
-                        title="Reset zoom and position"
+                        onClick={fitView}
+                        className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)]/80 backdrop-blur px-2.5 py-1.5 rounded-lg border border-white/5 hover:text-white hover:bg-[var(--color-surface)] transition-all active:scale-95 flex items-center gap-1.5"
+                        title="Fit image to screen"
                     >
-                        Reset View
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 14v6h6M20 10V4h-6M10 20H4v-6M14 4h6v6" />
+                        </svg>
+                        Fit
                     </button>
                 </div>
             )}
