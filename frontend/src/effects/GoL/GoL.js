@@ -171,6 +171,11 @@ function game_of_life(nhood) {
 export async function run(params, reportProgress) {
     console.log("[GoL] Entering GoL.run()");
     let image = params.stroke_input.image_rgba;
+    let transparentLayer = {
+        width: image.width,
+        height: image.height,
+        data: new Uint8ClampedArray(image.width * image.height * 4),
+    };
     let map = MAPPING_TYPES[params.user_input.Mapping];
     let path = params.stroke_input.path;
     let radius = params.user_input.Radius;
@@ -264,9 +269,10 @@ export async function run(params, reportProgress) {
         let idx = (y * width + x) * 3;
         let [r, g, b] = colors.hsvToRgb(image_hsv[idx], image_hsv[idx + 1], image_hsv[idx + 2]);
         let data_idx = (y * width + x) * 4;
-        image.data[data_idx] = r * 255;
-        image.data[data_idx + 1] = g * 255;
-        image.data[data_idx + 2] = b * 255;
+        transparentLayer.data[data_idx] = r * 255;
+        transparentLayer.data[data_idx + 1] = g * 255;
+        transparentLayer.data[data_idx + 2] = b * 255;
+        transparentLayer.data[data_idx + 3] = 255;
     }
-    return image;
+    return transparentLayer;
 }

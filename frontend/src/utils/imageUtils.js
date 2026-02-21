@@ -226,6 +226,7 @@ export function setPatch(imageRgba, coords, patch, blur = false, distance = null
         let origR = imageRgba.data[idx] / 255.0;
         let origG = imageRgba.data[idx + 1] / 255.0;
         let origB = imageRgba.data[idx + 2] / 255.0;
+        let origA = imageRgba.data[idx + 3] / 255.0;
 
         let pR = patch[i * 4];
         let pG = patch[i * 4 + 1];
@@ -236,12 +237,17 @@ export function setPatch(imageRgba, coords, patch, blur = false, distance = null
             pA *= (1 - Math.exp(-Math.pow(Math.abs((distance[i] - 1) / 0.5), 4)));
         }
 
-        let r = (1 - pA) * origR + pA * pR;
-        let g = (1 - pA) * origG + pA * pG;
-        let b = (1 - pA) * origB + pA * pB;
+        let outA = pA + origA * (1 - pA);
 
-        imageRgba.data[idx] = r * 255;
-        imageRgba.data[idx + 1] = g * 255;
-        imageRgba.data[idx + 2] = b * 255;
+        if (outA > 0) {
+            let r = (pR * pA + origR * origA * (1 - pA)) / outA;
+            let g = (pG * pA + origG * origA * (1 - pA)) / outA;
+            let b = (pB * pA + origB * origA * (1 - pA)) / outA;
+
+            imageRgba.data[idx] = r * 255;
+            imageRgba.data[idx + 1] = g * 255;
+            imageRgba.data[idx + 2] = b * 255;
+            imageRgba.data[idx + 3] = outA * 255;
+        }
     }
 }

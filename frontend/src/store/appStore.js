@@ -21,6 +21,10 @@ export const useAppStore = create((set, get) => ({
 
     setImage: (image) => set({ image }),
 
+    // ── Settings ───────────────────────────────────────────────────
+    isQuickMode: true,
+    toggleQuickMode: () => set((s) => ({ isQuickMode: !s.isQuickMode })),
+
     // ── Effects (brush descriptors) ────────────────────────────────
     effects: [],
     effectsLoaded: false,
@@ -88,7 +92,8 @@ export const useAppStore = create((set, get) => ({
                 strokes: [path],
                 status: 'idle', // idle | running | done | error | aborted
                 visible: true,
-                resultSrc: null, // base64 PNG of computed result
+                resultSrc: null, // base64 PNG of computed result (transparent layer)
+                compositeSrc: null, // base64 PNG of full composed canvas at this step (Quick Mode only)
                 jobId: null,
                 progress: 0,
             }
@@ -166,12 +171,21 @@ export const useAppStore = create((set, get) => ({
                 return stroke
             })
 
+            // When in Quick Mode, effects read from a canvas composited by all visible layers *before* them
+            let effectiveImageB64 = image?.src?.split(',')[1]
+            if (get().isQuickMode) {
+                const compositedSrc = await createCompositeBefore(layerId, get)
+                if (compositedSrc) {
+                    effectiveImageB64 = compositedSrc.split(',')[1]
+                }
+            }
+
             const strokeInput = {
                 path: adjustedStrokes.flat(),
                 clicks: adjustedStrokes.map((s) => s[0]),
                 image_width: image?.width ?? 800,
                 image_height: image?.height ?? 600,
-                image_b64: image?.src?.split(',')[1],
+                image_b64: effectiveImageB64,
             }
             const { job_id } = await api.runEffect(layer.effectId, strokeInput, layer.settings)
 
@@ -281,10 +295,20 @@ async function pollJob(layerId, jobId, set, get) {
         const { status, progress, result } = await api.getJobStatus(jobId)
 
         if (status === 'done') {
+            let compositeSrc = null;
+            if (get().isQuickMode) {
+                // If quick mode, generate the full composed render at this point
+                // which includes all prior layers + this new result.
+                // We mock evaluating up to this layer by passing it into createCompositeBefore, 
+                // but wait, `createCompositeBefore` stops *before* the target layer.
+                // Let's create `createCompositeUpTo` instead.
+                compositeSrc = await createCompositeUpTo(layerId, result, get)
+            }
+
             set((s) => ({
                 layers: s.layers.map((l) =>
                     l.id === layerId
-                        ? { ...l, status: 'done', progress: 1, resultSrc: result }
+                        ? { ...l, status: 'done', progress: 1, resultSrc: result, compositeSrc }
                         : l
                 ),
             }))
@@ -310,4 +334,62 @@ async function pollJob(layerId, jobId, set, get) {
 
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+const loadImg = (src) =>
+    new Promise((resolve) => {
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.src = src
+    })
+
+async function createCompositeBefore(layerId, get) {
+    const { image, layers } = get()
+    if (!image) return null
+
+    const canvas = document.createElement('canvas')
+    canvas.width = image.width
+    canvas.height = image.height
+    const ctx = canvas.getContext('2d')
+
+    const base = await loadImg(image.src)
+    ctx.drawImage(base, 0, 0)
+
+    for (const layer of layers) {
+        if (layer.id === layerId) break // Stop before the target layer
+        if (layer.visible && layer.resultSrc && layer.status === 'done') {
+            const overlay = await loadImg(`data:image/png;base64,${layer.resultSrc}`)
+            ctx.drawImage(overlay, 0, 0, image.width, image.height)
+        }
+    }
+
+    return canvas.toDataURL('image/png')
+}
+
+async function createCompositeUpTo(layerId, thisLayerResultSrc, get) {
+    const { image, layers } = get()
+    if (!image) return null
+
+    const canvas = document.createElement('canvas')
+    canvas.width = image.width
+    canvas.height = image.height
+    const ctx = canvas.getContext('2d')
+
+    const base = await loadImg(image.src)
+    ctx.drawImage(base, 0, 0)
+
+    for (const layer of layers) {
+        if (layer.id === layerId) {
+            // Draw the current layer's result we just got
+            const overlay = await loadImg(`data:image/png;base64,${thisLayerResultSrc}`)
+            ctx.drawImage(overlay, 0, 0, image.width, image.height)
+            break
+        }
+        if (layer.visible && layer.resultSrc && layer.status === 'done') {
+            const overlay = await loadImg(`data:image/png;base64,${layer.resultSrc}`)
+            ctx.drawImage(overlay, 0, 0, image.width, image.height)
+        }
+    }
+
+    return canvas.toDataURL('image/png')
 }

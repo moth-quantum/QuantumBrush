@@ -91,6 +91,11 @@ function runHeisenbergHardware(dt_list, radius, phi, theta, reportProgress) {
 
 export async function run(params, reportProgress) {
     let image = params.stroke_input.image_rgba;
+    let transparentLayer = {
+        width: image.width,
+        height: image.height,
+        data: new Uint8ClampedArray(image.width * image.height * 4),
+    };
     let path = params.stroke_input.path;
     let radius = params.user_input.Radius;
     let strength = params.user_input.Strength;
@@ -152,11 +157,12 @@ export async function run(params, reportProgress) {
             patch[k * 4] = c_rgb[0];
             patch[k * 4 + 1] = c_rgb[1];
             patch[k * 4 + 2] = c_rgb[2];
+            patch[k * 4 + 3] = 1.0;
         }
 
-        utils.setPatch(image, region, patch);
+        utils.setPatch(transparentLayer, region, patch);
     }
 
     if (reportProgress) reportProgress(1.0);
-    return image;
+    return transparentLayer;
 }

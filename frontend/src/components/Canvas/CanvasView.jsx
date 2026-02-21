@@ -6,9 +6,11 @@ export default function CanvasView() {
     const image = useAppStore((s) => s.image)
     const layers = useAppStore((s) => s.layers)
     const setImage = useAppStore((s) => s.setImage)
+    const isQuickMode = useAppStore((s) => s.isQuickMode)
 
     // Compute a primitive string to track only visual state changes for the canvas compositor
     const drawRenderKey = layers.map(l => `${l.id}-${l.visible}-${Boolean(l.resultSrc)}`).join(',')
+    const hasRunningLayer = layers.some(l => l.status === 'running')
 
     const canvasRef = useRef(null)
     const containerRef = useRef(null)
@@ -218,6 +220,16 @@ export default function CanvasView() {
                         onPanMove={onPanMove}
                         onPanEnd={onPanEnd}
                     />
+                    {isQuickMode && hasRunningLayer && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-[1px] cursor-not-allowed">
+                            <div className="flex items-center gap-3 px-6 py-3 bg-black/80 border border-white/10 rounded-full shadow-2xl text-white font-medium tracking-wide">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin text-amber-400">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                </svg>
+                                Applying Effect...
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none">

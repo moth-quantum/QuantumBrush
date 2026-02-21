@@ -21,6 +21,7 @@ import { CSS } from '@dnd-kit/utilities'
 export default function LayersPanel() {
     const layers = useAppStore((s) => s.layers)
     const reorderLayers = useAppStore((s) => s.reorderLayers)
+    const isQuickMode = useAppStore((s) => s.isQuickMode)
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
@@ -34,7 +35,9 @@ export default function LayersPanel() {
     return (
         <aside className="w-72 shrink-0 flex flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)]">
             <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Layers</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+                    {isQuickMode ? 'History' : 'Layers'}
+                </p>
                 <span className="text-xs text-[var(--color-text-muted)]">{layers.length}</span>
             </div>
 
@@ -51,22 +54,30 @@ export default function LayersPanel() {
                         </p>
                     </div>
                 ) : (
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={layers.map((l) => l.id)} strategy={verticalListSortingStrategy}>
-                            <div className="flex flex-col gap-2">
-                                {[...layers].reverse().map((layer) => (
-                                    <LayerCard key={layer.id} layer={layer} />
-                                ))}
-                            </div>
-                        </SortableContext>
-                    </DndContext>
+                    isQuickMode ? (
+                        <div className="flex flex-col gap-2">
+                            {[...layers].reverse().map((layer, index) => (
+                                <LayerCard key={layer.id} layer={layer} isQuickMode={isQuickMode} isTopLayer={index === 0} />
+                            ))}
+                        </div>
+                    ) : (
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={layers.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+                                <div className="flex flex-col gap-2">
+                                    {[...layers].reverse().map((layer, index) => (
+                                        <LayerCard key={layer.id} layer={layer} isQuickMode={isQuickMode} isTopLayer={index === 0} />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
+                    )
                 )}
             </div>
         </aside>
     )
 }
 
-function LayerCard({ layer }) {
+function LayerCard({ layer, isQuickMode, isTopLayer }) {
     const runLayer = useAppStore((s) => s.runLayer)
     const abortLayer = useAppStore((s) => s.abortLayer)
     const deleteLayer = useAppStore((s) => s.deleteLayer)
@@ -79,8 +90,8 @@ function LayerCard({ layer }) {
     })
 
     const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
+        transform: isQuickMode ? undefined : CSS.Transform.toString(transform),
+        transition: isQuickMode ? undefined : transition,
         opacity: isDragging ? 0.5 : 1,
     }
 
@@ -109,6 +120,23 @@ function LayerCard({ layer }) {
         ${layer.status === 'done' ? 'border-emerald-500/20' : ''}
       `}
         >
+            {/* Quick Mode Full-width Thumbnail */}
+            {isQuickMode && (
+                layer.resultSrc ? (
+                    <div className="w-full h-32 bg-[#0a0a0f] border-b border-[var(--color-border)]">
+                        <img
+                            src={layer.compositeSrc ? layer.compositeSrc : `data:image/png;base64,${layer.resultSrc}`}
+                            alt="History preview"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                ) : (
+                    <div className="w-full h-32 bg-[#0a0a0f] border-b border-dashed border-[var(--color-border)] flex items-center justify-center">
+                        <span className="text-[var(--color-text-muted)] text-xs">...</span>
+                    </div>
+                )
+            )}
+
             {/* Progress bar (running only) */}
             {layer.status === 'running' && (
                 <div className="h-0.5 bg-[var(--color-surface-3)]">
@@ -122,22 +150,38 @@ function LayerCard({ layer }) {
             <div className="p-3">
                 {/* Title row */}
                 <div className="flex items-start gap-2">
-                    {/* Drag handle */}
-                    <button
-                        {...attributes}
-                        {...listeners}
-                        className="mt-0.5 text-[var(--color-text-muted)] hover:text-neutral-400 cursor-grab active:cursor-grabbing shrink-0"
-                        title="Drag to reorder"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="9" cy="6" r="1.5" />
-                            <circle cx="15" cy="6" r="1.5" />
-                            <circle cx="9" cy="12" r="1.5" />
-                            <circle cx="15" cy="12" r="1.5" />
-                            <circle cx="9" cy="18" r="1.5" />
-                            <circle cx="15" cy="18" r="1.5" />
-                        </svg>
-                    </button>
+                    {/* Drag handle / Thumbnail (Normal Mode Only) */}
+                    {!isQuickMode && (
+                        <>
+                            <button
+                                {...attributes}
+                                {...listeners}
+                                className="mt-0.5 text-[var(--color-text-muted)] hover:text-neutral-400 cursor-grab active:cursor-grabbing shrink-0"
+                                title="Drag to reorder"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="9" cy="6" r="1.5" />
+                                    <circle cx="15" cy="6" r="1.5" />
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="9" cy="18" r="1.5" />
+                                    <circle cx="15" cy="18" r="1.5" />
+                                </svg>
+                            </button>
+
+                            {layer.resultSrc ? (
+                                <img
+                                    src={`data:image/png;base64,${layer.resultSrc}`}
+                                    alt="Layer preview"
+                                    className="w-8 h-8 rounded shrink-0 object-cover border border-[var(--color-border)] bg-[#0a0a0f]"
+                                />
+                            ) : (
+                                <div className="w-8 h-8 rounded shrink-0 flex items-center justify-center border border-dashed border-[var(--color-border)] bg-[#0a0a0f] text-[var(--color-text-muted)] text-xs">
+                                    ...
+                                </div>
+                            )}
+                        </>
+                    )}
 
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white truncate">{layer.effectName}</p>
@@ -167,7 +211,7 @@ function LayerCard({ layer }) {
                     )}
 
                     {/* Delete */}
-                    {layer.status !== 'running' && (
+                    {layer.status !== 'running' && (!isQuickMode || isTopLayer) && (
                         <button
                             onClick={() => deleteLayer(layer.id)}
                             className="p-1 rounded text-[var(--color-text-muted)] hover:text-red-400 transition-colors"
@@ -222,7 +266,8 @@ function LayerCard({ layer }) {
                         )
                     })()}
 
-                    {(layer.status === 'idle' || layer.status === 'aborted' || layer.status === 'error') && (
+                    {/* Hide Run Effect button if in Quick Mode */}
+                    {!isQuickMode && (layer.status === 'idle' || layer.status === 'aborted' || layer.status === 'error') && (
                         <button
                             onClick={() => runLayer(layer.id)}
                             disabled={(() => {
@@ -265,7 +310,8 @@ function LayerCard({ layer }) {
                         </>
                     )}
 
-                    {layer.status === 'done' && layer.resultSrc && (
+                    {/* Hide Rerun and Merge buttons if in Quick Mode */}
+                    {!isQuickMode && layer.status === 'done' && layer.resultSrc && (
                         <div className="flex gap-2">
                             <button
                                 onClick={() => {

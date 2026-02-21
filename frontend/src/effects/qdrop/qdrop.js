@@ -108,6 +108,11 @@ function drop(initial_angles, target_angle, strength) {
 
 export async function run(params, reportProgress) {
     let image = params.stroke_input.image_rgba;
+    let transparentLayer = {
+        width: image.width,
+        height: image.height,
+        data: new Uint8ClampedArray(image.width * image.height * 4),
+    };
     let path = params.stroke_input.path;
     let n_drops = params.user_input['Number of Drops'];
     let radius = params.user_input.Radius;
@@ -177,9 +182,9 @@ export async function run(params, reportProgress) {
         }
 
         let rgbArray = colors.hlsToRgbArray(hlsArray);
-        utils.setPatch(image, region, rgbArray);
+        utils.setPatch(transparentLayer, region, rgbArray);
     }
 
     if (reportProgress) reportProgress(1.0);
-    return image;
+    return transparentLayer;
 }

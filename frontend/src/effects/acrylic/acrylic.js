@@ -3,6 +3,11 @@ import * as utils from '../../utils/imageUtils.js';
 export async function run(params, reportProgress) {
     console.log("[acrylic] Entering run()");
     let image = params.stroke_input.image_rgba;
+    let transparentLayer = {
+        width: image.width,
+        height: image.height,
+        data: new Uint8ClampedArray(image.width * image.height * 4),
+    };
     let radius = params.user_input.Radius;
     let path = params.stroke_input.path;
     let blur = params.user_input['Blur Edges'];
@@ -37,9 +42,9 @@ export async function run(params, reportProgress) {
         patch[i * 4 + 3] = alpha;
     }
 
-    utils.setPatch(image, region, patch, blur, distance);
+    utils.setPatch(transparentLayer, region, patch, blur, distance);
     console.log(`[acrylic] Patch applied successfully.`);
 
     if (reportProgress) reportProgress(1.0);
-    return image;
+    return transparentLayer;
 }

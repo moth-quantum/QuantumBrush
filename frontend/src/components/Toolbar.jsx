@@ -9,6 +9,8 @@ export default function Toolbar() {
     const setImage = useAppStore((s) => s.setImage)
     const undoLastStroke = useAppStore((s) => s.undoLastStroke)
     const exportImage = useAppStore((s) => s.exportImage)
+    const isQuickMode = useAppStore((s) => s.isQuickMode)
+    const toggleQuickMode = useAppStore((s) => s.toggleQuickMode)
 
     const openFile = async () => {
         // Try pywebview native dialog first
@@ -70,6 +72,24 @@ export default function Toolbar() {
             </ToolBtn>
 
             <div className="flex-1" />
+
+            {/* Quick Edition Toggle */}
+            <div className="flex items-center gap-2 mr-2">
+                <span className={`text-[11px] font-medium tracking-wide uppercase transition-colors ${isQuickMode ? 'text-[var(--color-brand)]' : 'text-[var(--color-text-muted)]'}`}>
+                    Quick Mode
+                </span>
+                <button
+                    role="switch"
+                    aria-checked={isQuickMode}
+                    onClick={toggleQuickMode}
+                    className={`w-9 h-5 rounded-full transition-colors relative ${isQuickMode ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-surface-3)]'}`}
+                    title="Toggle Quick Edition (History vs Layers)"
+                >
+                    <span
+                        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isQuickMode ? 'translate-x-4' : 'translate-x-0'}`}
+                    />
+                </button>
+            </div>
 
             {/* Export */}
             <button

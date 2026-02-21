@@ -109,6 +109,13 @@ function ua_cloning(initial_angles, s0 = 2 / 3) {
 
 export async function run(params, reportProgress) {
     let image = params.stroke_input.image_rgba;
+    // DO NOT MUTATE THE BASE IMAGE. We want to return a transparent layer.
+    let transparentLayer = {
+        width: image.width,
+        height: image.height,
+        data: new Uint8ClampedArray(image.width * image.height * 4),
+    };
+
     let height = image.height;
     let width = image.width;
     let clicks = params.stroke_input.clicks;
@@ -208,7 +215,7 @@ export async function run(params, reportProgress) {
         copy_patch[i * 4 + 1] = Math.max(0, Math.min(1, copy_selectionM.get(i, 1)));
         copy_patch[i * 4 + 2] = Math.max(0, Math.min(1, copy_selectionM.get(i, 2)));
     }
-    utils.setPatch(image, copy_region, copy_patch);
+    // DO NOT MUTATE THE BASE IMAGE! utils.setPatch(image, copy_region, copy_patch);
 
     let paste_path = path.map(p => [p[0] + offset[0], p[1] + offset[1]]);
     let paste_region = utils.pointsWithinLasso(paste_path, [height, width]);
@@ -223,8 +230,10 @@ export async function run(params, reportProgress) {
         // preserve orig alpha or set to 1? usually preserve since getPatch gets it
     }
 
-    utils.setPatch(image, paste_region.slice(0, Math.min(N, limit)), paste_patch);
+    // copy back to base image isn't needed; we are constructing a standalone transparent pane.
+    // Instead of utils.setPatch(image, ...), we just set it into `transparentLayer`.
+    utils.setPatch(transparentLayer, paste_region.slice(0, Math.min(N, limit)), paste_patch);
 
     if (reportProgress) reportProgress(1.0);
-    return image;
+    return transparentLayer;
 }
