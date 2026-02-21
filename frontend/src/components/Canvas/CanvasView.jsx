@@ -160,13 +160,23 @@ export default function CanvasView() {
     const onDragOver = (e) => e.preventDefault()
     const onDrop = useCallback((e) => {
         e.preventDefault()
+        const store = useAppStore.getState()
+        if (store.image && store.layers.length > 0) {
+            if (!window.confirm('You have unsaved layers. Are you sure you want to load a new image and discard them?')) {
+                return
+            }
+        }
+
         const file = e.dataTransfer.files[0]
         if (!file || !file.type.startsWith('image/')) return
         const reader = new FileReader()
         reader.onload = (ev) => {
             const src = ev.target.result
             const img = new Image()
-            img.onload = () => setImage({ src, width: img.naturalWidth, height: img.naturalHeight })
+            img.onload = () => {
+                store.resetProject()
+                setImage({ src, width: img.naturalWidth, height: img.naturalHeight })
+            }
             img.src = src
         }
         reader.readAsDataURL(file)

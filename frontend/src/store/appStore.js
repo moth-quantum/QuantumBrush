@@ -21,6 +21,16 @@ export const useAppStore = create((set, get) => ({
 
     setImage: (image) => set({ image }),
 
+    resetProject: () => {
+        const { layers } = get()
+        layers.forEach(l => {
+            if (l.jobId && l.status === 'running') {
+                api.abortJob(l.jobId)
+            }
+        })
+        set({ image: null, layers: [] })
+    },
+
     // ── Settings ───────────────────────────────────────────────────
     isQuickMode: true,
     toggleQuickMode: () => set((s) => ({ isQuickMode: !s.isQuickMode })),

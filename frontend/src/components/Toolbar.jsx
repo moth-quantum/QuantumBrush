@@ -13,9 +13,17 @@ export default function Toolbar() {
     const toggleQuickMode = useAppStore((s) => s.toggleQuickMode)
 
     const openFile = async () => {
+        const store = useAppStore.getState()
+        if (store.image && store.layers.length > 0) {
+            if (!window.confirm('You have unsaved layers. Are you sure you want to load a new image and discard them?')) {
+                return
+            }
+        }
+
         // Try pywebview native dialog first
         const result = await api.openImageDialog()
         if (result) {
+            store.resetProject()
             setImage(result)
             return
         }
@@ -30,8 +38,10 @@ export default function Toolbar() {
             reader.onload = (e) => {
                 const src = e.target.result
                 const img = new Image()
-                img.onload = () =>
+                img.onload = () => {
+                    store.resetProject()
                     setImage({ src, width: img.naturalWidth, height: img.naturalHeight })
+                }
                 img.src = src
             }
             reader.readAsDataURL(file)
