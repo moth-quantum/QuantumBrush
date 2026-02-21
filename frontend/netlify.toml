@@ -1,0 +1,9 @@
+[build]
+  command = "bun run build"
+  publish = "dist"
+  environment = { VITE_BACKEND = "js" }
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
