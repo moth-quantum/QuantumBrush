@@ -1,0 +1,68 @@
+╔══════════════════════════════════════════════════╗
+║          QUANTUM CANVAS STUDIO — RUN REPORT      ║
+╚══════════════════════════════════════════════════╝
+  Date/Time : 2026-02-23 01:53:42
+  Canvas    : 128×128 px
+  Seed      : 42
+  Duration  : 37.8s
+
+  QUANTUM GATE SUMMARY
+  ─────────────────────
+  Total gates applied : 1638
+    CP           : 42 gates
+    CX-Rz-CX     : 78 gates
+    H-Ry-H       : 168 gates
+    QFT-CP       : 300 gates
+    RZ           : 42 gates
+    Rx           : 252 gates
+    Ry           : 756 gates
+
+  MODES COMPLETED
+  ───────────────
+    aurora         : 6 iterations
+    nebula         : 7 iterations
+    interference   : 6 iterations
+    portrait       : 6 iterations
+    watercolour    : 6 iterations
+
+  QUANTUM TECHNIQUES
+  ──────────────────
+    • Amplitude encoding via quantumblur image2circuits(log=True)
+    • Rx gates  → pixel-brightness interference (bit-flip oscillation)
+    • Ry gates  → hue rotation within Y-basis Bloch sphere
+    • Rz gates  → phase fringe patterns
+    • H→Ry→H   → frequency-domain spectral painting
+    • CX–Rz–CX → entanglement chain for ghost / echo effect
+    • CP gates  → phase kickback for glow / halo effect
+    • QFT-like  → multi-layer Hadamard+CP for rich frequency art
+    • Observer  → measure-collapse-re-encode loop (wavefunction collapse)
+    • Decoherence → iterative Ry with blend-back to origin
+
+  QUANTUM-INSPIRED TECHNIQUES
+  ───────────────────────────
+    • Interference seed  → Young's double-slit wave pattern
+    • Gaussian splat     → Wigner function / probability density
+    • Concentric rings   → Hydrogen atom electron orbital shells
+    • Radial burst       → Emission spectrum / spontaneous emission
+    • Superposition blend → colour as probability amplitude
+    • Decoherence fade   → loss of quantum coherence over time
+    • Shot noise grain   → quantum measurement shot noise
+    • Chromatic aberration → Heisenberg position uncertainty
+
+  OUTPUT FILES
+  ────────────
+    quantum_studio_output/
+      gallery.png         — All modes combined
+      aurora.png
+      aurora_evolution.png
+      nebula.png
+      nebula_evolution.png
+      interference.png
+      interference_evolution.png
+      portrait.png
+      portrait_evolution.png
+      watercolour.png
+      watercolour_evolution.png
+      quantum_report.txt  — This file
+
+═══════════════════════════════════════════════════
