@@ -18,6 +18,7 @@ from .damping import damping
 from .heisenbrush import heisenbrush
 from .heisenbrush2 import heisenbrush2
 from .qdrop import qdrop
+from .decoherence import decoherence
 
 EFFECT_REGISTRY = {
     "acrylic": {"module": acrylic, "config": _load_req("acrylic")},
@@ -27,4 +28,5 @@ EFFECT_REGISTRY = {
     "heisenbrush": {"module": heisenbrush, "config": _load_req("heisenbrush")},
     "heisenbrush2": {"module": heisenbrush2, "config": _load_req("heisenbrush2")},
     "qdrop": {"module": qdrop, "config": _load_req("qdrop")},
+    "decoherence": {"module": decoherence, "config": _load_req("decoherence")},
 }
