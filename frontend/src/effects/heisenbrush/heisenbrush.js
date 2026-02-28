@@ -87,6 +87,10 @@ function runHeisenbergHardware(dt_list, radius, phi, theta, reportProgress) {
         coeffs: new Array(n_qubits).fill(1.0 / n_qubits)
     };
 
+    if (circuits.length > 0) {
+        console.log("Quantum Circuit [heisenbrush] (last step):\n" + circuits[circuits.length - 1].exportQASM(""));
+    }
+
     let values = quantum.run_estimator(circuits, observables, (p) => {
         if (reportProgress) reportProgress(p);
     });

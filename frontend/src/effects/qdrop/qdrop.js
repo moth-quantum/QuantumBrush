@@ -86,6 +86,7 @@ function drop(initial_angles, target_angle, strength) {
         }
     }
 
+    console.log("Quantum Circuit [qdrop]:\n" + qc.exportQASM(""));
     let obs = quantum.run_estimator(qc, ops);
 
     let x_expectations = obs.slice(0, num_qubits);

@@ -1,37 +1,7 @@
 import * as utils from '../../utils/imageUtils.js';
 import { SVD } from 'ml-matrix';
-
-function evalPauli(p, i, num_qubits, psi_re, psi_im) {
-    let expect = 0;
-    for (let k = 0; k < 8; k++) {
-        let k_prime = k;
-        let phase_re = 1;
-        let phase_im = 0;
-
-        let bit = (k >> i) & 1;
-        if (p === 'X') {
-            k_prime ^= (1 << i);
-        } else if (p === 'Y') {
-            k_prime ^= (1 << i);
-            if (bit === 0) {
-                phase_re = 0; phase_im = 1;
-            } else {
-                phase_re = 0; phase_im = -1;
-            }
-        } else if (p === 'Z') {
-            if (bit === 1) {
-                phase_re = -1;
-            }
-        }
-
-        let c_re = psi_re[k_prime];
-        let c_im = psi_im[k_prime];
-        let bcr = phase_re * c_re - phase_im * c_im;
-        let bci = phase_re * c_im + phase_im * c_re;
-        expect += psi_re[k] * bcr + psi_im[k] * bci;
-    }
-    return expect;
-}
+import QuantumCircuit from 'quantum-circuit';
+import * as quantum from '../../utils/quantumUtils.js';
 
 function ua_cloning(initial_angles, s0 = 2 / 3) {
     let theta = initial_angles[0];
@@ -43,67 +13,36 @@ function ua_cloning(initial_angles, s0 = 2 / 3) {
     let norm = Math.sqrt(amps[0] * amps[0] + amps[1] * amps[1] + amps[2] * amps[2] + amps[3] * amps[3]);
     for (let i = 0; i < 4; i++) amps[i] /= norm;
 
-    let alpha = Math.cos(theta / 2);
-    let beta_re = Math.cos(phi) * Math.sin(theta / 2);
-    let beta_im = Math.sin(phi) * Math.sin(theta / 2);
+    let qc = new QuantumCircuit();
+    let col = 0;
 
-    let psi_re = new Float64Array(8).fill(0);
-    let psi_im = new Float64Array(8).fill(0);
+    qc.addGate("ry", col, 0, { params: { theta: theta } });
+    qc.addGate("rz", col + 1, 0, { params: { phi: phi, theta: phi, lambda: phi } });
+    col += 2;
 
-    for (let q2 = 0; q2 <= 1; q2++) {
-        for (let q1 = 0; q1 <= 1; q1++) {
-            for (let q0 = 0; q0 <= 1; q0++) {
-                let idx = q2 * 4 + q1 * 2 + q0;
-                let a = amps[q2 * 2 + q1];
-                if (q0 === 0) {
-                    psi_re[idx] = a * alpha;
-                } else {
-                    psi_re[idx] = a * beta_re;
-                    psi_im[idx] = a * beta_im;
-                }
-            }
-        }
-    }
+    let theta_1 = 2 * Math.acos(amps[0]);
+    let theta_2 = 2 * Math.atan2(amps[3], amps[1]);
 
-    let next_re = new Float64Array(8); let next_im = new Float64Array(8);
-    // CNOT(1, 0)
-    for (let k = 0; k < 8; k++) {
-        let q1 = (k >> 1) & 1;
-        let k_new = q1 ? k ^ 1 : k;
-        next_re[k_new] = psi_re[k]; next_im[k_new] = psi_im[k];
-    }
-    psi_re.set(next_re); psi_im.set(next_im);
+    qc.addGate("ry", col, 2, { params: { theta: theta_1 } });
+    qc.addGate("cry", col + 1, [2, 1], { params: { theta: theta_2, phi: theta_2, lambda: theta_2 } });
+    col += 2;
 
-    // CNOT(2, 0)
-    for (let k = 0; k < 8; k++) {
-        let q2 = (k >> 2) & 1;
-        let k_new = q2 ? k ^ 1 : k;
-        next_re[k_new] = psi_re[k]; next_im[k_new] = psi_im[k];
-    }
-    psi_re.set(next_re); psi_im.set(next_im);
+    qc.addGate("cx", col++, [1, 0]);
+    qc.addGate("cx", col++, [2, 0]);
+    qc.addGate("cx", col++, [0, 1]);
+    qc.addGate("cx", col++, [0, 2]);
 
-    // CNOT(0, 1)
-    for (let k = 0; k < 8; k++) {
-        let q0 = k & 1;
-        let k_new = q0 ? k ^ 2 : k;
-        next_re[k_new] = psi_re[k]; next_im[k_new] = psi_im[k];
-    }
-    psi_re.set(next_re); psi_im.set(next_im);
+    console.log("Quantum Circuit [clone]:\n" + qc.exportQASM(""));
 
-    // CNOT(0, 2)
-    for (let k = 0; k < 8; k++) {
-        let q0 = k & 1;
-        let k_new = q0 ? k ^ 4 : k;
-        next_re[k_new] = psi_re[k]; next_im[k_new] = psi_im[k];
-    }
-    psi_re.set(next_re); psi_im.set(next_im);
-
-    let obs = [];
+    let ops = [];
     for (let i of [0, 2]) {
         for (let p of ['X', 'Y', 'Z']) {
-            obs.push(evalPauli(p, i, 3, psi_re, psi_im));
+            let opStr = 'I'.repeat(3 - i - 1) + p + 'I'.repeat(i);
+            ops.push(opStr);
         }
     }
+
+    let obs = quantum.run_estimator(qc, ops);
     return [obs.slice(0, 3), obs.slice(3, 6)];
 }
 

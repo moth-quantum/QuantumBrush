@@ -55,6 +55,7 @@ function damping(initial_angles, strength, invert) {
         }
     }
 
+    console.log("Quantum Circuit [damping]:\n" + qc.exportQASM(""));
     let obs = quantum.run_estimator(qc, ops);
 
     let x_expectations = obs.slice(0, num_qubits);

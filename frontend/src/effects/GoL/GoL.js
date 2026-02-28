@@ -107,7 +107,7 @@ function SCGOL(nhood_s) {
     return [out_0, out_1];
 }
 
-function game_of_life(nhood) {
+function game_of_life(nhood, logCircuit = false) {
     let qc = new QuantumCircuit(9);
     let col = 0;
 
@@ -141,6 +141,9 @@ function game_of_life(nhood) {
         }
     }
 
+    if (logCircuit) {
+        console.log("Quantum Circuit [GoL]:\n" + qc.exportQASM(""));
+    }
     qc.run();
     let state = qc.state;
 
@@ -247,7 +250,7 @@ export async function run(params, reportProgress) {
                 nhood_s.push([sc, 1 - sc]);
             }
 
-            let [v, purity] = game_of_life(nhood);
+            let [v, purity] = game_of_life(nhood, (it === 0 && i === 0));
             let new_sc = SCGOL(nhood_s)[0];
             let new_hsv = statevector_to_hsv(v, new_sc, map);
             after_iteration.set(`${y},${x}`, new_hsv);

@@ -19,7 +19,7 @@ const T1_VALUES = [
  * @param {number} intensity - User decoherence intensity
  * @param {number} channelIdx - R=0, G=1, B=2
  */
-function getDecoherenceFactor(val, intensity, channelIdx) {
+function getDecoherenceFactor(val, intensity, channelIdx, logCircuit = false) {
     if (val <= 0.001) return 1.0;
 
     // Use two qubits for Amplitude Damping (monotonic decay)
@@ -51,6 +51,9 @@ function getDecoherenceFactor(val, intensity, channelIdx) {
         qc.addGate("cx", 5, [1, 0]);
     }
 
+    if (logCircuit) {
+        console.log("Quantum Circuit [decoherence]:\n" + qc.exportQASM(""));
+    }
     qc.run();
 
     // 3. Extract the probability of system qubit (q0) being in state |1>
@@ -103,9 +106,9 @@ export async function run(params, reportProgress) {
         const avgB = sumB / region.length;
 
         // Compute the quantum decoherence factor based on the average
-        const factorR = getDecoherenceFactor(avgR, intensity, 0);
-        const factorG = getDecoherenceFactor(avgG, intensity, 1);
-        const factorB = getDecoherenceFactor(avgB, intensity, 2);
+        const factorR = getDecoherenceFactor(avgR, intensity, 0, (i === 0));
+        const factorG = getDecoherenceFactor(avgG, intensity, 1, (i === 0));
+        const factorB = getDecoherenceFactor(avgB, intensity, 2, (i === 0));
 
         const newPatch = new Float32Array(region.length * 4);
         for (let k = 0; k < region.length; k++) {
