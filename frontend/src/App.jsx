@@ -8,7 +8,7 @@ import CanvasView from './components/Canvas/CanvasView.jsx'
 import { useAppStore } from './store/appStore.js'
 
 export default function App() {
-  const showTitleBar = import.meta.env.VITE_BACKEND === 'native'
+  const showTitleBar = false//import.meta.env.VITE_BACKEND === 'native'
 
   useEffect(() => {
     if (import.meta.env.VITE_BACKEND === 'native') return;

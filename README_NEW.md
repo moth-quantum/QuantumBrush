@@ -45,9 +45,14 @@ The backend implementation has been refactored to prioritize stability and stati
 ## Deployment & Development
 
 ### Local Execution (Repository Mode)
-For development and full environment access:
+For development and full environment access using a standard environment:
 1. Initialize the environment: `./install.sh`
 2. Launch the application: `./run_native.sh`
+
+#### Conda Environment
+For users who prefer or require Anaconda/Miniconda to manage dependencies (especially useful for scientific environments):
+1. Initialize the isolated python 3.10 Conda environment and install dependencies: `./install_conda.sh`
+2. Launch the application natively via Conda: `./run_native_conda.sh`
 
 ### Standalone Build
 To generate a production-ready binary distribution for end-users:
