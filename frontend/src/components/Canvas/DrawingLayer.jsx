@@ -19,11 +19,6 @@ export default function DrawingLayer({ width, height, scale, isPanMode, onPanSta
     useEffect(() => {
         const handle = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                if (useAppStore.getState().isQuickMode) {
-                    // In Quick Mode, undo is handled by deleting/hiding history layers, 
-                    // strokes are immutable after they run.
-                    return
-                }
                 e.preventDefault()
                 undoLastStroke()
                 setPreviewPaths((p) => p.slice(0, -1))

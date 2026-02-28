@@ -111,17 +111,19 @@ export const useAppStore = create((set, get) => ({
         }
     },
 
-    /** Undo the last stroke. Removes layer if it becomes empty. */
+    /** Undo the last stroke. In quick mode, deletes the topmost valid layer. */
     undoLastStroke: () => {
-        const { layers } = get()
-        // Find topmost idle layer with strokes
+        const { layers, isQuickMode } = get()
+        // Find topmost layer that is not aborted or errored (essentially 'idle' or 'done')
+        // In quick mode we delete the whole layer as it represents the last history step.
         for (let i = layers.length - 1; i >= 0; i--) {
             const layer = layers[i]
-            if (layer.status === 'idle' && layer.strokes.length > 0) {
-                if (layer.strokes.length === 1) {
-                    // Remove the layer entirely
+            if ((layer.status === 'idle' || layer.status === 'done') && layer.strokes.length > 0) {
+                if (isQuickMode || layer.strokes.length === 1) {
+                    // Remove the layer entirely (either it's Quick Mode = delete whole step, or 1 stroke left)
                     set((s) => ({ layers: s.layers.filter((l) => l.id !== layer.id) }))
                 } else {
+                    // Normal mode: just pop the last stroke off the current layer
                     set((s) => ({
                         layers: s.layers.map((l) =>
                             l.id === layer.id
