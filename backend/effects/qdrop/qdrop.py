@@ -58,7 +58,6 @@ def drop(initial_angles, target_angle,strength):
 
 
 
-# The only thing that you need to change is this function
 def run(params):
     """
     Executes the effect pipeline based on the provided parameters.
@@ -67,7 +66,7 @@ def run(params):
         parameters (dict): A dictionary containing all the relevant data.
 
     Returns:
-        Image: the new numpy array of RGBA values or None if the effect failed
+        Image: the new numpy array of RGBA values representing the transparent layer
     """
 
     
@@ -78,8 +77,17 @@ def run(params):
 
     height = image.shape[0]
     width = image.shape[1]
+    
+    # Create the transparent layer we will draw onto
+    new_layer = np.zeros_like(image, dtype=np.uint8)
 
     path = params["stroke_input"]["path"]
+    clicks = params["stroke_input"]["clicks"]
+    
+    # Optional path smoothing interpolation
+    if params.get("flags", {}).get("smooth_path", True):
+        split_paths = utils.split_path_from_clicks(path, clicks)
+        path = np.vstack(split_paths) if split_paths else np.array([])
 
     n_drops = params["user_input"]["Number of Drops"]
     assert n_drops > 0, "Number of drops must be greater than 0"
@@ -102,8 +110,10 @@ def run(params):
     print("target angle", target_angle)
     initial_angles = [] #(Theta,phi)
     pixels = []
+    
     for lines in split_paths:
-        region = utils.points_within_radius(lines, radius,border = (height, width))
+        region = utils.points_within_radius(lines, radius, border=(height, width))
+        if len(region) == 0: continue
 
         selection = image[region[:, 0], region[:, 1]]
         selection = selection.astype(np.float32) / 255.0
@@ -118,9 +128,12 @@ def run(params):
     strength = params["user_input"]["Strength"]
     assert strength >= 0 and strength <= 1, "Strength must be between 0 and 1"
 
-    final_angles =  drop(initial_angles, target_angle, strength)
+    # Start of Validated Algorithm
+    final_angles = drop(initial_angles, target_angle, strength)
+    # End of Validated Algorithm
+    
     print("final angles", final_angles)
-    for i,(region,selection_hls) in enumerate(pixels):
+    for i, (region, selection_hls) in enumerate(pixels):
         new_phi, new_theta = final_angles[i]
         old_phi, old_theta = initial_angles[i]
 
@@ -129,7 +142,6 @@ def run(params):
 
         selection_hls[...,0] = (selection_hls[...,0] + offset_h) % 1
         selection_hls[...,1] += offset_l
-        #selection_hls[...,2] *= 100000
 
         #Need to change the luminosity
         selection_hls = np.clip(selection_hls, 0, 1)
@@ -137,7 +149,10 @@ def run(params):
         selection_rgb = utils.hls_to_rgb(selection_hls)
         selection_rgb = (selection_rgb * 254).astype(np.uint8)
 
-        image[region[:, 0], region[:, 1]] = selection_rgb
+        # Keep original alpha context
+        alpha_patch = image[region[:, 0], region[:, 1], 3:4]
         
+        new_layer[region[:, 0], region[:, 1], :3] = selection_rgb[:, :3]
+        new_layer[region[:, 0], region[:, 1], 3:4] = alpha_patch
         
-    return image
+    return new_layer

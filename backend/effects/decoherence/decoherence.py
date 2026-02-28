@@ -51,9 +51,18 @@ def run(params):
     Executes the Decoherence quantum effect pipeline.
     """
     image = params["stroke_input"]["image_rgba"].copy()
-    height, width, _ = image.shape
+    height, width = image.shape[0], image.shape[1]
     
+    # Create the transparent layer we will draw onto
+    new_layer = np.zeros_like(image, dtype=np.uint8)
     path = params["stroke_input"]["path"]
+    clicks = params["stroke_input"]["clicks"]
+    
+    # Optional path smoothing interpolation
+    if params.get("flags", {}).get("smooth_path", True):
+        split_paths = utils.split_path_from_clicks(path, clicks)
+        path = np.vstack(split_paths) if split_paths else np.array([])
+        
     radius = params["user_input"]["Radius"]
     intensity = params["user_input"]["Decoherence"]
 
@@ -76,6 +85,7 @@ def run(params):
         # Average color for the patch
         avg_rgb = np.mean(patch[:, :3], axis=0)
         
+        # Start of Validated Algorithm
         # Compute factors
         factors = [get_decoherence_factor(avg_rgb[c], intensity, c) for c in range(3)]
         
@@ -83,8 +93,15 @@ def run(params):
         new_patch = patch.copy()
         for c in range(3):
             new_patch[:, c] *= factors[c]
+        # End of Validated Algorithm
             
-        # Re-apply to image using the utils (handles blending/alpha)
-        image[region[:, 0], region[:, 1]] = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch)
+        # Re-apply to the transparent layer using utils (handles blending/alpha)
+        # We pull the original alpha to keep it unchanged outside of brush
+        alpha_patch = image[region[:, 0], region[:, 1], 3:4]
         
-    return image
+        patched_colors = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch)
+        
+        new_layer[region[:, 0], region[:, 1], :3] = patched_colors[:, :3]
+        new_layer[region[:, 0], region[:, 1], 3:4] = alpha_patch
+        
+    return new_layer

@@ -109,7 +109,6 @@ def run_heisenberg_hardware(dt_list, radius, phi, theta):
         return
 
 
-# The main function using  Heisenberg model
 def run(params):
     """
     Executes the Heisenberg quantum effect pipeline based on the provided parameters.
@@ -118,7 +117,7 @@ def run(params):
         parameters (dict): A dictionary containing all the relevant data.
 
     Returns:
-        Image: the new numpy array of RGBA values or None if the effect failed
+        Image: the new numpy array of RGBA values representing the transparent layer
     """
 
     # Extract image to work from
@@ -127,6 +126,9 @@ def run(params):
 
     height = image.shape[0]
     width = image.shape[1]
+    
+    # Create the transparent layer we will draw onto
+    new_layer = np.zeros_like(image, dtype=np.uint8)
 
     path = params["stroke_input"]["path"]
 
@@ -138,6 +140,7 @@ def run(params):
     h,l,s = colorsys.rgb_to_hls(color[0]/255, color[1]/255, color[2]/255)
     print(f"Using color: {color}")
 
+    # Start of Validated Algorithm
     phi, theta, _ = utils.color_to_spherical(color)
     print(f"Using angles: phi={phi}, theta={theta}")
 
@@ -147,7 +150,8 @@ def run(params):
     clicks = params["stroke_input"]["clicks"]
     assert len(clicks) < 11, "There can be no more than 10 clicks in a stroke"
 
-    split_paths = utils.split_path_from_clicks(path,clicks)
+    # Utils handles the exact segmentation
+    split_paths = utils.split_path_from_clicks(path, clicks)
 
     normalized_distances = [0.1] * len(split_paths) #dt*path_length
   
@@ -157,16 +161,17 @@ def run(params):
     new_hls = np.array([[(h + shift) % 1.0, (l + shift) % 1, (s + shift) % 1.0] for shift in color_shifts])
     new_hls = np.array([(1 - strength) * np.array([h,l,s]) + strength * new for new in new_hls])
     heisenberg_colors = utils.hls_to_rgb(new_hls)
-
+    # End of Validated Algorithm
     
-    for i,path in enumerate(split_paths):
+    for i, p_segment in enumerate(split_paths):
         # Get the region around this point
-        region = utils.points_within_radius(path, radius, border=(height, width))
+        region = utils.points_within_radius(p_segment, radius, border=(height, width))
+        if len(region) == 0: continue
 
-        new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
+        new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255.0
         new_patch[...,:3] = heisenberg_colors[i]
 
-        image[region[:, 0], region[:, 1]] = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch)
+        new_layer[region[:, 0], region[:, 1]] = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch)
 
     print("Heisenberg effect applied successfully")
-    return image
+    return new_layer

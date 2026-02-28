@@ -100,14 +100,17 @@ def process_effect(instr: dict):
         if key == "clicks" or key == "path":
             req["stroke_input"][key] = req["stroke_input"][key][..., ::-1]
 
-    # Process any other flags
-    if req.get("flags", {}).get("smooth_path", False):
-        req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
+    # Ensure `clicks` array is always made available to all effects safely, regardless of JSON schema
+    if "clicks" not in req["stroke_input"] and "clicks" in instr.get("stroke_input", {}):
+        req["stroke_input"]["clicks"] = process_variable("array", instr["stroke_input"]["clicks"])
+        req["stroke_input"]["clicks"] = req["stroke_input"]["clicks"][..., ::-1]
 
-    if req.get("flags", {}).get("use_hls", False):
-        req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
+    # Process any other flags
+    # We no longer aggressively interpolate path coordinates gobally before giving them to the effects.
+    # The effects (like clone/lasso) handle their own path processing, identical to JS frontend behavior.
 
     # Add execution metadata
+
     req["effect_id"] = effect_id
     req["stroke_output_path"] = Path(tempfile.gettempdir()) / f"{stroke_id}_output.png"
 
@@ -121,15 +124,20 @@ def apply_effect(req: dict):
     effect_id = req["effect_id"]
     effect_module = EFFECT_REGISTRY[effect_id]["module"]
 
-    new_image = effect_module.run(req)
+    # The effect should return a transparent layer of the same size as input_image
+    # where all unpainted pixels are (0,0,0,0) and painted pixels contain robust RGBA data.
+    new_layer = effect_module.run(req)
+    
+    # Validation
+    if new_layer is None or new_layer.shape != input_image.shape:
+        raise ValueError("Effect must return an RGBA numpy array of identical shape (a transparent layer).")
 
-    # Merge the new image with the original image
-    mask = np.all(new_image == input_image, axis=-1)  
-    new_image[mask] = [0, 0, 0, 0]  # Set differing pixels to [0, 0, 0, 0]
+    # The output is directly the transparent layer created by the effect to overlay on the front-end JS canvas
+    # No more manual masking diffs here!
     
     output_path = Path(req["stroke_output_path"])
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
+    Image.fromarray(new_layer.astype(np.uint8)).save(output_path, format="PNG")
 
     return True
 

@@ -3,7 +3,7 @@
     "id": "decoherence",
     "author": "Antigravity",
     "version": "1.0.0",
-    "description": "Simulates quantum decoherence, causing color to decay and desaturate over time (Qiskit Backend).",
+    "description": "Simulates quantum decoherence, causing color to decay and desaturate over time.",
     "usage_instructions": "Draw a stroke on the canvas to apply the decay effect.",
     "min_strokes": 1,
     "max_strokes": 1,

@@ -167,17 +167,21 @@ def run(params):
         parameters (dict): A dictionary containing all the relevant data.
 
     Returns:
-        Image: the new numpy array of RGBA values or None if the effect failed
+        Image: the new numpy array of RGBA values representing the transparent layer
     """
     
     # Extract image to work from
     image = params["stroke_input"]["image_rgba"]
-    map = mapping[params["user_input"]["Mapping"]]
+    map_str = mapping[params["user_input"]["Mapping"]]
     # It's a good practice to check any of the request variables
     assert image.shape[-1] == 4, "Image must be RGBA format"
 
     height = image.shape[0]
     width = image.shape[1]
+    
+    # Create the transparent layer we will draw onto
+    new_layer = np.zeros_like(image, dtype=np.uint8)
+
     # Convert the image to HSV colorspace as a copy
     rgb_norm = image[:, :, :3].astype(np.float32) / 255.0
 
@@ -189,12 +193,19 @@ def run(params):
     
     # Extract the lasso path
     path = params["stroke_input"]["path"]
+    clicks = params["stroke_input"]["clicks"]
     
+    # Optional path smoothing interpolation
+    if params.get("flags", {}).get("smooth_path", True):
+        split_paths = utils.split_path_from_clicks(path, clicks)
+        path = np.vstack(split_paths) if split_paths else np.array([])
+
     radius = params["user_input"]["Radius"]
     if radius > 0:
-        copy_region = utils.points_within_radius(path, radius, border = (height, width))
+        copy_region = utils.points_within_radius(path, radius, border=(height, width))
     else:
-        copy_region = utils.points_within_lasso(path, border = (height, width))
+        copy_region = utils.points_within_lasso(path, border=(height, width))
+        
     def extract_neighbourhoods(x, y):
         neighbours = []
         for dx in [-1, 0, 1]:
@@ -203,29 +214,38 @@ def run(params):
                 neighbours.append((ni, nj))
         return neighbours
     
-    
+    # Start of Validated Algorithm
     for iterations in range(params["user_input"]["Iterations"]):
         copy_selection = {} 
         statevector_selection = {}
         semiclassical = {}
         after_iteration = {}
         for i in copy_region:
-            neighbourhood = extract_neighbourhoods(i[0],i[1])
-            nhood = np.zeros((9,2), dtype=np.complex128)
-            nhood_s = np.zeros((9,2), dtype=np.float64)
-            for n,coord in enumerate(neighbourhood):
+            neighbourhood = extract_neighbourhoods(i[0], i[1])
+            nhood = np.zeros((9, 2), dtype=np.complex128)
+            nhood_s = np.zeros((9, 2), dtype=np.float64)
+            for n, coord in enumerate(neighbourhood):
                 if coord not in copy_selection:
-                    copy_selection[coord] = np.array(image_hsv[coord[0], coord[1],:3])
-                    statevector_selection[coord],semiclassical[coord] = hsv_to_statevector(copy_selection[coord],mapping=map)
+                    copy_selection[coord] = np.array(image_hsv[coord[0], coord[1], :3])
+                    statevector_selection[coord], semiclassical[coord] = hsv_to_statevector(copy_selection[coord], mapping=map_str)
                 nhood[n] = statevector_selection[coord]
-                nhood_s[n] = semiclassical[coord], 1-semiclassical[coord]
+                nhood_s[n] = semiclassical[coord], 1 - semiclassical[coord]
             v, purity = game_of_life(nhood)
             new_sc = SCGOL(nhood_s)[0]
-            hsv = statevector_to_hsv(v,semiclassical=new_sc, mapping=map)
-            after_iteration[(i[0],i[1])] = np.array([hsv['h'],hsv['s'],hsv['v']])
+            hsv = statevector_to_hsv(v, semiclassical=new_sc, mapping=map_str)
+            after_iteration[(i[0], i[1])] = np.array([hsv['h'], hsv['s'], hsv['v']])
+            
         for key in after_iteration:
-            image_hsv[key[0], key[1],:3] = after_iteration[key]
+            image_hsv[key[0], key[1], :3] = after_iteration[key]
+    # End of Validated Algorithm
+            
+    # Apply rendering transparently
     for key in after_iteration:
-        image[key[0], key[1],:3] = np.round(np.array(colorsys.hsv_to_rgb(*after_iteration[key]))*255).astype(np.uint8)
-    return image
+        y, x = key[0], key[1]
+        rgb_color = np.round(np.array(colorsys.hsv_to_rgb(*after_iteration[key]))*255).astype(np.uint8)
+        new_layer[y, x, :3] = rgb_color
+        # Keep original alpha context
+        new_layer[y, x, 3] = image[y, x, 3]
+        
+    return new_layer
 #%%
