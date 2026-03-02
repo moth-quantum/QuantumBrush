@@ -55,6 +55,7 @@ const CanvasArea = () => {
   const isPanningRef = useRef(false);
   const lastPanPointRef = useRef<{ x: number; y: number } | null>(null);
   const spaceHeldRef = useRef(false);
+  const compareSnapshotRef = useRef<string | null>(null);
 
   const currentTool = useStore((s) => s.currentTool);
   const brushWidth = useStore((s) => s.brushWidth);
@@ -80,7 +81,7 @@ const CanvasArea = () => {
     fabricRef.current = canvas;
     setCanvasInstance(canvas);
 
-    // Size to container
+    // Size to container using ResizeObserver for reliable resize tracking
     const resize = () => {
       if (!containerRef.current) return;
       canvas.setDimensions({
@@ -90,7 +91,8 @@ const CanvasArea = () => {
       canvas.renderAll();
     };
     resize();
-    window.addEventListener('resize', resize);
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(containerRef.current);
 
     // Default brush
     canvas.freeDrawingBrush = new PencilBrush(canvas);
@@ -101,7 +103,7 @@ const CanvasArea = () => {
     pushUndoState(JSON.stringify(canvas.toJSON()));
 
     return () => {
-      window.removeEventListener('resize', resize);
+      resizeObserver.disconnect();
       setCanvasInstance(null);
       canvas.dispose();
     };
@@ -184,14 +186,14 @@ const CanvasArea = () => {
     canvas.freeDrawingBrush.color = hexToRgba(brushColor, brushOpacity);
   }, [brushWidth, brushColor, brushOpacity, currentTool]);
 
-  // ─── Dot click handling ──────────────────────────────────
+  // ─── Dot click + drag handling ──────────────────────────────
   useEffect(() => {
     const canvas = fabricRef.current;
     if (!canvas || currentTool !== 'dot') return;
 
-    const onMouseDown = (opt: any) => {
-      if (spaceHeldRef.current) return;
-      const pointer = canvas.getScenePoint(opt.e);
+    let isDotting = false;
+
+    const placeDot = (pointer: { x: number; y: number }) => {
       const { brushWidth: bw, brushColor: bc, brushOpacity: bo } = useStore.getState();
       const dotRadius = Math.max(bw / 2, 1);
       const circle = new Circle({
@@ -206,12 +208,35 @@ const CanvasArea = () => {
       });
       canvas.add(circle);
       addClick([Math.round(pointer.x), Math.round(pointer.y)]);
-      pushUndoState(JSON.stringify(canvas.toJSON()));
+    };
+
+    const onMouseDown = (opt: any) => {
+      if (spaceHeldRef.current) return;
+      isDotting = true;
+      const pointer = canvas.getScenePoint(opt.e);
+      placeDot(pointer);
+    };
+
+    const onMouseMove = (opt: any) => {
+      if (!isDotting || spaceHeldRef.current) return;
+      const pointer = canvas.getScenePoint(opt.e);
+      placeDot(pointer);
+    };
+
+    const onMouseUp = () => {
+      if (isDotting) {
+        pushUndoState(JSON.stringify(canvas.toJSON()));
+      }
+      isDotting = false;
     };
 
     canvas.on('mouse:down', onMouseDown);
+    canvas.on('mouse:move', onMouseMove);
+    canvas.on('mouse:up', onMouseUp);
     return () => {
       canvas.off('mouse:down', onMouseDown);
+      canvas.off('mouse:move', onMouseMove);
+      canvas.off('mouse:up', onMouseUp);
     };
   }, [currentTool, brushColor, addClick, pushUndoState]);
 
@@ -494,6 +519,46 @@ const CanvasArea = () => {
     window.addEventListener('qb:load-effect-output', handler);
     return () => window.removeEventListener('qb:load-effect-output', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── Before/After comparison listeners ─────────────────────
+  useEffect(() => {
+    const onCompareStart = (e: Event) => {
+      const canvas = fabricRef.current;
+      if (!canvas) return;
+      const detail = (e as CustomEvent).detail;
+      const strokeId = detail?.strokeId;
+      const stroke = useStore.getState().strokes.find((s) => s.id === strokeId);
+      if (!stroke?.beforeCanvasJson) return;
+
+      // Save current canvas state so we can restore it later
+      compareSnapshotRef.current = JSON.stringify(canvas.toJSON());
+
+      // Load the "before" canvas state
+      canvas.loadFromJSON(JSON.parse(stroke.beforeCanvasJson)).then(() => {
+        reapplyToolState(canvas);
+        canvas.renderAll();
+      });
+    };
+
+    const onCompareEnd = () => {
+      const canvas = fabricRef.current;
+      if (!canvas || !compareSnapshotRef.current) return;
+
+      // Restore canvas to the state before comparison
+      canvas.loadFromJSON(JSON.parse(compareSnapshotRef.current)).then(() => {
+        reapplyToolState(canvas);
+        canvas.renderAll();
+        compareSnapshotRef.current = null;
+      });
+    };
+
+    window.addEventListener('qb:compare-start', onCompareStart);
+    window.addEventListener('qb:compare-end', onCompareEnd);
+    return () => {
+      window.removeEventListener('qb:compare-start', onCompareStart);
+      window.removeEventListener('qb:compare-end', onCompareEnd);
+    };
   }, []);
 
   const loadImageOntoCanvas = (dataUrl: string) => {

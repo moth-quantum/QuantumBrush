@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 
   // Python environment
   checkPython: () => ipcRenderer.invoke('check-python'),
+  installPackages: (packages: string[]) => ipcRenderer.invoke('install-packages', packages),
 
   // Effects
   loadEffects: () => ipcRenderer.invoke('load-effects'),

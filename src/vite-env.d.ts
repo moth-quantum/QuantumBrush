@@ -8,6 +8,7 @@ interface ElectronAPI {
 
   // Python environment
   checkPython: () => Promise<{ success: boolean; data?: { available: boolean; version?: string; missing?: string[] }; error?: string }>;
+  installPackages: (packages: string[]) => Promise<{ success: boolean; error?: string }>;
 
   // Effects
   loadEffects: () => Promise<{ success: boolean; data?: import('./types').EffectDefinition[]; error?: string }>;

@@ -33,6 +33,10 @@ export interface StrokeRecord {
   pathData: number[][];
   clickData: number[][];
   error?: string;
+  /** Canvas JSON snapshot taken before the effect was applied (for before/after compare) */
+  beforeCanvasJson?: string;
+  /** The data URL of the effect output image (for re-displaying after compare) */
+  resultDataUrl?: string;
 }
 
 export interface ProjectMeta {

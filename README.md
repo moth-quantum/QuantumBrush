@@ -40,9 +40,8 @@ Every technology used in this project is **free and open source**.
 
 ### Canvas & Drawing Tools
 
-- **Brush** — Free-drawing with configurable color, width, and opacity
+- **Brush** — Free-drawing with configurable color, width, and opacity; includes a **Dots sub-mode** (press `D`) for placing dots — click to place single dots, or click-and-drag to place dots continuously along the path
 - **Eraser** — Remove drawn objects from the canvas
-- **Dot** — Place single points for point-based quantum effects
 - **Select** — Move, resize, and delete objects on the canvas
 - **Zoom** — Scroll-wheel zoom (0.1x to 20x)
 - **Pan** — Space + drag to navigate the canvas
@@ -62,6 +61,15 @@ Every technology used in this project is **free and open source**.
 - **Native file dialogs** for all import/export operations
 - **Per-stroke SVG archival** for effect execution history
 
+### Stroke Manager & Before/After Comparison
+
+Open the **Stroke Manager** by clicking the **Layers icon** in the left sidebar. It shows every applied effect as a stroke entry with status (pending, running, completed, failed). For each completed stroke:
+
+- **Eye icon** — Toggle before/after comparison: click to see the canvas *before* the effect was applied, click again to restore the *after* state
+- **Re-apply icon** — Re-run the effect with the same parameters
+- **Play icon** (pending strokes) — Execute a queued effect immediately
+- **Trash icon** — Remove the stroke from history
+
 ### Project Management
 
 - Create new projects with custom canvas dimensions
@@ -75,7 +83,7 @@ Every technology used in this project is **free and open source**.
 | `V` | Select tool |
 | `B` | Brush tool |
 | `E` | Eraser tool |
-| `D` | Dot tool |
+| `D` | Dots mode (brush sub-mode) |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Y` | Redo |
 | `Ctrl+S` | Save |
@@ -159,7 +167,7 @@ npm install
 pip install numpy pillow qiskit qiskit-aer scipy pennylane jax
 ```
 
-> The app checks for missing Python packages on startup and will notify you if any are missing.
+> **In-app installation:** The app automatically detects missing Python packages on startup by scanning each effect's requirements. If packages are missing, a red alert appears in the Control Panel with an **"Install All Packages"** button that runs `pip install` for you — no terminal needed.
 
 ### Run in Development Mode
 
@@ -223,6 +231,17 @@ QuantumBrush_App/
 ├── electron-builder.json5 # Packaging configuration
 └── package.json
 ```
+
+---
+
+## Review Feedback & Fixes
+
+See [`REVIEWER_FIXES.md`](REVIEWER_FIXES.md) for a detailed breakdown of the four issues raised during review and their fixes:
+
+1. **Window resize bug** — Right bar no longer disappears (CSS-based collapse with transition)
+2. **Stroke Manager** — Before/after comparison, apply later/now, re-apply, and delete all work correctly
+3. **Python package management** — In-app "Install All Packages" button with automatic dependency detection
+4. **Dots/Brush unification** — Dots is now a brush sub-mode, not a separate tool
 
 ---
 

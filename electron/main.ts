@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron'
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs/promises'
@@ -63,20 +63,57 @@ app.whenReady().then(() => {
   buildAppMenu()
 })
 
+/**
+ * Aggregate all unique Python package names from every effect's _requirements.json.
+ * Maps import names to pip names where they differ (e.g. PIL → Pillow).
+ */
+async function collectEffectDependencies(appRoot: string): Promise<string[]> {
+  const pythonDir = path.join(appRoot, 'python')
+  const allDeps = new Set<string>()
+  try {
+    const entries = await fs.readdir(pythonDir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const reqPath = path.join(pythonDir, entry.name, `${entry.name}_requirements.json`)
+      try {
+        const data = JSON.parse(await fs.readFile(reqPath, 'utf-8'))
+        if (data.dependencies) {
+          for (const dep of Object.keys(data.dependencies)) {
+            allDeps.add(dep)
+          }
+        }
+      } catch {
+        // skip dirs without requirements
+      }
+    }
+  } catch {
+    // fallback
+  }
+  // Always ensure core packages are checked
+  for (const core of ['numpy', 'PIL', 'qiskit', 'qiskit_aer', 'scipy']) {
+    allDeps.add(core)
+  }
+  return Array.from(allDeps)
+}
+
 function checkPython(): Promise<{ available: boolean; version?: string; missing?: string[] }> {
   const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
-  return new Promise((resolve) => {
-    execFile(pythonCmd, ['--version'], (err, stdout) => {
+  return new Promise(async (resolve) => {
+    execFile(pythonCmd, ['--version'], async (err, stdout) => {
       if (err) {
         resolve({ available: false, missing: ['python3 not found'] })
         return
       }
       const version = stdout.trim()
-      // Check key packages
+
+      // Aggregate dependencies from all effects
+      const deps = await collectEffectDependencies(APP_ROOT)
+      const depsJson = JSON.stringify(deps)
+
       const checkScript = `
 import sys, json
 missing = []
-for pkg in ['numpy', 'PIL', 'qiskit', 'qiskit_aer', 'scipy']:
+for pkg in json.loads('${depsJson}'):
     try:
         __import__(pkg)
     except ImportError:
@@ -109,6 +146,41 @@ function registerIpcHandlers() {
       const msg = error instanceof Error ? error.message : String(error)
       return { success: false, error: msg }
     }
+  })
+
+  // ─── Install Python Packages ─────────────────────────────────
+  ipcMain.handle('install-packages', async (_event, packages: string[]) => {
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+    // Map import names to pip install names where they differ
+    const importToPip: Record<string, string> = {
+      PIL: 'Pillow',
+      qiskit_aer: 'qiskit-aer',
+      cv2: 'opencv-python',
+    }
+    const pipNames = packages.map((pkg) => importToPip[pkg] || pkg)
+
+    return new Promise((resolve) => {
+      const proc = spawn(pythonCmd, ['-m', 'pip', 'install', ...pipNames], {
+        cwd: APP_ROOT,
+      })
+
+      let stdout = ''
+      let stderr = ''
+      proc.stdout.on('data', (d) => { stdout += d.toString() })
+      proc.stderr.on('data', (d) => { stderr += d.toString() })
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          resolve({ success: true })
+        } else {
+          resolve({ success: false, error: stderr || `pip exited with code ${code}` })
+        }
+      })
+
+      proc.on('error', (err) => {
+        resolve({ success: false, error: `Failed to run pip: ${err.message}` })
+      })
+    })
   })
 
   // ─── Effects ───────────────────────────────────────────────

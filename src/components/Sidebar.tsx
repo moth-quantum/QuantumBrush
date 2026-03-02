@@ -3,7 +3,6 @@ import {
   MousePointer2,
   Brush,
   Eraser,
-  Circle,
   ImagePlus,
   Download,
   FolderOpen,
@@ -15,11 +14,10 @@ import {
 import { useStore } from '../store';
 import type { Tool } from '../types';
 
-const tools: { id: Tool; icon: typeof Brush; label: string }[] = [
+const tools: { id: Tool; icon: typeof Brush; label: string; alsoActive?: Tool }[] = [
   { id: 'select', icon: MousePointer2, label: 'Select (V)' },
-  { id: 'brush', icon: Brush, label: 'Brush (B)' },
+  { id: 'brush', icon: Brush, label: 'Brush (B) / Dots (D)', alsoActive: 'dot' },
   { id: 'eraser', icon: Eraser, label: 'Eraser (E)' },
-  { id: 'dot', icon: Circle, label: 'Dot (D)' },
 ];
 
 const Sidebar = () => {
@@ -191,20 +189,23 @@ const Sidebar = () => {
 
   return (
     <div className="w-14 h-full bg-gray-900/80 backdrop-blur-xl border-r border-white/10 flex flex-col items-center py-3 gap-1">
-      {tools.map(({ id, icon: Icon, label }) => (
-        <button
-          key={id}
-          onClick={() => setTool(id)}
-          title={label}
-          className={`p-2 rounded-lg transition-all duration-150 ${
-            currentTool === id
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-              : 'text-gray-400 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <Icon size={20} />
-        </button>
-      ))}
+      {tools.map(({ id, icon: Icon, label, alsoActive }) => {
+        const isActive = currentTool === id || currentTool === alsoActive;
+        return (
+          <button
+            key={id}
+            onClick={() => setTool(id)}
+            title={label}
+            className={`p-2 rounded-lg transition-all duration-150 ${
+              isActive
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Icon size={20} />
+          </button>
+        );
+      })}
 
       <div className="w-8 border-t border-white/10 my-2" />
 

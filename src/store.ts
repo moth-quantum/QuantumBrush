@@ -36,6 +36,9 @@ interface AppState {
   // Zoom
   zoomLevel: number;
 
+  // Python package management
+  missingPackages: string[] | null;
+
   // UI toggles
   strokeManagerOpen: boolean;
   projectDialogOpen: boolean;
@@ -52,6 +55,8 @@ interface AppState {
   loadEffects: (effects: EffectDefinition[]) => void;
   addStroke: (stroke: StrokeRecord) => void;
   updateStroke: (id: string, updates: Partial<StrokeRecord>) => void;
+  removeStroke: (id: string) => void;
+  reapplyStroke: (id: string) => void;
   setProject: (project: ProjectMeta | null) => void;
   setProjectFilePath: (filePath: string | null) => void;
   setCanvasInstance: (canvas: unknown) => void;
@@ -62,6 +67,7 @@ interface AppState {
   undo: () => string | null;
   redo: () => string | null;
   setZoomLevel: (level: number) => void;
+  setMissingPackages: (packages: string[]) => void;
   toggleStrokeManager: () => void;
   openProjectDialog: (mode: 'new' | 'open') => void;
   closeProjectDialog: () => void;
@@ -93,6 +99,8 @@ export const useStore = create<AppState>((set, get) => ({
   redoStack: [],
 
   zoomLevel: 1,
+
+  missingPackages: null,
 
   strokeManagerOpen: false,
   projectDialogOpen: false,
@@ -128,6 +136,55 @@ export const useStore = create<AppState>((set, get) => ({
     set((state) => ({
       strokes: state.strokes.map((s) => (s.id === id ? { ...s, ...updates } : s)),
     })),
+
+  removeStroke: (id) =>
+    set((state) => ({
+      strokes: state.strokes.filter((s) => s.id !== id),
+    })),
+
+  reapplyStroke: (id) => {
+    const { strokes, currentProject, updateStroke: update, notify: n } = get();
+    const stroke = strokes.find((s) => s.id === id);
+    if (!stroke || !currentProject) return;
+
+    update(id, { status: 'running', error: undefined });
+    const canvas = get()._canvasInstance as any;
+    if (!canvas) return;
+
+    const canvasDataUrl = canvas.toDataURL({ format: 'png', multiplier: 1 });
+    // Snapshot canvas before applying so before/after comparison works
+    const beforeCanvasJson = JSON.stringify(canvas.toJSON());
+    update(id, { beforeCanvasJson });
+
+    window.ipcRenderer
+      .runEffect({
+        projectId: currentProject.id,
+        strokeId: stroke.id,
+        effectId: stroke.effectId,
+        userInput: stroke.params as Record<string, unknown>,
+        strokeInput: { path: stroke.pathData, clicks: stroke.clickData },
+        canvasImageDataUrl: canvasDataUrl,
+      })
+      .then((result: any) => {
+        if (result.success && result.data) {
+          update(id, { status: 'completed', resultDataUrl: result.data.outputImageDataUrl });
+          window.dispatchEvent(
+            new CustomEvent('qb:load-effect-output', {
+              detail: { dataUrl: result.data.outputImageDataUrl },
+            })
+          );
+          n('Effect re-applied successfully', 'success');
+        } else {
+          update(id, { status: 'failed', error: result.error });
+          n('Effect failed: ' + result.error, 'error');
+        }
+      })
+      .catch((err: any) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        update(id, { status: 'failed', error: msg });
+        n('Effect error: ' + msg, 'error');
+      });
+  },
 
   setProject: (project) => set({ currentProject: project }),
   setProjectFilePath: (filePath) => set({ projectFilePath: filePath }),
@@ -167,6 +224,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setZoomLevel: (level) => set({ zoomLevel: level }),
+  setMissingPackages: (packages) => set({ missingPackages: packages.length > 0 ? packages : null }),
   toggleStrokeManager: () => set((state) => ({ strokeManagerOpen: !state.strokeManagerOpen })),
   openProjectDialog: (mode) => set({ projectDialogOpen: true, projectDialogMode: mode }),
   closeProjectDialog: () => set({ projectDialogOpen: false, projectDialogMode: null }),
