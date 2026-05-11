@@ -1,9 +1,10 @@
 #!/bin/bash
+set -euo pipefail
 
-REPO_URL="https://github.com/moth-quantum/QuantumBrush.git"
-REPO_BRANCH="dist"
-TEMP_DIR="/tmp/quantum-brush-update"
+TARBALL_URL="https://github.com/moth-quantum/QuantumBrush/archive/refs/heads/dist.tar.gz"
 INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 [ -t 1 ] && { R=$'\033[31m' G=$'\033[32m' Y=$'\033[33m' B=$'\033[34m' N=$'\033[0m'; }
 : "${R:=}" "${G:=}" "${Y:=}" "${B:=}" "${N:=}"
@@ -17,25 +18,30 @@ echo "║                   QuantumBrush Updater                      ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 printf "\nInstall dir: %s\n\n" "$INSTALL_DIR"
 
-command -v git &>/dev/null || die "Git is not installed."
+command -v curl &>/dev/null || die "curl is required but not installed."
 
 printf "Update to the latest version? (Y/n): "
 read -r -n 1 REPLY; echo
 [[ $REPLY =~ ^[Nn]$ ]] && { warn "Update cancelled."; exit 0; }
 
 printf "${B}[INFO]${N} Downloading latest version...\n"
-rm -rf "$TEMP_DIR"
-git clone --depth=1 --branch "$REPO_BRANCH" "$REPO_URL" "$TEMP_DIR" 2>&1 \
-    || die "Download failed."
+curl -fsSL "$TARBALL_URL" | tar -xz --strip-components=1 -C "$TEMP_DIR"
 
 printf "${B}[INFO]${N} Updating application files...\n"
-rm -rf "$TEMP_DIR/.git"
 cp -R "$TEMP_DIR"/. "$INSTALL_DIR/"
-rm -rf "$TEMP_DIR"
-
 chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/update.sh" \
-         "$INSTALL_DIR/Setup.command" "$INSTALL_DIR/Update.command" 2>/dev/null
+         "$INSTALL_DIR/Setup.command" "$INSTALL_DIR/Update.command" 2>/dev/null || true
 
 echo
 ok "QuantumBrush updated!"
+
+printf "Re-run setup to update Python dependencies? (Y/n): "
+read -r -n 1 REPLY; echo
+if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    cd "$INSTALL_DIR" && ./setup.sh
+else
+    warn "Skipped. Run manually if brushes stop working:"
+    printf "  cd %s && ./setup.sh\n\n" "$INSTALL_DIR"
+fi
+
 printf "${B}To run:${N} cd %s && java -jar QuantumBrush.jar\n\n" "$INSTALL_DIR"
