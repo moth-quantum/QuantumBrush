@@ -1,73 +1,41 @@
 #!/bin/bash
-# QuantumBrush Update Script
-# Updates application files while preserving user data
-# User data (project/, config/, metadata/, log/) is not in the repo, so a
-# simple cp -R from a fresh clone will never overwrite it.
 
 REPO_URL="https://github.com/moth-quantum/QuantumBrush.git"
 REPO_BRANCH="dist"
 TEMP_DIR="/tmp/quantum-brush-update"
+INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# ── Color / output helpers ───────────────────────────────────────────
-if [ -t 1 ] && command -v tput > /dev/null; then
-    ncolors=$(tput colors 2>/dev/null)
-    if [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
-        BOLD="$(tput bold)" NORMAL="$(tput sgr0)"
-        RED="$(tput setaf 1)" GREEN="$(tput setaf 2)"
-        YELLOW="$(tput setaf 3)" BLUE="$(tput setaf 4)"
-    fi
-fi
-: "${RED:=}" "${GREEN:=}" "${YELLOW:=}" "${BLUE:=}" "${BOLD:=}" "${NORMAL:=}"
+[ -t 1 ] && { R=$'\033[31m' G=$'\033[32m' Y=$'\033[33m' B=$'\033[34m' N=$'\033[0m'; }
+: "${R:=}" "${G:=}" "${Y:=}" "${B:=}" "${N:=}"
+ok()   { printf "${G}[OK]${N} %s\n" "$1"; }
+warn() { printf "${Y}[WARN]${N} %s\n" "$1"; }
+die()  { printf "${R}[ERROR]${N} %s\n" "$1"; exit 1; }
 
-info()    { printf "${BLUE}[INFO]${NORMAL} %s\n" "$1"; }
-success() { printf "${GREEN}[OK]${NORMAL} %s\n" "$1"; }
-warn()    { printf "${YELLOW}[WARNING]${NORMAL} %s\n" "$1"; }
-err()     { printf "${RED}[ERROR]${NORMAL} %s\n" "$1"; }
+echo
+echo "╔══════════════════════════════════════════════════════════════╗"
+echo "║                   QuantumBrush Updater                      ║"
+echo "╚══════════════════════════════════════════════════════════════╝"
+printf "\nInstall dir: %s\n\n" "$INSTALL_DIR"
 
-# ── Main ─────────────────────────────────────────────────────────────
-main() {
-    # Figure out where this script lives (= the install dir)
-    INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
+command -v git &>/dev/null || die "Git is not installed."
 
-    printf "\n"
-    printf "╔══════════════════════════════════════════════════════════════╗\n"
-    printf "║                   QuantumBrush Updater                       ║\n"
-    printf "╚══════════════════════════════════════════════════════════════╝\n"
-    printf "\n"
-    printf "${BLUE}Installation:${NORMAL} %s\n\n" "$INSTALL_DIR"
+printf "Update to the latest version? (Y/n): "
+read -r -n 1 REPLY; echo
+[[ $REPLY =~ ^[Nn]$ ]] && { warn "Update cancelled."; exit 0; }
 
-    if ! command -v git &> /dev/null; then
-        err "Git is not installed. Please install Git first."
-        exit 1
-    fi
+printf "${B}[INFO]${N} Downloading latest version...\n"
+rm -rf "$TEMP_DIR"
+git clone --depth=1 --branch "$REPO_BRANCH" "$REPO_URL" "$TEMP_DIR" 2>&1 \
+    || die "Download failed."
 
-    read -p "Update QuantumBrush to the latest version? (Y/n): " -n 1 -r
-    echo
-    [[ $REPLY =~ ^[Nn]$ ]] && { warn "Update cancelled."; exit 0; }
+printf "${B}[INFO]${N} Updating application files...\n"
+rm -rf "$TEMP_DIR/.git"
+cp -R "$TEMP_DIR"/. "$INSTALL_DIR/"
+rm -rf "$TEMP_DIR"
 
-    # Download latest version
-    info "Downloading latest version..."
-    rm -rf "$TEMP_DIR"
-    if ! git clone --depth=1 --branch "$REPO_BRANCH" "$REPO_URL" "$TEMP_DIR" 2>&1; then
-        err "Download failed."
-        exit 1
-    fi
+chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/update.sh" \
+         "$INSTALL_DIR/Setup.command" "$INSTALL_DIR/Update.command" 2>/dev/null
 
-    # Copy application files (user data dirs aren't in the repo)
-    info "Updating application files..."
-    rm -rf "$TEMP_DIR/.git"
-    cp -R "$TEMP_DIR"/* "$INSTALL_DIR/"
-    cp "$TEMP_DIR"/.gitignore "$INSTALL_DIR/" 2>/dev/null
-
-    # Make scripts executable
-    chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/update.sh" 2>/dev/null
-
-    # Clean up
-    rm -rf "$TEMP_DIR"
-
-    echo
-    success "QuantumBrush has been updated!"
-    printf "${BLUE}To run:${NORMAL} cd %s && java -jar QuantumBrush.jar\n\n" "$INSTALL_DIR"
-}
-
-main "$@"
+echo
+ok "QuantumBrush updated!"
+printf "${B}To run:${N} cd %s && java -jar QuantumBrush.jar\n\n" "$INSTALL_DIR"
