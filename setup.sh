@@ -116,47 +116,53 @@ setup_env() {
     info "Creating Python 3.11 environment..."
     conda create -p "$ENV" python=3.11 -y || die "Failed to create environment"
 
-    conda install -p "$ENV" -c conda-forge -y \
-        "numpy>=2.1.0" "matplotlib>=3.7.0" "scipy>=1.10.0" \
-        || warn "Some conda base packages failed"
+    local py
+    if [ "$OS" = "windows" ]; then
+        py="$ENV/Scripts/python.exe"
+    else
+        py="$ENV/bin/python"
+    fi
 
-    conda run -p "$ENV" pip install \
+    info "Installing core packages..."
+    "$py" -m pip install \
+        "numpy>=2.1.0" \
+        "matplotlib>=3.7.0" \
+        "scipy>=1.10.0" \
         "Pillow>=10.0.0" \
         "qiskit>=2.0.0" \
         "qiskit-ibm-runtime>=0.20.0" \
         "qiskit-aer>=0.17.0" \
         || die "Core package installation failed"
-    ok "Qiskit installed"
+    ok "Core packages installed"
 
-    conda run -p "$ENV" pip install "pytest>=7.0.0" "black>=23.0.0" 2>/dev/null \
+    "$py" -m pip install "pytest>=7.0.0" "black>=23.0.0" 2>/dev/null \
         || warn "Dev tools failed (non-critical)"
 
-    if conda run -p "$ENV" pip install "jax~=0.6.0" "jaxlib~=0.6.0"; then
+    if "$py" -m pip install "jax~=0.6.0" "jaxlib~=0.6.0"; then
         ok "JAX installed"
-        conda run -p "$ENV" pip install \
+        "$py" -m pip install \
             "pennylane>=0.43.0,<0.44.0" "optax>=0.1.0,<0.2.0" "equinox" \
             || warn "PennyLane stack failed — quantum ML effects unavailable"
     else
         warn "JAX/jaxlib failed — common on some hardware. Core features unaffected."
     fi
 
-    local py
+    local config_py
     if [ "$OS" = "windows" ]; then
-        py=$(cygpath -w "$ENV/Scripts/python.exe" 2>/dev/null || echo "$ENV/Scripts/python.exe")
+        config_py=$(cygpath -w "$py" 2>/dev/null || echo "$py")
     else
-        py="$ENV/bin/python"
+        config_py="$py"
     fi
-    mkdir -p config && echo "$py" > config/python_path.txt
-    ok "Python path: $py"
+    mkdir -p config && echo "$config_py" > config/python_path.txt
+    ok "Python path: $config_py"
 
     info "Verifying core packages..."
-    if ! conda run -p "$ENV" python -c \
-        "import numpy, qiskit, qiskit_ibm_runtime, matplotlib, scipy, PIL"; then
+    if ! "$py" -c "import numpy, qiskit, qiskit_ibm_runtime, matplotlib, scipy, PIL"; then
         die "Core package verification failed"
     fi
     ok "Core packages verified"
 
-    conda run -p "$ENV" python -c "import jax, pennylane, optax, equinox" 2>/dev/null \
+    "$py" -c "import jax, pennylane, optax, equinox" 2>/dev/null \
         && ok "ML packages verified" || warn "ML packages not available (optional)"
 }
 

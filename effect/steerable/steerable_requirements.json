@@ -9,7 +9,10 @@
         "numpy": ">=2.1.0",
         "qiskit": "",
         "jax": "",
-        "pennylane": ""
+        "jaxlib": "",
+        "pennylane": ">=0.43.0,<0.44.0",
+        "optax": ">=0.1.0,<0.2.0",
+        "equinox": ""
     },
     "user_input": {
         "Controls": {
