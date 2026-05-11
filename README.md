@@ -168,7 +168,7 @@ Used IDE version: Eclipse 2025-03
 
 # License
 
-Copyright [2025] [MOTH Quantum]
+Copyright [2025] [Moth]
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
