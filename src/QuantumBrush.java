@@ -39,6 +39,9 @@ public class QuantumBrush extends PApplet {
     private static final float MAX_ZOOM = 10.0f;
     private static final int CANVAS_WIDTH = 800;
     private static final int CANVAS_HEIGHT = 600;
+    private static final int MIN_CANVAS_WIDTH = 320;
+    private static final int MIN_CANVAS_HEIGHT = 240;
+    private static final float SCREEN_FIT_RATIO = 0.9f;
     
     // Project history for undo/redo
     private ArrayList<ProjectState> projectHistory;
@@ -238,17 +241,49 @@ public class QuantumBrush extends PApplet {
     }
     
     private void calculateInitialZoomAndPan() {
+        calculateInitialZoomAndPan(width, height);
+    }
+
+    private void calculateInitialZoomAndPan(int canvasWidth, int canvasHeight) {
         if (currentImage == null) return;
         
         // Calculate zoom to fit image in canvas with some margin
-        float fitZoomX = (width * 0.9f) / currentImage.width;
-        float fitZoomY = (height * 0.9f) / currentImage.height;
+        float fitZoomX = (canvasWidth * SCREEN_FIT_RATIO) / currentImage.width;
+        float fitZoomY = (canvasHeight * SCREEN_FIT_RATIO) / currentImage.height;
         zoomLevel = Math.min(fitZoomX, fitZoomY);
         zoomLevel = constrain(zoomLevel, MIN_ZOOM, MAX_ZOOM);
         
         // Center the image
-        panX = (width - currentImage.width * zoomLevel) / 2;
-        panY = (height - currentImage.height * zoomLevel) / 2;
+        panX = (canvasWidth - currentImage.width * zoomLevel) / 2;
+        panY = (canvasHeight - currentImage.height * zoomLevel) / 2;
+    }
+
+    public void fitCanvasWindowToCurrentImage() {
+        if (currentImage == null) {
+            surface.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+            zoomLevel = 1.0f;
+            panX = 0;
+            panY = 0;
+            return;
+        }
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int maxWidth = Math.max(MIN_CANVAS_WIDTH, (int) (screenSize.width * SCREEN_FIT_RATIO));
+        int maxHeight = Math.max(MIN_CANVAS_HEIGHT, (int) (screenSize.height * SCREEN_FIT_RATIO));
+
+        float scale = Math.min(1.0f, Math.min(
+            maxWidth / (float) currentImage.width,
+            maxHeight / (float) currentImage.height
+        ));
+
+        int targetWidth = Math.round(currentImage.width * scale);
+        int targetHeight = Math.round(currentImage.height * scale);
+        targetWidth = Math.max(MIN_CANVAS_WIDTH, Math.min(targetWidth, maxWidth));
+        targetHeight = Math.max(MIN_CANVAS_HEIGHT, Math.min(targetHeight, maxHeight));
+
+        surface.setSize(targetWidth, targetHeight);
+        calculateInitialZoomAndPan(targetWidth, targetHeight);
+        redraw();
     }
     
     // Coordinate transformation methods
@@ -589,8 +624,8 @@ public class QuantumBrush extends PApplet {
             if (loadedImage != null) {
                 currentImage = loadedImage;
                 
-                // Calculate initial zoom and pan to fit image nicely
-                calculateInitialZoomAndPan();
+                // Size and center the canvas using the same logic used when reopening projects.
+                fitCanvasWindowToCurrentImage();
                 
                 // Ask user for project name
                 String defaultProjectName = selectedFile.getName();
@@ -744,9 +779,6 @@ public class QuantumBrush extends PApplet {
                 
                 if (files.loadProject(selectedProjectId)) {
                     projectId = selectedProjectId;
-                    
-                    // Calculate initial zoom and pan for loaded image
-                    calculateInitialZoomAndPan();
                     
                     println("Project loaded: " + selectedItem.name + " (ID: " + projectId + ")");
                     
@@ -1032,8 +1064,8 @@ public class QuantumBrush extends PApplet {
     private void restoreProjectState(ProjectState state) {
         if (state.image != null) {
             currentImage = state.image.copy();
-            // Recalculate zoom and pan for the restored image
-            calculateInitialZoomAndPan();
+            // Keep undo/redo restores consistent with new and reopened projects.
+            fitCanvasWindowToCurrentImage();
         }
         canvas.setPaths(state.paths);
         projectId = state.projectId;
@@ -1191,7 +1223,7 @@ public class QuantumBrush extends PApplet {
     public void setCurrentImage(PImage image) {
         this.currentImage = image;
         if (image != null) {
-            calculateInitialZoomAndPan();
+            fitCanvasWindowToCurrentImage();
         }
     }
     
