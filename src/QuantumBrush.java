@@ -14,6 +14,7 @@ public class QuantumBrush extends PApplet {
     private StrokeManager strokes;
     private FileManager files;
     private UIManager ui;
+    private HardwareManager hardware;
     
     // UI components
     private JFrame controlFrame;
@@ -63,6 +64,7 @@ public class QuantumBrush extends PApplet {
         canvas = new CanvasManager(this);
         effects = new EffectManager(this);
         files = new FileManager(this);
+        hardware = new HardwareManager();
         ui = new UIManager(this);
         strokes = new StrokeManager(this);
         
@@ -81,6 +83,9 @@ public class QuantumBrush extends PApplet {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (strokes != null) {
                 strokes.shutdown();
+            }
+            if (hardware != null) {
+                hardware.clearToken();
             }
         }));
         
@@ -467,11 +472,27 @@ public class QuantumBrush extends PApplet {
         });
         zoomTimer.start();
         
-        // Add only the effects panel and zoom info to main panel
-        mainPanel.add(effectsPanel, BorderLayout.CENTER);
+        // Wrap the effects controls and the Hardware config in a tabbed pane.
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Effect", effectsPanel);
+        tabbedPane.addTab("Hardware", ui.createHardwareTab());
+
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
         mainPanel.add(zoomInfoPanel, BorderLayout.SOUTH);
-        
+
         controlFrame.add(mainPanel);
+
+        // Belt-and-braces: clear the in-memory IQM token if the user closes the
+        // control window (the shutdown hook covers SIGTERM/exit() paths too).
+        controlFrame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (hardware != null) {
+                    hardware.clearToken();
+                }
+            }
+        });
+
         controlFrame.setVisible(true);
     }
     
@@ -1181,6 +1202,10 @@ public class QuantumBrush extends PApplet {
     
     public UIManager getUIManager() {
         return ui;
+    }
+
+    public HardwareManager getHardwareManager() {
+        return hardware;
     }
     
     // Getter methods for state

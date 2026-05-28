@@ -13,14 +13,29 @@ public class UIManager {
     private JButton createButton;
     private Map<String, Object> currentEffectParameters;
     private Effect currentEffect;
-    
+
     // ✅ NEW: Track single Stroke Manager instance
     private JFrame strokeManagerFrame = null;
     private DefaultListModel<StrokeItem> strokeListModel = null;
     private JList<StrokeItem> strokeList = null;
     private JPanel strokeDetailsContent = null;
     private JScrollPane strokeDetailsScrollPane = null;
-    
+
+    // Effects whose Python implementation runs through utils.run_estimator
+    // and therefore can target a non-Aer backend. Other brushes use direct
+    // statevector / PennyLane / classical paths.
+    private static final Set<String> HARDWARE_SUPPORTED_EFFECTS = new HashSet<>(Arrays.asList(
+        "heisenbrush", "heisenbrush2", "clone", "chemical", "qdrop", "damping"
+    ));
+
+    // Hardware tab — kept around so we can refresh the IQM availability hint
+    // when the user switches to a different effect.
+    private JPanel hardwareTabPanel;
+    private JComboBox<String> hwProviderCombo;
+    private JPasswordField hwTokenField;
+    private JLabel hwTokenStatusLabel;
+    private JLabel hwEffectHintLabel;
+
     public UIManager(QuantumBrush app) {
         this.app = app;
         this.currentEffectParameters = new HashMap<>();
@@ -36,7 +51,8 @@ public class UIManager {
     
     public void createEffectWindow(Effect effect) {
         this.currentEffect = effect;
-        
+        refreshHardwareEffectHint();
+
         // Clear parameters completely when switching effects
         currentEffectParameters.clear();
         
@@ -501,7 +517,7 @@ public class UIManager {
         buttonPanel.add(runButton);
         buttonPanel.add(applyButton);
         buttonPanel.add(deleteButton);
-        
+
         if ("running".equals(status)) {
             JButton cancelButton = new JButton("Cancel");
             cancelButton.addActionListener(e -> strokeManager.cancelStrokeProcessing(stroke.getId()));
@@ -509,6 +525,46 @@ public class UIManager {
         }
         detailsPanel.add(buttonPanel);
         detailsPanel.add(Box.createVerticalStrut(10));
+
+        // Cost estimate / hardware result — populated by Python after a run.
+        String projectIdForCost = app.getProjectId();
+        if (projectIdForCost != null) {
+            String instrPath = "project/" + projectIdForCost + "/stroke/" + stroke.getId() + "_instructions.json";
+            java.io.File instrFile = new java.io.File(instrPath);
+            if (instrFile.exists()) {
+                try {
+                    JSONObject instr = app.loadJSONObject(instrPath);
+                    if (instr.hasKey("cost_estimate_qpu_seconds")) {
+                        float cost = instr.getFloat("cost_estimate_qpu_seconds", 0.0f);
+                        JSONObject hwBlock = instr.hasKey("hardware") ? instr.getJSONObject("hardware") : null;
+                        String providerStr = hwBlock != null ? hwBlock.getString("provider", "aer") : "aer";
+                        JLabel costLabel = new JLabel(String.format(
+                            "Estimated cost: ~%.3f QPU-seconds (backend: %s)", cost, providerStr));
+                        costLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+                        costLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                        detailsPanel.add(costLabel);
+                    }
+                    if (instr.hasKey("error_message")) {
+                        String msg = instr.getString("error_message", "");
+                        if (msg != null && !msg.isEmpty()) {
+                            JTextArea errArea = new JTextArea("Error: " + msg);
+                            errArea.setForeground(Color.RED);
+                            errArea.setFont(new Font("Arial", Font.PLAIN, 12));
+                            errArea.setLineWrap(true);
+                            errArea.setWrapStyleWord(true);
+                            errArea.setEditable(false);
+                            errArea.setOpaque(false);
+                            errArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+                            errArea.setBorder(BorderFactory.createEmptyBorder(2, 0, 6, 0));
+                            detailsPanel.add(errArea);
+                        }
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Could not read stroke status fields: " + ex.getMessage());
+                }
+            }
+            detailsPanel.add(Box.createVerticalStrut(6));
+        }
 
         // --- Image Previews Panel ---
         JPanel imagesPanel = new JPanel(new GridLayout(1, 2, 10, 10));
@@ -631,6 +687,173 @@ public class UIManager {
         container.add(placeholder);
     }
     
+    /**
+     * Builds the contents of the "Hardware" tab. Called once from
+     * QuantumBrush.createControlFrame; the returned panel is the tab body.
+     * Subsequent state changes are pushed through the HardwareManager and the
+     * widgets keep their own listeners in sync.
+     */
+    public JPanel createHardwareTab() {
+        hardwareTabPanel = new JPanel();
+        hardwareTabPanel.setLayout(new BoxLayout(hardwareTabPanel, BoxLayout.Y_AXIS));
+        hardwareTabPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        HardwareManager hw = app.getHardwareManager();
+
+        JLabel header = new JLabel("Backend selection");
+        header.setFont(new Font("Arial", Font.BOLD, 14));
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hardwareTabPanel.add(header);
+        hardwareTabPanel.add(Box.createVerticalStrut(8));
+
+        // Provider dropdown
+        JPanel providerRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        providerRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel providerLabel = new JLabel("Backend:");
+        providerLabel.setPreferredSize(new Dimension(160, 25));
+        providerRow.add(providerLabel);
+        hwProviderCombo = new JComboBox<>(new String[]{
+            "Aer simulator (default)", "IQM (Garnet)"
+        });
+        hwProviderCombo.setSelectedIndex(HardwareManager.PROVIDER_IQM.equals(hw.getProvider()) ? 1 : 0);
+        hwProviderCombo.addActionListener(e -> {
+            boolean iqm = hwProviderCombo.getSelectedIndex() == 1;
+            hw.setProvider(iqm ? HardwareManager.PROVIDER_IQM : HardwareManager.PROVIDER_AER);
+        });
+        providerRow.add(hwProviderCombo);
+        hardwareTabPanel.add(providerRow);
+
+        // Effect-availability hint — set by refreshHardwareEffectHint()
+        hwEffectHintLabel = new JLabel(" ");
+        hwEffectHintLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        hwEffectHintLabel.setForeground(new Color(180, 100, 0));
+        hwEffectHintLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hardwareTabPanel.add(hwEffectHintLabel);
+
+        hardwareTabPanel.add(Box.createVerticalStrut(15));
+
+        // Token row
+        JLabel tokenHeader = new JLabel("IQM API token");
+        tokenHeader.setFont(new Font("Arial", Font.BOLD, 13));
+        tokenHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hardwareTabPanel.add(tokenHeader);
+
+        JLabel tokenNote = new JLabel("Stored in memory only; cleared when the app closes.");
+        tokenNote.setFont(new Font("Arial", Font.ITALIC, 11));
+        tokenNote.setForeground(Color.GRAY);
+        tokenNote.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hardwareTabPanel.add(tokenNote);
+        hardwareTabPanel.add(Box.createVerticalStrut(4));
+
+        JPanel tokenRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        tokenRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel tokenLabel = new JLabel("Token:");
+        tokenLabel.setPreferredSize(new Dimension(160, 25));
+        tokenRow.add(tokenLabel);
+        hwTokenField = new JPasswordField(18);
+        tokenRow.add(hwTokenField);
+        JButton saveTokenButton = new JButton("Save");
+        saveTokenButton.addActionListener(e -> {
+            char[] entered = hwTokenField.getPassword();
+            app.getHardwareManager().setToken(entered);
+            Arrays.fill(entered, '\0');
+            hwTokenField.setText("");
+            updateTokenStatusLabel();
+        });
+        JButton clearTokenButton = new JButton("Clear");
+        clearTokenButton.addActionListener(e -> {
+            app.getHardwareManager().clearToken();
+            hwTokenField.setText("");
+            updateTokenStatusLabel();
+        });
+        tokenRow.add(saveTokenButton);
+        tokenRow.add(clearTokenButton);
+        hardwareTabPanel.add(tokenRow);
+
+        hwTokenStatusLabel = new JLabel("");
+        hwTokenStatusLabel.setFont(new Font("Arial", Font.ITALIC, 11));
+        hwTokenStatusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hardwareTabPanel.add(hwTokenStatusLabel);
+        updateTokenStatusLabel();
+
+        hardwareTabPanel.add(Box.createVerticalStrut(15));
+
+        // Spinners
+        JLabel optsHeader = new JLabel("Execution options");
+        optsHeader.setFont(new Font("Arial", Font.BOLD, 13));
+        optsHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hardwareTabPanel.add(optsHeader);
+        hardwareTabPanel.add(Box.createVerticalStrut(4));
+
+        JSpinner shotsSpinner = new JSpinner(new SpinnerNumberModel(hw.getShots(), 1, 100000, 256));
+        shotsSpinner.addChangeListener(e -> hw.setShots((Integer) shotsSpinner.getValue()));
+        hardwareTabPanel.add(makeHardwareSpinnerRow("Shots:", shotsSpinner,
+            "Measurements per circuit"));
+
+        JSpinner optSpinner = new JSpinner(new SpinnerNumberModel(hw.getOptimizationLevel(), 0, 3, 1));
+        optSpinner.addChangeListener(e -> hw.setOptimizationLevel((Integer) optSpinner.getValue()));
+        hardwareTabPanel.add(makeHardwareSpinnerRow("Optimization level:", optSpinner,
+            "Qiskit transpiler optimization level (0-3)"));
+
+        JSpinner qpuSpinner = new JSpinner(new SpinnerNumberModel(hw.getMaxQpuSeconds(), 0.1, 600.0, 5.0));
+        qpuSpinner.addChangeListener(e -> hw.setMaxQpuSeconds((Double) qpuSpinner.getValue()));
+        hardwareTabPanel.add(makeHardwareSpinnerRow("Max QPU-seconds:", qpuSpinner,
+            "Per-stroke estimated cost cap; strokes exceeding this refuse to submit"));
+
+        hardwareTabPanel.add(Box.createVerticalGlue());
+        refreshHardwareEffectHint();
+        return hardwareTabPanel;
+    }
+
+    private JPanel makeHardwareSpinnerRow(String label, JSpinner spinner, String tooltip) {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel lab = new JLabel(label);
+        lab.setPreferredSize(new Dimension(160, 25));
+        if (tooltip != null) lab.setToolTipText(tooltip);
+        row.add(lab);
+        spinner.setPreferredSize(new Dimension(100, 25));
+        row.add(spinner);
+        return row;
+    }
+
+    private void updateTokenStatusLabel() {
+        if (hwTokenStatusLabel == null) return;
+        if (app.getHardwareManager().hasToken()) {
+            hwTokenStatusLabel.setText("Token loaded.");
+            hwTokenStatusLabel.setForeground(new Color(0, 120, 0));
+        } else {
+            hwTokenStatusLabel.setText("No token set.");
+            hwTokenStatusLabel.setForeground(Color.GRAY);
+        }
+    }
+
+    /**
+     * Enables/disables the IQM option based on whether the active effect can
+     * actually target hardware. Currently only the 6 brushes that route
+     * through utils.run_estimator are supported.
+     */
+    public void refreshHardwareEffectHint() {
+        if (hwProviderCombo == null || hwEffectHintLabel == null) return;
+
+        boolean iqmAllowedForEffect = currentEffect != null
+            && HARDWARE_SUPPORTED_EFFECTS.contains(currentEffect.getId());
+
+        if (!iqmAllowedForEffect) {
+            // Force selection back to Aer and lock the dropdown
+            if (hwProviderCombo.getSelectedIndex() != 0) {
+                hwProviderCombo.setSelectedIndex(0);
+            }
+            app.getHardwareManager().setProvider(HardwareManager.PROVIDER_AER);
+            hwProviderCombo.setEnabled(false);
+            String list = String.join(", ", HARDWARE_SUPPORTED_EFFECTS);
+            hwEffectHintLabel.setText("Hardware execution unavailable for this effect. Supported: " + list);
+        } else {
+            hwProviderCombo.setEnabled(true);
+            hwEffectHintLabel.setText(" ");
+        }
+    }
+
     private static class StrokeItem {
         public final StrokeManager.Stroke stroke;
         public final String status;
