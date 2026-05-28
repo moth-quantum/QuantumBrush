@@ -11,7 +11,7 @@ utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 
 
-def drop(initial_angles, target_angle,strength):
+def drop(initial_angles, target_angle, strength, params=None):
     num_qubits = len(initial_angles)
     print("initial angles",initial_angles)
     print("target angles",target_angle)
@@ -44,7 +44,13 @@ def drop(initial_angles, target_angle,strength):
 
     ops = [SparsePauliOp(Pauli('I'*(num_qubits-i) + p + 'I'*i)) for p in ['X','Y','Z']  for i in range(num_qubits) ]
 
-    obs = utils.run_estimator(qc,ops)
+    p = params or {}
+    obs = utils.run_estimator(
+        qc, ops,
+        backend=p.get("backend"),
+        hw=p.get("hw"),
+        cost_estimate_out=p.get("cost_accumulator"),
+    )
 
     x_expectations = obs[:num_qubits]
     y_expectations = obs[num_qubits:2*num_qubits]
@@ -121,7 +127,7 @@ def run(params):
     strength = params["user_input"]["Strength"]
     assert strength >= 0 and strength <= 1, "Strength must be between 0 and 1"
 
-    final_angles =  drop(initial_angles, target_angle, strength)
+    final_angles =  drop(initial_angles, target_angle, strength, params=params)
     print("final angles", final_angles)
     for i,(region,selection_hls) in enumerate(pixels):
         new_phi, new_theta = final_angles[i]

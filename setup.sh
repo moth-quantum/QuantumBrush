@@ -147,6 +147,27 @@ setup_env() {
         warn "JAX/jaxlib failed — common on some hardware. Core features unaffected."
     fi
 
+    # IQM hardware execution (optional). Installed in its own pip command so
+    # the resolver doesn't have to balance iqm-client's heavy transitive deps
+    # against the core scientific stack. Failure is non-fatal — the app still
+    # works on the Aer simulator without iqm-client present.
+    #
+    # NOTE on the suppressed warning below: iqm-client 34.x requires
+    # qiskit<2.2, which conflicts on paper with qiskit-ibm-runtime / samplomatic
+    # / ibm-quantum-schemas (they declare qiskit>=2.2). For the current
+    # QuantumBrush code path this is cosmetic — see HARDWARE.md in the source
+    # branch for the rationale and the conditions under which it would stop
+    # being cosmetic.
+    info "Installing IQM client (optional, for hardware execution)..."
+    "$py" -m pip install "iqm-client[qiskit]>=22.10,<35.0" 2>&1 \
+        | grep -v -E "^(ERROR: pip's dependency resolver does not currently take into account|(qiskit-ibm-runtime|samplomatic|ibm-quantum-schemas) [0-9.]+ requires qiskit[<>=!,. 0-9]+, but you have qiskit [0-9.]+ which is incompatible\.)"
+    pip_ec=${PIPESTATUS[0]}
+    if [ "$pip_ec" = "0" ] && "$py" -c "import iqm.qiskit_iqm" 2>/dev/null; then
+        ok "IQM client installed"
+    else
+        warn "iqm-client[qiskit] not available — IQM hardware execution disabled. Aer simulator still works."
+    fi
+
     local config_py
     if [ "$OS" = "windows" ]; then
         config_py=$(cygpath -w "$py" 2>/dev/null || echo "$py")
@@ -161,6 +182,9 @@ setup_env() {
         die "Core package verification failed"
     fi
     ok "Core packages verified"
+
+    "$py" -c "import iqm.qiskit_iqm" 2>/dev/null \
+        && ok "IQM client verified" || warn "IQM client not available (optional)"
 
     "$py" -c "import jax, pennylane, optax, equinox" 2>/dev/null \
         && ok "ML packages verified" || warn "ML packages not available (optional)"

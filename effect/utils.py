@@ -147,27 +147,57 @@ def split_path_from_clicks(path,clicks):
     
     return split_paths
 
-def run_estimator(circuits, operators, backend=None, options = None):
+def run_estimator(circuits, operators, backend=None, options=None,
+                  hw=None, cost_estimate_out=None):
     '''Runs the estimator on the provided circuits and operators.
     It can receive a single circuit or a list of circuits.
     It can receive a single operator or a list of operators or a list of list of operators (one for each circuit).
+
+    When `hw` is provided (the `hardware` block from the stroke JSON), shots
+    and optimization level come from there, and a conservative pre-flight
+    QPU-seconds estimate is computed after transpilation. If the estimate
+    exceeds `hw["max_qpu_seconds"]`, a CostExceededError is raised BEFORE any
+    circuit is submitted. The estimate is appended to `cost_estimate_out` (a
+    list) when provided, so apply_effect.py can sum it across calls.
     '''
-    
-    #iqm_server_url = "https://cocos.resonance.meetiqm.com/garnet:mock"  # Replace this with the correct URL
-    #provider = IQMProvider(iqm_server_url)
-    #backend = provider.get_backend('garnet')
-    #sampler = BackendSamplerV2(backend, options={"default_shots": 1000})
     if backend is None:
         backend = AerSimulator()
 
-    estimator = Estimator(backend=backend, options=options)
+    hw = hw or {}
+    opt_level = int(hw.get("optimization_level", 2))
+    shots = hw.get("shots")
+    if shots is not None:
+        shots = int(shots)
 
-    pm = generate_preset_pass_manager(backend=backend, optimization_level=2)
+    # BackendEstimatorV2 does not accept `default_shots` (that's a Sampler V2
+    # option); it controls accuracy via `default_precision`. Map shots →
+    # precision = 1/sqrt(shots) when the caller hasn't passed their own
+    # precision. Shots is still kept on `hw` for the cost estimate.
+    est_options = dict(options) if options else {}
+    if (
+        shots is not None
+        and "default_precision" not in est_options
+    ):
+        est_options["default_precision"] = 1.0 / (shots ** 0.5)
+    estimator = Estimator(backend=backend, options=est_options or None)
+
+    pm = generate_preset_pass_manager(backend=backend, optimization_level=opt_level)
 
     if isinstance(circuits, list):
         isa_circuits = [pm.run(circuit) for circuit in circuits]
     else:
         isa_circuits = [pm.run(circuits)]
+
+    # Pre-flight cost estimate (only meaningful for hardware; returns 0.0 for
+    # Aer or unknown devices).
+    if hw:
+        from backend import estimate_qpu_seconds, CostExceededError
+        estimate = estimate_qpu_seconds(isa_circuits, hw)
+        if cost_estimate_out is not None:
+            cost_estimate_out.append(estimate)
+        cap = hw.get("max_qpu_seconds")
+        if cap is not None and hw.get("provider") == "iqm" and estimate > float(cap):
+            raise CostExceededError(estimate, float(cap), hw.get("device", "unknown"))
 
     n_circuits = len(isa_circuits)
 
