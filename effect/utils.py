@@ -147,11 +147,22 @@ def split_path_from_clicks(path,clicks):
     
     return split_paths
 
-def run_estimator(circuits, operators, backend=None, options = None):
+def run_estimator(circuits, operators, backend=None, options = None, timeout=30):
     '''Runs the estimator on the provided circuits and operators.
     It can receive a single circuit or a list of circuits.
     It can receive a single operator or a list of operators or a list of list of operators (one for each circuit).
+    
+    Args:
+        timeout (int): Maximum time in seconds to wait for quantum simulation results
     '''
+    import signal
+    
+    def timeout_handler(signum, frame):
+        raise TimeoutError(f"Quantum simulation timed out after {timeout} seconds. Try reducing the radius or simplifying the effect.")
+    
+    # Set up timeout signal
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)
     
     #iqm_server_url = "https://cocos.resonance.meetiqm.com/garnet:mock"  # Replace this with the correct URL
     #provider = IQMProvider(iqm_server_url)
@@ -180,16 +191,20 @@ def run_estimator(circuits, operators, backend=None, options = None):
     else:
         isa_observables = [[operators.apply_layout(isa_circuits[0].layout)]] * n_circuits
 
-    isa_inputs = list(zip(isa_circuits, isa_observables))
-    job = estimator.run(isa_inputs)
+    try:
+        isa_inputs = list(zip(isa_circuits, isa_observables))
+        job = estimator.run(isa_inputs)
 
-    pub_result = job.result()
-    obs = [pub_result[i].data.evs for i in range(n_circuits)]
+        pub_result = job.result()
+        obs = [pub_result[i].data.evs for i in range(n_circuits)]
 
-    if n_circuits == 1:
-        return obs[0]
-    
-    return obs
+        if n_circuits == 1:
+            return obs[0]
+        
+        return obs
+    finally:
+        # Always cancel the timeout alarm
+        signal.alarm(0)
 
 def bresenham_line(x1, y1, x2, y2):
     points = []
