@@ -487,7 +487,7 @@ public class StrokeManager {
         
         // Generate and save JSON instructions
         String instructionsPath = strokeDir.getPath() + "/" + strokeId + "_instructions.json";
-        JSONObject instructions = stroke.generateJSON(projectId);
+        JSONObject instructions = stroke.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
         app.saveJSONObject(instructions, instructionsPath);
 
         // DEBUG: Show the final JSON that was saved
@@ -886,7 +886,7 @@ public void runStroke(Stroke stroke) {
         
         // Ensure instructions file exists
         if (!instructionsFile.exists()) {
-            JSONObject instructions = stroke.generateJSON(projectId);
+            JSONObject instructions = stroke.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
             app.saveJSONObject(instructions, instructionsPath);
         }
         
@@ -1236,7 +1236,11 @@ public void runStroke(Stroke stroke) {
             );
             processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(stdoutLog));
             processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(stderrLog));
-            
+
+            // Pass the IQM token through the subprocess environment when the
+            // user has chosen the IQM backend. The token never lands on disk.
+            app.getHardwareManager().applyToProcessEnv(processBuilder.environment());
+
             // Execute process
             process = processBuilder.start();
             
@@ -1539,9 +1543,9 @@ public void runStroke(Stroke stroke) {
                 // Update the parameters in the stroke object
                 strokeToUpdate.setParameters(newParameters);
 
-                // Regenerate and save the JSON
+                // Regenerate and save the JSON (re-snapshotting current hardware config)
                 String projectId = app.getProjectId();
-                JSONObject instructions = strokeToUpdate.generateJSON(projectId);
+                JSONObject instructions = strokeToUpdate.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
                 String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
                 
                 // Mark the stroke as pending again, as its parameters have changed.
@@ -1607,6 +1611,10 @@ public void runStroke(Stroke stroke) {
         }
         
         public JSONObject generateJSON(String projectId) {
+            return generateJSON(projectId, null);
+        }
+
+        public JSONObject generateJSON(String projectId, JSONObject hardwareSnapshot) {
             DebugLogger.log("\n=== JSON GENERATION DEBUG START ===");
             DebugLogger.log("Generating JSON for stroke: " + id);
             DebugLogger.log("Effect: " + effect.getName() + " (ID: " + effect.getId() + ")");
@@ -1772,7 +1780,14 @@ public void runStroke(Stroke stroke) {
             DebugLogger.log("=== END PATH SERIALIZATION DEBUG ===");
             
             json.setJSONObject("stroke_input", strokeInput);
-            
+
+            // Hardware execution config (provider, device, shots, opt level,
+            // max QPU-seconds). Token is NEVER serialized — it travels via
+            // the IQM_TOKEN env var on the subprocess.
+            if (hardwareSnapshot != null) {
+                json.setJSONObject("hardware", hardwareSnapshot);
+            }
+
             // Add status fields
             json.setBoolean("created", true);
             json.setString("effect_received", "null");
