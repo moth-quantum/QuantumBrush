@@ -17,7 +17,7 @@ def prep(s0,s1=None): #s0 is the final state and s1 is the initial state
     assert s0**2 + s1**2 + s0*s1 - s0 -s1 <= 10**(-10), "Coefs must satisfy the ellipse inequality"
     return StatePreparation([np.sqrt((s0 + s1) / 2), np.sqrt((1 - s0) / 2), 0, np.sqrt((1 - s1) / 2)])
 
-def ua_cloning(intial_angles, s0=2/3):
+def ua_cloning(intial_angles, s0=2/3, params=None):
     '''
     Asymmetric universal cloning (same as the symetric case for default values)
     :param n_steps: Number of steps to repeat the cloning
@@ -47,7 +47,14 @@ def ua_cloning(intial_angles, s0=2/3):
 
     ops = [SparsePauliOp(Pauli('I'*(num_qubits-i-1) + p + 'I'*i)) for i in [0,2] for p in ['X','Y','Z'] ]
 
-    obs = utils.run_estimator(qc,ops,options = {"default_precision": 1e-3})
+    p = params or {}
+    obs = utils.run_estimator(
+        qc, ops,
+        options={"default_precision": 1e-3},
+        backend=p.get("backend"),
+        hw=p.get("hw"),
+        cost_estimate_out=p.get("cost_accumulator"),
+    )
  
     return obs[:3], obs[3:]
 
@@ -102,7 +109,7 @@ def run(params):
     r = np.linalg.norm([x,y,z])
     print("intial SVD", S)
     print("intial", x/r,y/r,z/r)
-    copy_coord, paste_coord = ua_cloning((theta,phi), s0=params["user_input"]["Strength"])
+    copy_coord, paste_coord = ua_cloning((theta,phi), s0=params["user_input"]["Strength"], params=params)
 
     copy_r = np.linalg.norm(copy_coord)
     paste_r = np.linalg.norm(paste_coord)

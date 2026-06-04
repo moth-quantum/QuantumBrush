@@ -60,7 +60,7 @@ def time_evolution_Heisenberg(n_qubits: int, J_list: list, hz_list: list, hx_lis
 
     return circ_dt
 
-def run_heisenberg_hardware(dt_list, radius, phi, theta):
+def run_heisenberg_hardware(dt_list, radius, phi, theta, params=None):
     """
     Run Heisenberg model simulation on quantum hardware simulator.
 
@@ -99,7 +99,13 @@ def run_heisenberg_hardware(dt_list, radius, phi, theta):
         observables = get_mean_magnetization(n_qubits)
 
         # Run the estimator
-        values=utils.run_estimator(circuits, observables, backend=None)
+        p = params or {}
+        values = utils.run_estimator(
+            circuits, observables,
+            backend=p.get("backend"),
+            hw=p.get("hw"),
+            cost_estimate_out=p.get("cost_accumulator"),
+        )
 
         values=np.array([val[0] for val in values])
 
@@ -108,9 +114,11 @@ def run_heisenberg_hardware(dt_list, radius, phi, theta):
        
 
     except Exception as e:
+        # Re-raise so apply_effect.py can write `error_message` to the
+        # stroke JSON. Previously this returned None and caused the
+        # cryptic 'NoneType is not iterable' downstream.
         print(f"Quantum simulation failed: {e}")
-
-        return
+        raise
 
 
 # The main function using  Heisenberg model
@@ -156,7 +164,7 @@ def run(params):
     normalized_distances = [0.1] * len(split_paths) #dt*path_length
   
     # Run Heisenberg simulation to get colors
-    color_shifts = run_heisenberg_hardware(normalized_distances, radius, phi, theta)
+    color_shifts = run_heisenberg_hardware(normalized_distances, radius, phi, theta, params=params)
 
     new_hls = np.array([[(h + shift) % 1.0, (l + shift) % 1, (s + shift) % 1.0] for shift in color_shifts])
     new_hls = np.array([(1 - strength) * np.array([h,l,s]) + strength * new for new in new_hls])

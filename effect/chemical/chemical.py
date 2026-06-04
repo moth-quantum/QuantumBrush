@@ -53,7 +53,7 @@ def resize_list_repeat(values, new_length):
     return [values[i] for i in idx]
 
 
-def chemistry(initial_angles, circuit, params_to_apply, num_repeat):
+def chemistry(initial_angles, circuit, params_to_apply, num_repeat, params=None):
     """
     Run Chemical model simulation on quantum hardware simulator.
 
@@ -99,7 +99,13 @@ def chemistry(initial_angles, circuit, params_to_apply, num_repeat):
 
         # measure expectations
         ops = [SparsePauliOp(Pauli('I'*(num_qubits-i) + p + 'I'*i)) for p in ['X','Y','Z']  for i in range(num_qubits)]
-        obs = utils.run_estimator(qc,ops)
+        p = params or {}
+        obs = utils.run_estimator(
+            qc, ops,
+            backend=p.get("backend"),
+            hw=p.get("hw"),
+            cost_estimate_out=p.get("cost_accumulator"),
+        )
         # Store the expectations
         x_expectations[start_index:end_index] = obs[:num_qubits].mean()
         y_expectations[start_index:end_index] = obs[num_qubits:2*num_qubits].mean()
@@ -183,7 +189,7 @@ def run(params):
         initial_angles.append((phi,theta))
         pixels.append((region, distance, selection_hls))
     
-    final_angles =  chemistry(initial_angles, circuit, params_to_apply, num_repeat)
+    final_angles =  chemistry(initial_angles, circuit, params_to_apply, num_repeat, params=params)
     print("final angles", final_angles)
 
     for i,(region, distance, selection_hls) in enumerate(pixels):

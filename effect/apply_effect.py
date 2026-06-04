@@ -12,9 +12,18 @@ import argparse
 import os
 import time
 from utils import *
+from backend import get_backend, CostExceededError, MissingTokenError
 import contextlib
 
 app_path = Path(sys.path[0] + "/..") # Path to the app folder
+
+_DEFAULT_HARDWARE = {
+    "provider": "aer",
+    "device": "garnet",
+    "shots": 1024,
+    "optimization_level": 2,
+    "max_qpu_seconds": None,
+}
 
 def process_variable(var_type: str, variable: any):
     match var_type:
@@ -123,6 +132,14 @@ def process_effect(instr: dict):
     req["effect_script_path"] = effect_path / f"{effect_id}.py"
     req["stroke_output_path"] = project_path / f"stroke/{stroke_id}_output.png"
 
+    # Hardware execution config. Java emits a top-level `hardware` block;
+    # older stroke JSONs without one fall back to Aer with sensible defaults.
+    hw = dict(_DEFAULT_HARDWARE)
+    hw.update(instr.get("hardware") or {})
+    req["hw"] = hw
+    req["backend"] = get_backend(hw)
+    req["cost_accumulator"] = []
+
     return req
 
 def apply_effect(req: dict):
@@ -228,12 +245,32 @@ if __name__ == "__main__":
             #Apply the effect
             success = apply_effect(data)
 
+            # Surface the summed pre-flight cost estimate (sum across all
+            # run_estimator calls inside this stroke). Always written, even
+            # for Aer (where it's 0.0) — Java reads it for the inline display.
+            cost_total = float(sum(data.get("cost_accumulator") or []))
+            instructions["cost_estimate_qpu_seconds"] = cost_total
+
             instructions["effect_success"] = success
             dump_json(instructions, args.stroke_path)
 
+        except CostExceededError as e:
+            record_error(e)
+            instructions["effect_success"] = False
+            instructions["error_message"] = str(e)
+            instructions["cost_estimate_qpu_seconds"] = float(e.estimate_seconds)
+            dump_json(instructions, args.stroke_path)
+            success = False
+        except MissingTokenError as e:
+            record_error(e)
+            instructions["effect_success"] = False
+            instructions["error_message"] = str(e)
+            dump_json(instructions, args.stroke_path)
+            success = False
         except Exception as e:
             record_error(e)
             instructions["effect_success"] = False
+            instructions["error_message"] = str(e)
             dump_json(instructions, args.stroke_path)
             success = False
 
@@ -247,6 +284,7 @@ if __name__ == "__main__":
         record_error(e)
         if instructions:
             instructions["effect_success"] = False
+            instructions["error_message"] = str(e)
             dump_json(instructions, args.stroke_path)
         success = False
         # Redirect stdout and stderr to a log file
