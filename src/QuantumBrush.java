@@ -135,7 +135,7 @@ public class QuantumBrush extends PApplet {
         // Get the JFrame from Processing for canvas
         PSurfaceAWT.SmoothCanvas smoothCanvas = (PSurfaceAWT.SmoothCanvas) ((PSurfaceAWT)surface).getNative();
         canvasFrame = (JFrame) smoothCanvas.getFrame();
-        canvasFrame.setTitle("Quantum Brush - Canvas");
+        canvasFrame.setTitle("Quantum Brush");
         canvasFrame.addWindowFocusListener(new WindowAdapter() {
             @Override
             public void windowGainedFocus(WindowEvent e) {
@@ -143,12 +143,12 @@ public class QuantumBrush extends PApplet {
             }
         });
         
-        // Position the canvas frame on the right side of the screen
+        // Position the main frame near the center of the screen.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        canvasFrame.setLocation(screenSize.width/2, screenSize.height/4);
+        canvasFrame.setLocation(screenSize.width/4, screenSize.height/6);
         
-        // Create control frame
-        createControlFrame();
+        // Dock the control panel and the Processing canvas into one window.
+        createControlFrame(smoothCanvas);
         
         // Add keyboard shortcuts for undo/redo and zoom/pan
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
@@ -284,17 +284,14 @@ public class QuantumBrush extends PApplet {
                imagePoint.y >= 0 && imagePoint.y <= currentImage.height;
     }
     
-    private void createControlFrame() {
-        // Create main control window
-        controlFrame = new JFrame("Quantum Brush - Control Panel");
+    private void createControlFrame(Component processingCanvas) {
+        // Reuse Processing's JFrame so controls and canvas live together.
+        controlFrame = canvasFrame;
+        controlFrame.setTitle("Quantum Brush");
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int controlWidth = Math.min(500, (int)(screenSize.width * 0.4));
         int controlHeight = Math.min(700, (int)(screenSize.height * 0.8));
-        controlFrame.setSize(controlWidth, controlHeight);
         controlFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-        // Position the control frame on the left side of the screen
-        controlFrame.setLocation(screenSize.width/4, screenSize.height/4);
         
         // Set references for UI manager
         ui.setMainControlFrame(controlFrame);
@@ -479,8 +476,33 @@ public class QuantumBrush extends PApplet {
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
         mainPanel.add(zoomInfoPanel, BorderLayout.SOUTH);
+        mainPanel.setMinimumSize(new Dimension(320, 360));
+        mainPanel.setPreferredSize(new Dimension(controlWidth, controlHeight));
 
-        controlFrame.add(mainPanel);
+        JPanel canvasPanel = new JPanel(new BorderLayout());
+        canvasPanel.setBorder(BorderFactory.createTitledBorder("Canvas"));
+        canvasPanel.add(processingCanvas, BorderLayout.CENTER);
+        canvasPanel.setMinimumSize(new Dimension(360, 300));
+
+        JSplitPane workspaceSplit = new JSplitPane(
+            JSplitPane.HORIZONTAL_SPLIT,
+            mainPanel,
+            canvasPanel
+        );
+        workspaceSplit.setResizeWeight(0.0);
+        workspaceSplit.setDividerLocation(controlWidth);
+        workspaceSplit.setContinuousLayout(true);
+
+        int frameWidth = Math.min(screenSize.width - 80, controlWidth + CANVAS_WIDTH + 70);
+        int frameHeight = Math.min(screenSize.height - 80, Math.max(controlHeight, CANVAS_HEIGHT + 90));
+        controlFrame.getContentPane().removeAll();
+        controlFrame.getContentPane().setLayout(new BorderLayout());
+        controlFrame.getContentPane().add(workspaceSplit, BorderLayout.CENTER);
+        controlFrame.setSize(frameWidth, frameHeight);
+        controlFrame.setLocation(
+            Math.max(0, (screenSize.width - frameWidth) / 2),
+            Math.max(0, (screenSize.height - frameHeight) / 2)
+        );
 
         // Belt-and-braces: clear the in-memory IQM token if the user closes the
         // control window (the shutdown hook covers SIGTERM/exit() paths too).
@@ -493,6 +515,8 @@ public class QuantumBrush extends PApplet {
             }
         });
 
+        controlFrame.revalidate();
+        controlFrame.repaint();
         controlFrame.setVisible(true);
     }
     
