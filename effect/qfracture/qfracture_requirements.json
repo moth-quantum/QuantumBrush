@@ -1,0 +1,49 @@
+{
+    "name": "Quantum Fracture",
+    "id": "qfracture",
+    "author": "Abdullah Al Omar Galib",
+    "version": "1.0.0",
+    "description": "Quantum Fracture simulates a quantum walk on a line graph to paint jagged, crystal-fracture patterns. Each brush stroke spawns a quantum walker whose decoherence, controlled by the Measurement Rate, governs whether pixels collapse into solid colour or remain ghost-like and translucent.\n\nParameters:\n - Radius → thickness of each fracture arm\n - Branches → number of fracture arms radiating from the path\n - Measurement Rate → probability of collapse per step (0 = coherent quantum walk, 1 = classical random walk)\n - Colour → base hue for the fracture\n - Glow → adds a soft luminous aura around collapsed pixels\n\nUsage:\n - Click and drag to define the spine of the fracture. Arms will branch off at quantum-determined angles.",
+    "dependencies": {
+        "numpy": ">=1.21.0",
+        "colorsys": "",
+        "qiskit": ">=1.0.0",
+        "qiskit_aer": ">=0.11.0"
+    },
+    "user_input": {
+        "Radius": {
+            "type": "int",
+            "min": 1,
+            "max": 30,
+            "default": 5
+        },
+        "Branches": {
+            "type": "int",
+            "min": 2,
+            "max": 8,
+            "default": 4
+        },
+        "Measurement Rate": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.3
+        },
+        "Colour": {
+            "type": "color",
+            "default": "#88CCFF"
+        },
+        "Glow": {
+            "type": "bool",
+            "default": true
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array",
+        "clicks": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}
