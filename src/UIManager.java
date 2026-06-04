@@ -572,11 +572,11 @@ public class UIManager {
         String projectId = app.getProjectId();
         if (projectId != null) {
             // Input Image
-            String inputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_input.png";
+            String inputPath = getStrokeImagePath(projectId, stroke, "input_location", "_input.png");
             addImageWithOverlay(imagesPanel, inputPath, "Input", stroke);
 
             // Output Image
-            String outputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_output.png";
+            String outputPath = getStrokeImagePath(projectId, stroke, "output_location", "_output.png");
             addImageWithOverlay(imagesPanel, outputPath, "Output", null);
         }
         detailsPanel.add(imagesPanel);
@@ -619,6 +619,34 @@ public class UIManager {
         detailsPanel.add(Box.createVerticalGlue());
         detailsPanel.revalidate();
         detailsPanel.repaint();
+    }
+
+    private String getStrokeImagePath(
+        String projectId,
+        StrokeManager.Stroke stroke,
+        String jsonKey,
+        String fallbackSuffix
+    ) {
+        String fallback = "project/" + projectId + "/stroke/" + stroke.getId() + fallbackSuffix;
+        String instructionsPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_instructions.json";
+        java.io.File instructionsFile = new java.io.File(instructionsPath);
+        if (!instructionsFile.exists()) {
+            return fallback;
+        }
+
+        try {
+            JSONObject instructions = app.loadJSONObject(instructionsPath);
+            if (instructions.hasKey("stroke_input")) {
+                JSONObject strokeInput = instructions.getJSONObject("stroke_input");
+                String configuredPath = strokeInput.getString(jsonKey, "");
+                if (configuredPath != null && !configuredPath.trim().isEmpty()) {
+                    return configuredPath;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error reading stroke image path: " + e.getMessage());
+        }
+        return fallback;
     }
 
     private void addImageWithOverlay(JPanel container, String imagePath, String title, StrokeManager.Stroke stroke) {

@@ -5,6 +5,7 @@ import java.io.*;
 import javax.swing.*;
 import java.awt.*;
 import java.nio.file.Files;
+import java.security.MessageDigest;
 import java.util.concurrent.*;
 
 public class StrokeManager {
@@ -488,6 +489,17 @@ public class StrokeManager {
         // Generate and save JSON instructions
         String instructionsPath = strokeDir.getPath() + "/" + strokeId + "_instructions.json";
         JSONObject instructions = stroke.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
+
+        JSONObject strokeInput = instructions.getJSONObject("stroke_input");
+        if (app.getCurrentImage() != null) {
+            String inputPath = saveSharedInputSnapshot(projectDir, projectId, app.getCurrentImage());
+            strokeInput.setString("input_location", inputPath);
+        }
+        strokeInput.setString(
+            "output_location",
+            normalizeRelativePath(strokeDir.getPath() + "/" + strokeId + "_output.png")
+        );
+        instructions.setJSONObject("stroke_input", strokeInput);
         app.saveJSONObject(instructions, instructionsPath);
 
         // DEBUG: Show the final JSON that was saved
@@ -505,28 +517,60 @@ public class StrokeManager {
             DebugLogger.log("  No user_input section found in JSON!");
         }
         DebugLogger.log("=== END FINAL SAVED JSON DEBUG ===\n");
-        
-        // Save input image
-        if (app.getCurrentImage() != null) {
-            String inputPath = strokeDir.getPath() + "/" + strokeId + "_input.png";
-            app.getCurrentImage().save(inputPath);
-            
-            // Update JSON with image paths
-            instructions = app.loadJSONObject(instructionsPath);
-            JSONObject strokeInput = instructions.getJSONObject("stroke_input");
-            strokeInput.setString("input_location", inputPath);
-            strokeInput.setString(
-            "output_location", 
-            strokeDir.getPath() + "/" + strokeId + "_output.png"
-            );
-            instructions.setJSONObject("stroke_input", strokeInput);
-            app.saveJSONObject(instructions, instructionsPath);
-        }
-        
         // Set current stroke index
         currentStrokeIndex = strokes.size() - 1;
         
         return strokeId;
+    }
+
+    private String saveSharedInputSnapshot(File projectDir, String projectId, PImage image) {
+        File inputDir = new File(projectDir, "input");
+        if (!inputDir.exists()) {
+            inputDir.mkdirs();
+        }
+
+        String imageHash = hashImagePixels(image);
+        String relativePath = "project/" + projectId + "/input/" + imageHash + ".png";
+        File snapshotFile = new File(inputDir, imageHash + ".png");
+        if (!snapshotFile.exists()) {
+            image.save(snapshotFile.getPath());
+            DebugLogger.log("Saved shared stroke input snapshot: " + relativePath);
+        } else {
+            DebugLogger.log("Reusing shared stroke input snapshot: " + relativePath);
+        }
+        return relativePath;
+    }
+
+    private String hashImagePixels(PImage image) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            updateDigestWithInt(digest, image.width);
+            updateDigestWithInt(digest, image.height);
+            image.loadPixels();
+            for (int pixel : image.pixels) {
+                updateDigestWithInt(digest, pixel);
+            }
+            byte[] bytes = digest.digest();
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 16 && i < bytes.length; i++) {
+                builder.append(String.format("%02x", bytes[i] & 0xff));
+            }
+            return builder.toString();
+        } catch (Exception e) {
+            System.err.println("Error hashing image pixels: " + e.getMessage());
+            return "snapshot_" + System.currentTimeMillis();
+        }
+    }
+
+    private void updateDigestWithInt(MessageDigest digest, int value) {
+        digest.update((byte) (value >>> 24));
+        digest.update((byte) (value >>> 16));
+        digest.update((byte) (value >>> 8));
+        digest.update((byte) value);
+    }
+
+    private String normalizeRelativePath(String path) {
+        return path.replace(File.separatorChar, '/');
     }
   
   // ✅ FIXED: Completely rewrite path loading to preserve separate strokes
@@ -1450,19 +1494,17 @@ public void runStroke(Stroke stroke) {
             // Delete stroke files
             String strokeDir = "project/" + projectId + "/stroke/";
             File instructionsFile = new File(strokeDir + strokeId + "_instructions.json");
-            File inputFile = new File(strokeDir + strokeId + "_input.png");
             File outputFile = new File(strokeDir + strokeId + "_output.png");
+            String inputLocation = getStrokeInputLocation(projectId, strokeId);
             
             boolean success = true;
             if (instructionsFile.exists()) {
                 success &= instructionsFile.delete();
             }
-            if (inputFile.exists()) {
-                success &= inputFile.delete();
-            }
             if (outputFile.exists()) {
                 success &= outputFile.delete();
             }
+            success &= deleteInputSnapshotIfUnused(projectId, strokeId, inputLocation);
             
             // Update current stroke index if needed
             if (currentStrokeIndex >= strokes.size()) {
@@ -1498,6 +1540,90 @@ public void runStroke(Stroke stroke) {
         strokes.clear();
         currentStrokeIndex = -1;
         processingStrokes.clear();
+    }
+
+    private String getStrokeInputLocation(String projectId, String strokeId) {
+        String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
+        File instructionsFile = new File(instructionsPath);
+        if (instructionsFile.exists()) {
+            try {
+                JSONObject instructions = app.loadJSONObject(instructionsPath);
+                if (instructions.hasKey("stroke_input")) {
+                    JSONObject strokeInput = instructions.getJSONObject("stroke_input");
+                    return strokeInput.getString("input_location", "");
+                }
+            } catch (Exception e) {
+                System.err.println("Error reading stroke input location: " + e.getMessage());
+            }
+        }
+        return "project/" + projectId + "/stroke/" + strokeId + "_input.png";
+    }
+
+    private boolean deleteInputSnapshotIfUnused(String projectId, String strokeId, String inputLocation) {
+        if (inputLocation == null || inputLocation.isEmpty()) {
+            return true;
+        }
+
+        File projectDir = new File("project/" + projectId);
+        File inputFile = new File(inputLocation);
+        try {
+            File canonicalProject = projectDir.getCanonicalFile();
+            File canonicalInput = inputFile.getCanonicalFile();
+            if (!isWithinDirectory(canonicalInput, canonicalProject)) {
+                return true;
+            }
+
+            File sharedInputDir = new File(projectDir, "input").getCanonicalFile();
+            if (isWithinDirectory(canonicalInput, sharedInputDir)) {
+                if (!isInputLocationReferenced(projectId, strokeId, inputLocation) && inputFile.exists()) {
+                    return inputFile.delete();
+                }
+                return true;
+            }
+
+            File legacyStrokeInput = new File("project/" + projectId + "/stroke/" + strokeId + "_input.png")
+                .getCanonicalFile();
+            if (canonicalInput.equals(legacyStrokeInput) && inputFile.exists()) {
+                return inputFile.delete();
+            }
+        } catch (Exception e) {
+            System.err.println("Error cleaning up stroke input snapshot: " + e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isWithinDirectory(File file, File directory) throws IOException {
+        String filePath = file.getCanonicalPath();
+        String directoryPath = directory.getCanonicalPath();
+        return filePath.equals(directoryPath) || filePath.startsWith(directoryPath + File.separator);
+    }
+
+    private boolean isInputLocationReferenced(String projectId, String deletedStrokeId, String inputLocation) {
+        File strokeDir = new File("project/" + projectId + "/stroke");
+        File[] instructionFiles = strokeDir.listFiles((dir, name) -> name.endsWith("_instructions.json"));
+        if (instructionFiles == null) {
+            return false;
+        }
+
+        for (File file : instructionFiles) {
+            if (file.getName().equals(deletedStrokeId + "_instructions.json")) {
+                continue;
+            }
+            try {
+                JSONObject instructions = app.loadJSONObject(file.getAbsolutePath());
+                if (instructions.hasKey("stroke_input")) {
+                    JSONObject strokeInput = instructions.getJSONObject("stroke_input");
+                    String otherInput = strokeInput.getString("input_location", "");
+                    if (inputLocation.equals(otherInput)) {
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error checking input snapshot reference: " + e.getMessage());
+            }
+        }
+        return false;
     }
     
     /**
@@ -1545,8 +1671,31 @@ public void runStroke(Stroke stroke) {
 
                 // Regenerate and save the JSON (re-snapshotting current hardware config)
                 String projectId = app.getProjectId();
-                JSONObject instructions = strokeToUpdate.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
                 String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
+                JSONObject previousInput = null;
+                File instructionsFile = new File(instructionsPath);
+                if (instructionsFile.exists()) {
+                    JSONObject previousInstructions = app.loadJSONObject(instructionsPath);
+                    if (previousInstructions.hasKey("stroke_input")) {
+                        previousInput = previousInstructions.getJSONObject("stroke_input");
+                    }
+                }
+                JSONObject instructions = strokeToUpdate.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
+                JSONObject strokeInput = instructions.getJSONObject("stroke_input");
+                String defaultOutputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
+                if (previousInput != null) {
+                    String previousInputPath = previousInput.getString("input_location", "");
+                    if (!previousInputPath.isEmpty()) {
+                        strokeInput.setString("input_location", previousInputPath);
+                    }
+                    strokeInput.setString(
+                        "output_location",
+                        previousInput.getString("output_location", defaultOutputPath)
+                    );
+                } else {
+                    strokeInput.setString("output_location", defaultOutputPath);
+                }
+                instructions.setJSONObject("stroke_input", strokeInput);
                 
                 // Mark the stroke as pending again, as its parameters have changed.
                 // This is important so it can be re-run.
