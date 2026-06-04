@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+main() {
+
 TARBALL_URL="https://github.com/moth-quantum/QuantumBrush/archive/refs/heads/dist.tar.gz"
 INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
 TEMP_DIR=$(mktemp -d)
@@ -14,7 +16,7 @@ die()  { printf "${R}[ERROR]${N} %s\n" "$1"; exit 1; }
 
 echo
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║                   QuantumBrush Updater                      ║"
+echo "║                   QuantumBrush Update                        ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 printf "\nInstall dir: %s\n\n" "$INSTALL_DIR"
 
@@ -33,7 +35,7 @@ chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/update.sh" \
          "$INSTALL_DIR/Setup.command" "$INSTALL_DIR/Update.command" 2>/dev/null || true
 
 echo
-ok "QuantumBrush updated!"
+ok "Update is finished."
 
 printf "Re-run setup to update Python dependencies? (Y/n): "
 read -r -n 1 REPLY; echo
@@ -45,3 +47,7 @@ else
 fi
 
 printf "${B}To run:${N} cd %s && java -jar QuantumBrush.jar\n\n" "$INSTALL_DIR"
+
+}
+
+main "$@"
