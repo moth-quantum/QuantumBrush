@@ -214,9 +214,6 @@ public class FileManager {
         if (loadedImage != null) {
             app.setCurrentImage(loadedImage);
             
-            // CRITICAL: Ensure proper window sizing
-            app.getSurface().setSize(Math.min(loadedImage.width, 1200), Math.min(loadedImage.height, 800));
-            
             // Update metadata
             updateProjectMetadata(projectId);
             

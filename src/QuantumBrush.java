@@ -40,6 +40,10 @@ public class QuantumBrush extends PApplet {
     private static final float MAX_ZOOM = 10.0f;
     private static final int CANVAS_WIDTH = 800;
     private static final int CANVAS_HEIGHT = 600;
+    private static final int MIN_CANVAS_WIDTH = 320;
+    private static final int MIN_CANVAS_HEIGHT = 240;
+    private static final float CANVAS_SCREEN_WIDTH_RATIO = 0.6f;
+    private static final float CANVAS_SCREEN_HEIGHT_RATIO = 0.8f;
     
     // Project history for undo/redo
     private ArrayList<ProjectState> projectHistory;
@@ -136,6 +140,8 @@ public class QuantumBrush extends PApplet {
         PSurfaceAWT.SmoothCanvas smoothCanvas = (PSurfaceAWT.SmoothCanvas) ((PSurfaceAWT)surface).getNative();
         canvasFrame = (JFrame) smoothCanvas.getFrame();
         canvasFrame.setTitle("Quantum Brush - Canvas");
+        canvasFrame.setMinimumSize(new Dimension(MIN_CANVAS_WIDTH, MIN_CANVAS_HEIGHT));
+        surface.setResizable(true);
         canvasFrame.addWindowFocusListener(new WindowAdapter() {
             @Override
             public void windowGainedFocus(WindowEvent e) {
@@ -244,16 +250,73 @@ public class QuantumBrush extends PApplet {
     
     private void calculateInitialZoomAndPan() {
         if (currentImage == null) return;
+        calculateInitialZoomAndPan(width, height);
+    }
+
+    private void calculateInitialZoomAndPan(int canvasWidth, int canvasHeight) {
+        if (currentImage == null) return;
         
         // Calculate zoom to fit image in canvas with some margin
-        float fitZoomX = (width * 0.9f) / currentImage.width;
-        float fitZoomY = (height * 0.9f) / currentImage.height;
+        float fitZoomX = (canvasWidth * 0.9f) / currentImage.width;
+        float fitZoomY = (canvasHeight * 0.9f) / currentImage.height;
         zoomLevel = Math.min(fitZoomX, fitZoomY);
         zoomLevel = constrain(zoomLevel, MIN_ZOOM, MAX_ZOOM);
         
         // Center the image
-        panX = (width - currentImage.width * zoomLevel) / 2;
-        panY = (height - currentImage.height * zoomLevel) / 2;
+        panX = (canvasWidth - currentImage.width * zoomLevel) / 2;
+        panY = (canvasHeight - currentImage.height * zoomLevel) / 2;
+    }
+
+    public void resizeCanvasToFitImage(PImage image) {
+        if (image == null) {
+            surface.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+            zoomLevel = 1.0f;
+            panX = 0;
+            panY = 0;
+            keepCanvasFrameOnScreen();
+            return;
+        }
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int maxWidth = Math.max(
+            MIN_CANVAS_WIDTH,
+            Math.round(screenSize.width * CANVAS_SCREEN_WIDTH_RATIO)
+        );
+        int maxHeight = Math.max(
+            MIN_CANVAS_HEIGHT,
+            Math.round(screenSize.height * CANVAS_SCREEN_HEIGHT_RATIO)
+        );
+
+        float scale = Math.min(
+            (float) maxWidth / image.width,
+            (float) maxHeight / image.height
+        );
+        scale = Math.min(1.0f, scale);
+
+        int targetWidth = Math.max(
+            MIN_CANVAS_WIDTH,
+            Math.min(maxWidth, Math.round(image.width * scale))
+        );
+        int targetHeight = Math.max(
+            MIN_CANVAS_HEIGHT,
+            Math.min(maxHeight, Math.round(image.height * scale))
+        );
+
+        surface.setSize(targetWidth, targetHeight);
+        keepCanvasFrameOnScreen();
+        calculateInitialZoomAndPan(targetWidth, targetHeight);
+    }
+
+    private void keepCanvasFrameOnScreen() {
+        if (canvasFrame == null) return;
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Point frameLocation = canvasFrame.getLocation();
+        int maxX = Math.max(0, screenSize.width - canvasFrame.getWidth());
+        int maxY = Math.max(0, screenSize.height - canvasFrame.getHeight());
+        int x = Math.max(0, Math.min(frameLocation.x, maxX));
+        int y = Math.max(0, Math.min(frameLocation.y, maxY));
+        canvasFrame.setLocation(x, y);
     }
     
     // Coordinate transformation methods
@@ -608,10 +671,7 @@ public class QuantumBrush extends PApplet {
             PImage loadedImage = loadImage(selectedFile.getAbsolutePath());
             
             if (loadedImage != null) {
-                currentImage = loadedImage;
-                
-                // Calculate initial zoom and pan to fit image nicely
-                calculateInitialZoomAndPan();
+                setCurrentImage(loadedImage);
                 
                 // Ask user for project name
                 String defaultProjectName = selectedFile.getName();
@@ -1216,7 +1276,7 @@ public class QuantumBrush extends PApplet {
     public void setCurrentImage(PImage image) {
         this.currentImage = image;
         if (image != null) {
-            calculateInitialZoomAndPan();
+            resizeCanvasToFitImage(image);
         }
     }
     
