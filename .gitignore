@@ -1,5 +1,9 @@
 .DS_Store
 install.sh
+packaging/out/
+packaging/staging/
+packaging/input/
+packaging/launcher/build/
 .code-workspace
 test.ipynb
 **/__pycache__/

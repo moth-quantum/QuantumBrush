@@ -1,0 +1,15 @@
+.DS_Store
+install.sh
+packaging/out/
+packaging/staging/
+packaging/input/
+packaging/resources/
+packaging/launcher/build/
+.code-workspace
+test.ipynb
+**/__pycache__/
+__pycache__/
+config/
+log/
+metadata/
+project/

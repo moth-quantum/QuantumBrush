@@ -1,5 +1,23 @@
 #!/bin/bash
 
+NONINTERACTIVE=false
+for arg in "$@"; do
+    case "$arg" in
+        --yes|-y) NONINTERACTIVE=true ;;
+    esac
+done
+
+confirm() {
+    local prompt="$1"
+    if [ "$NONINTERACTIVE" = true ]; then
+        REPLY=""
+        return 0
+    fi
+    printf "%s" "$prompt"
+    read -r -n 1 REPLY
+    echo
+}
+
 [ -t 1 ] && { R=$'\033[31m' G=$'\033[32m' Y=$'\033[33m' B=$'\033[34m' N=$'\033[0m'; }
 : "${R:=}" "${G:=}" "${Y:=}" "${B:=}" "${N:=}"
 info() { printf "${B}[INFO]${N} %s\n" "$1"; }
@@ -93,7 +111,8 @@ install_conda() {
                 *) die "Unsupported architecture: $arch" ;;
             esac
             curl -fSL -o /tmp/mc.sh "$url" || die "Miniconda download failed"
-            bash /tmp/mc.sh -b -p "$HOME/miniconda3" && rm /tmp/mc.sh
+            bash /tmp/mc.sh -b -p "$HOME/miniconda3"
+            rm -f /tmp/mc.sh
             require_conda || die "Miniconda init failed"
             ok "Miniconda installed"
             ;;
@@ -174,8 +193,15 @@ setup_env() {
     else
         config_py="$py"
     fi
-    mkdir -p config && echo "$config_py" > config/python_path.txt
+
+    USER_CONFIG_DIR="$HOME/.quantumbrush/config"
+    mkdir -p "$USER_CONFIG_DIR"
+    echo "$config_py" > "$USER_CONFIG_DIR/python_path.txt"
     ok "Python path: $config_py"
+
+    if mkdir -p config 2>/dev/null && [ -w config ]; then
+        echo "$config_py" > config/python_path.txt
+    fi
 
     info "Verifying core packages..."
     if ! "$py" -c "import numpy, qiskit, qiskit_ibm_runtime, matplotlib, scipy, PIL"; then
@@ -201,8 +227,7 @@ RESTART=false
 if java_ok; then
     ok "Java $(java -version 2>&1 | head -1 | cut -d'"' -f2) found"
 else
-    printf "Java 11+ required. Install now? (Y/n): "
-    read -r -n 1 REPLY; echo
+    confirm "Java 11+ required. Install now? (Y/n): "
     [[ $REPLY =~ ^[Nn]$ ]] && warn "Skipped — QuantumBrush requires Java 11+" \
         || install_java || exit 1
 fi
@@ -210,8 +235,7 @@ fi
 if require_conda; then
     ok "Conda found"
 else
-    printf "Miniconda required. Install now? (Y/n): "
-    read -r -n 1 REPLY; echo
+    confirm "Miniconda required. Install now? (Y/n): "
     [[ $REPLY =~ ^[Nn]$ ]] && warn "Skipped — conda required for Python dependencies" \
         || install_conda || exit 1
 fi
@@ -227,4 +251,4 @@ setup_env
 
 echo
 ok "Setup complete!"
-printf "${B}To run:${N} java -jar QuantumBrush.jar\n\n"
+printf "${B}To run:${N} ./RunQuantumBrush.sh\n\n"

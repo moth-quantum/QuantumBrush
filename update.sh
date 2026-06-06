@@ -23,7 +23,7 @@ printf "\nInstall dir: %s\n\n" "$INSTALL_DIR"
 command -v curl &>/dev/null || die "curl is required but not installed."
 
 printf "Update to the latest version? (Y/n): "
-read -r -n 1 REPLY; echo
+read -r -n 1 REPLY || true; echo
 [[ $REPLY =~ ^[Nn]$ ]] && { warn "Update cancelled."; exit 0; }
 
 printf "${B}[INFO]${N} Downloading latest version...\n"
@@ -32,13 +32,15 @@ curl -fsSL "$TARBALL_URL" | tar -xz --strip-components=1 -C "$TEMP_DIR"
 printf "${B}[INFO]${N} Updating application files...\n"
 cp -R "$TEMP_DIR"/. "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/update.sh" \
+         "$INSTALL_DIR/RunQuantumBrush.sh" "$INSTALL_DIR/RunQuantumBrush.command" \
+         "$INSTALL_DIR/RunQuantumBrush.bat" \
          "$INSTALL_DIR/Setup.command" "$INSTALL_DIR/Update.command" 2>/dev/null || true
 
 echo
 ok "Update is finished."
 
 printf "Re-run setup to update Python dependencies? (Y/n): "
-read -r -n 1 REPLY; echo
+read -r -n 1 REPLY || true; echo
 if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     cd "$INSTALL_DIR" && ./setup.sh
 else
@@ -46,7 +48,7 @@ else
     printf "  cd %s && ./setup.sh\n\n" "$INSTALL_DIR"
 fi
 
-printf "${B}To run:${N} cd %s && java -jar QuantumBrush.jar\n\n" "$INSTALL_DIR"
+printf "${B}To run:${N} cd %s && ./RunQuantumBrush.sh\n\n" "$INSTALL_DIR"
 
 }
 
