@@ -1,6 +1,24 @@
 #!/bin/bash
 set +H
 
+NONINTERACTIVE=false
+for arg in "$@"; do
+    case "$arg" in
+        --yes|-y) NONINTERACTIVE=true ;;
+    esac
+done
+
+confirm() {
+    local prompt="$1"
+    if [ "$NONINTERACTIVE" = true ]; then
+        REPLY=""
+        return 0
+    fi
+    printf "%s" "$prompt"
+    read -r -n 1 REPLY
+    echo
+}
+
 [ -t 1 ] && { R=$'\033[31m' G=$'\033[32m' Y=$'\033[33m' B=$'\033[34m' N=$'\033[0m'; }
 : "${R:=}" "${G:=}" "${Y:=}" "${B:=}" "${N:=}"
 info() { printf "${B}[INFO]${N} %s\n" "$1"; }
@@ -38,7 +56,7 @@ install_java() {
             if   command -v apt    &>/dev/null; then sudo apt update && sudo apt install -y openjdk-21-jdk
             elif command -v dnf    &>/dev/null; then sudo dnf install -y java-21-openjdk-devel
             elif command -v pacman &>/dev/null; then sudo pacman -S --noconfirm jdk-openjdk
-            else die "Java not found. Install Java manually from Microsoft OpenJDK."
+            else die "No package manager found. Install Java 11+ manually."
             fi
             ;;
         windows)
@@ -52,25 +70,41 @@ install_java() {
     java_ok && ok "Java installed" || die "Java installation failed"
 }
 
+add_windows_conda_to_path() {
+    local root="$1"
+    if [ -f "$root/Scripts/conda.exe" ] || [ -f "$root/condabin/conda.bat" ]; then
+        export PATH="$root/Scripts:$root/condabin:$PATH"
+        return 0
+    fi
+    return 1
+}
+
 require_conda() {
     if ! command -v conda &>/dev/null; then
-        for p in \
-            "$HOME/miniconda3/bin/conda" \
-            "$HOME/anaconda3/bin/conda" \
-            "$HOME/miniforge3/bin/conda" \
-            "/opt/anaconda3/bin/conda" \
-            "/opt/miniconda3/bin/conda" \
-            "/opt/homebrew/Caskroom/miniconda/base/bin/conda"; do
-            [ -f "$p" ] && { export PATH="$(dirname "$p"):$PATH"; break; }
-        done
         if [ "$OS" = "windows" ]; then
-            local win
-            win=$(cygpath -u "$(cmd.exe /C 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null)
+            for root in \
+                "$HOME/miniconda3" "$HOME/Miniconda3" \
+                "$HOME/anaconda3" "$HOME/Anaconda3" \
+                "$HOME/miniforge3" "$HOME/AppData/Local/miniconda3"; do
+                add_windows_conda_to_path "$root" && break
+            done
+            if ! command -v conda &>/dev/null; then
+                local win
+                win=$(cygpath -u "$(cmd.exe /C 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null)
+                for root in \
+                    "$win/miniconda3" "$win/Miniconda3" \
+                    "$win/anaconda3" "$win/AppData/Local/miniconda3"; do
+                    add_windows_conda_to_path "$root" && break
+                done
+            fi
+        else
             for p in \
-                "$win/miniconda3/condabin/conda" \
-                "$win/Miniconda3/condabin/conda" \
-                "$win/anaconda3/condabin/conda" \
-                "$win/AppData/Local/miniconda3/condabin/conda"; do
+                "$HOME/miniconda3/bin/conda" \
+                "$HOME/anaconda3/bin/conda" \
+                "$HOME/miniforge3/bin/conda" \
+                "/opt/anaconda3/bin/conda" \
+                "/opt/miniconda3/bin/conda" \
+                "/opt/homebrew/Caskroom/miniconda/base/bin/conda"; do
                 [ -f "$p" ] && { export PATH="$(dirname "$p"):$PATH"; break; }
             done
         fi
@@ -94,7 +128,8 @@ install_conda() {
                 *) die "Unsupported architecture: $arch" ;;
             esac
             curl -fSL -o /tmp/mc.sh "$url" || die "Miniconda download failed"
-            bash /tmp/mc.sh -b -p "$HOME/miniconda3" && rm /tmp/mc.sh
+            bash /tmp/mc.sh -b -p "$HOME/miniconda3"
+            rm -f /tmp/mc.sh
             require_conda || die "Miniconda init failed"
             ok "Miniconda installed"
             ;;
@@ -108,21 +143,34 @@ install_conda() {
     esac
 }
 
+resolve_env_python() {
+    local env_dir="$1"
+    if [ "$OS" = "windows" ]; then
+        if [ -f "$env_dir/python.exe" ]; then
+            echo "$env_dir/python.exe"
+        elif [ -f "$env_dir/Scripts/python.exe" ]; then
+            echo "$env_dir/Scripts/python.exe"
+        else
+            return 1
+        fi
+    elif [ -f "$env_dir/bin/python" ]; then
+        echo "$env_dir/bin/python"
+    else
+        return 1
+    fi
+}
+
 setup_env() {
     require_conda || die "Conda not available"
     conda tos accept &>/dev/null || true
 
     [ -d "$ENV" ] && { warn "Removing existing environment..."; conda env remove -p "$ENV" -y; }
 
-    info "Creating Python 3.11 environment..."
+    info "Creating Python 3.11 environment (first run may take 15–30 minutes)..."
     conda create -p "$ENV" python=3.11 -y || die "Failed to create environment"
 
     local py
-    if [ "$OS" = "windows" ]; then
-        py="$ENV/Scripts/python.exe"
-    else
-        py="$ENV/bin/python"
-    fi
+    py=$(resolve_env_python "$ENV") || die "Python not found in environment at $ENV"
 
     info "Installing core packages..."
     "$py" -m pip install \
@@ -143,9 +191,9 @@ setup_env() {
         ok "JAX installed"
         "$py" -m pip install \
             "pennylane>=0.43.0,<0.44.0" "optax>=0.1.0,<0.2.0" "equinox" \
-            || warn "PennyLane stack failed — Advanced quantum algorithms unavailable"
+            || warn "PennyLane stack failed — quantum ML effects unavailable"
     else
-        warn "JAX/jaxlib failed — common on some hardware. Most brushes are unaffected."
+        warn "JAX/jaxlib failed — common on some hardware. Core features unaffected."
     fi
 
     # IQM hardware execution (optional). Installed in its own pip command so
@@ -175,8 +223,15 @@ setup_env() {
     else
         config_py="$py"
     fi
-    mkdir -p config && echo "$config_py" > config/python_path.txt
+
+    USER_CONFIG_DIR="$HOME/.quantumbrush/config"
+    mkdir -p "$USER_CONFIG_DIR"
+    echo "$config_py" > "$USER_CONFIG_DIR/python_path.txt"
     ok "Python path: $config_py"
+
+    if mkdir -p config 2>/dev/null && [ -w config ]; then
+        echo "$config_py" > config/python_path.txt
+    fi
 
     info "Verifying core packages..."
     if ! "$py" -c "import numpy, qiskit, qiskit_ibm_runtime, matplotlib, scipy, PIL"; then
@@ -188,7 +243,7 @@ setup_env() {
         && ok "IQM client verified" || warn "IQM client not available (optional)"
 
     "$py" -c "import jax, pennylane, optax, equinox" 2>/dev/null \
-        && ok "Advanced packages verified" || warn "Advanced packages not available (optional)"
+        && ok "ML packages verified" || warn "ML packages not available (optional)"
 }
 
 echo
@@ -202,24 +257,23 @@ RESTART=false
 if java_ok; then
     ok "Java $(java -version 2>&1 | head -1 | cut -d'"' -f2) found"
 else
-    printf "Java 11+ required. Install now? (Y/n): "
-    read -r -n 1 REPLY; echo
-    [[ $REPLY =~ ^[Nn]$ ]] && warn "QuantumBrush requires Java 11+" \
+    confirm "Java 11+ required. Install now? (Y/n): "
+    [[ $REPLY =~ ^[Nn]$ ]] && warn "Skipped — QuantumBrush requires Java 11+" \
         || install_java || exit 1
 fi
 
+info "Checking for Miniconda..."
 if require_conda; then
-    ok "Conda found"
+    ok "Conda found ($(conda info --base 2>/dev/null))"
 else
-    printf "Miniconda required. Install now? (Y/n): "
-    read -r -n 1 REPLY; echo
-    [[ $REPLY =~ ^[Nn]$ ]] && warn "Conda is required for Python dependencies!" \
+    confirm "Miniconda required. Install now? (Y/n): "
+    [[ $REPLY =~ ^[Nn]$ ]] && warn "Skipped — conda required for Python dependencies" \
         || install_conda || exit 1
 fi
 
 if [ "$RESTART" = true ]; then
     echo
-    echo "  Close this window, open a new terminal, then run ./setup.sh again."
+    echo "  Tools installed. Close this window, open a new terminal, then run ./setup.sh again."
     echo
     exit 0
 fi
@@ -228,4 +282,4 @@ setup_env
 
 echo
 ok "Setup complete!"
-printf "${B}To run:${N} Open up HOME/QuantumBrush/QuantumBrush.jar \n\n"
+printf "${B}To run:${N} ./RunQuantumBrush.sh\n\n"

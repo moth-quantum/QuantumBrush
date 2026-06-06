@@ -19,7 +19,7 @@
 # Usage Instruction
 This application is tested with MacOS Sequoia (15.5) && Eclipse IDE (2025-03) && Python 3.11+ && OpenJDK 21.0.7 LTS. Technically, the application must support every machines (Windows, Linux and MacOS) with the suitable Java and Python versions. It requires OpenJDK and Python to execute, so they must be previously installed.
 
-However, Luckily, the installer provides automatic OpenJDK + Python installation through `miniconda` thus you actually don’t need to do anything! `install.sh` creates condo environment `’quantumbrush’` and store all necessary libraries there. More of this is described under [Installation Instructions](https://github.com/moth-quantum/quantumbrush?tab=readme-ov-file#instllation-instruction).
+However, luckily, the installer provides automatic OpenJDK + Python installation through Miniconda — you usually don’t need to install them yourself. The native installers and `setup.sh` create a dedicated Python environment at `~/.quantumbrush/env` and store all necessary libraries there. On Windows, [Git for Windows](https://git-scm.com/download/win) is required so setup can run. More of this is described under [Installation Instructions](https://github.com/moth-quantum/quantumbrush?tab=readme-ov-file#installation-instructions).
 
 Quantum Brush is basically a graphics software powered by quantum-computing-imagination. There’s nothing which makes user experience difficult. The program has three windows. Treat them equally well.
 
@@ -61,19 +61,53 @@ Quantum Brush is basically a graphics software powered by quantum-computing-imag
 
 # Installation Instructions
 
-These instructions are primarily for MacOS. They will likely also work for Linux.
+These instructions are for artists and creatives who want the easiest install path.
 
-1. Download the install script `install.sh` [here](https://github.com/moth-quantum/QuantumBrush/releases/download/v0.0.3/install.sh).
-2. Open up the terminal. On a Mac, to open the ’Terminal’ app, press command+Space, type terminal and press Enter.
-3. Write `sh ~/Downloads/install.sh` (or copy-paste from here) and then press Enter to run the install script.
-4. If the installer shows `{someQuestion}? (Y/y)`, you can press `y` and Enter!
-5. After it install the program, you can choose whether the installer will set up the environment for you or not. Just press `y` for peaceful mind.
-6. The `QuantumBrush` folder can down be found in your Home folder.
+## Recommended: native installers
 
-To update you will need to run a similar process, but this time using the `update.sh` file in the QuantumBrush folder.
- 
-1. Open a terminal, as in step 2 above.
-2. Write `sh ~/QuantumBrush/update.sh` (or copy-paste from here) and then press Enter to run the update script.
+Download the latest release [here](https://github.com/moth-quantum/QuantumBrush/releases/latest). Each tagged release ships native packages for all platforms (`.dmg`, `.exe`, `.deb`, `.iso`) plus fallback shell installers.
+
+| Platform | File | What to do |
+|----------|------|------------|
+| macOS Apple Silicon | `QuantumBrush-*-macos-apple-silicon.dmg` | Open the `.dmg`, drag QuantumBrush to Applications, launch it |
+| macOS Intel | `QuantumBrush-*-macos-intel.dmg` | Open the `.dmg`, drag QuantumBrush to Applications, launch it |
+| Windows | `QuantumBrush-*-windows-x64.exe` | Run the installer, then launch from Start Menu |
+| Ubuntu / Debian | `QuantumBrush-*-linux-amd64.deb` | Install the `.deb`, then launch from applications menu |
+| Ubuntu ISO option | `QuantumBrush-*-ubuntu-amd64.iso` | Mount the ISO, open Terminal in the mounted folder, run `./install-quantumbrush.sh` |
+
+On first launch, QuantumBrush automatically configures Java and Python for you.
+
+- **macOS / Linux (`.dmg` or `.deb`):** no terminal required — launch from Applications or the app menu.
+- **Windows (`.exe`):** install [Git for Windows](https://git-scm.com/download/win) first. First launch runs setup through Git Bash in the background; allow any setup prompts.
+- **Ubuntu ISO:** requires Terminal once to run `install-quantumbrush.sh`.
+
+**macOS security:** release builds are signed and notarized when Apple Developer credentials are configured in CI. Unsigned builds may trigger Gatekeeper. Use an official signed release from the Releases page — do not bypass security with `xattr` or similar tools.
+
+## Fallback: shell installer
+
+If a native package is unavailable for your machine:
+
+1. Download `QuantumBrush-Installer.sh` (macOS/Linux) or `QuantumBrush-Installer.bat` (Windows) from [Releases](https://github.com/moth-quantum/QuantumBrush/releases/latest).
+2. macOS/Linux: open Terminal and run `bash ~/Downloads/QuantumBrush-Installer.sh`
+3. Windows: install [Git for Windows](https://git-scm.com/download/win) if needed, then double-click `QuantumBrush-Installer.bat`
+4. When prompted, press Enter or `y` to run setup and install Java/Python automatically.
+5. Open Terminal (or Git Bash on Windows), go to the install folder, and launch:
+   ```bash
+   cd ~/QuantumBrush
+   ./RunQuantumBrush.sh        # macOS / Linux
+   ./RunQuantumBrush.command   # macOS (double-click also works)
+   RunQuantumBrush.bat         # Windows
+   ```
+
+## Update an existing install
+
+1. Open a terminal in your `QuantumBrush` folder (`~/QuantumBrush` by default).
+2. Run `bash ~/QuantumBrush/update.sh` on macOS/Linux, or `bash update.sh` on Windows with Git Bash.
+3. Launch again with `RunQuantumBrush.sh` / `RunQuantumBrush.bat`.
+
+## Hackathon / verification
+
+If you are submitting a demo video, follow [packaging/INSTALL_VERIFICATION.md](packaging/INSTALL_VERIFICATION.md).
 
 # Examples
 
@@ -160,7 +194,7 @@ While development, check `apply_effect.py` underneath the `effect` folder so tha
           OpenJDK 64-Bit Server VM Temurin-21.0.7+6 (build 21.0.7+6-LTS, mixed mode, sharing)
       ```
 
-- Works on Python 3.11+ (Automatic background: Recent version of Miniconda environment called ‘`quantumbrush`')
+- Works on Python 3.11+ (Automatic background: dedicated Miniconda environment at `~/.quantumbrush/env`)
 
 Project location: `$HOME/QuantumBrush`
 

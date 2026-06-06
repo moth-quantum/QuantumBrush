@@ -1,0 +1,140 @@
+name: Release Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.8.0)'
+        required: true
+        default: '0.8.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install ISO tooling
+        run: sudo apt-get update && sudo apt-get install -y xorriso fakeroot
+      - name: Build Linux packages
+        env:
+          QB_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          VERSION="${QB_VERSION#v}"
+          export QB_VERSION="$VERSION"
+          chmod +x packaging/build-linux.sh
+          bash packaging/build-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-installers
+          path: packaging/out/*
+
+  build-macos-intel:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build macOS Intel DMG
+        env:
+          QB_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          QB_ARCH: x86_64
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          VERSION="${QB_VERSION#v}"
+          export QB_VERSION="$VERSION"
+          chmod +x packaging/build-macos.sh
+          bash packaging/build-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-intel-dmg
+          path: packaging/out/*.dmg
+
+  build-macos-arm:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build macOS Apple Silicon DMG
+        env:
+          QB_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          QB_ARCH: arm64
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          VERSION="${QB_VERSION#v}"
+          export QB_VERSION="$VERSION"
+          chmod +x packaging/build-macos.sh
+          bash packaging/build-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm-dmg
+          path: packaging/out/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build Windows EXE
+        shell: pwsh
+        env:
+          QB_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          WINDOWS_SIGNING_CERT: ${{ secrets.WINDOWS_SIGNING_CERT }}
+          WINDOWS_SIGNING_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PASSWORD }}
+        run: |
+          $version = "$env:QB_VERSION".TrimStart('v')
+          $env:QB_VERSION = $version
+          .\packaging\build-windows.ps1 -Version $version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: packaging/out/*.exe
+
+  publish-release:
+    needs: [build-linux, build-macos-intel, build-macos-arm, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Collect release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f \( -name '*.deb' -o -name '*.iso' -o -name '*.dmg' -o -name '*.exe' \) -exec cp {} release-assets/ \;
+          cp packaging/QuantumBrush-Installer.sh release-assets/
+          cp packaging/QuantumBrush-Installer.bat release-assets/
+          ls -la release-assets/
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
+          name: QuantumBrush ${{ github.event.inputs.version || github.ref_name }}
+          draft: false
+          generate_release_notes: true
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
