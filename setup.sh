@@ -69,25 +69,41 @@ install_java() {
     java_ok && ok "Java installed" || die "Java installation failed"
 }
 
+add_windows_conda_to_path() {
+    local root="$1"
+    if [ -f "$root/Scripts/conda.exe" ] || [ -f "$root/condabin/conda.bat" ]; then
+        export PATH="$root/Scripts:$root/condabin:$PATH"
+        return 0
+    fi
+    return 1
+}
+
 require_conda() {
     if ! command -v conda &>/dev/null; then
-        for p in \
-            "$HOME/miniconda3/bin/conda" \
-            "$HOME/anaconda3/bin/conda" \
-            "$HOME/miniforge3/bin/conda" \
-            "/opt/anaconda3/bin/conda" \
-            "/opt/miniconda3/bin/conda" \
-            "/opt/homebrew/Caskroom/miniconda/base/bin/conda"; do
-            [ -f "$p" ] && { export PATH="$(dirname "$p"):$PATH"; break; }
-        done
         if [ "$OS" = "windows" ]; then
-            local win
-            win=$(cygpath -u "$(cmd.exe /C 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null)
+            for root in \
+                "$HOME/miniconda3" "$HOME/Miniconda3" \
+                "$HOME/anaconda3" "$HOME/Anaconda3" \
+                "$HOME/miniforge3" "$HOME/AppData/Local/miniconda3"; do
+                add_windows_conda_to_path "$root" && break
+            done
+            if ! command -v conda &>/dev/null; then
+                local win
+                win=$(cygpath -u "$(cmd.exe /C 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null)
+                for root in \
+                    "$win/miniconda3" "$win/Miniconda3" \
+                    "$win/anaconda3" "$win/AppData/Local/miniconda3"; do
+                    add_windows_conda_to_path "$root" && break
+                done
+            fi
+        else
             for p in \
-                "$win/miniconda3/condabin/conda" \
-                "$win/Miniconda3/condabin/conda" \
-                "$win/anaconda3/condabin/conda" \
-                "$win/AppData/Local/miniconda3/condabin/conda"; do
+                "$HOME/miniconda3/bin/conda" \
+                "$HOME/anaconda3/bin/conda" \
+                "$HOME/miniforge3/bin/conda" \
+                "/opt/anaconda3/bin/conda" \
+                "/opt/miniconda3/bin/conda" \
+                "/opt/homebrew/Caskroom/miniconda/base/bin/conda"; do
                 [ -f "$p" ] && { export PATH="$(dirname "$p"):$PATH"; break; }
             done
         fi
@@ -126,21 +142,34 @@ install_conda() {
     esac
 }
 
+resolve_env_python() {
+    local env_dir="$1"
+    if [ "$OS" = "windows" ]; then
+        if [ -f "$env_dir/python.exe" ]; then
+            echo "$env_dir/python.exe"
+        elif [ -f "$env_dir/Scripts/python.exe" ]; then
+            echo "$env_dir/Scripts/python.exe"
+        else
+            return 1
+        fi
+    elif [ -f "$env_dir/bin/python" ]; then
+        echo "$env_dir/bin/python"
+    else
+        return 1
+    fi
+}
+
 setup_env() {
     require_conda || die "Conda not available"
     conda tos accept &>/dev/null || true
 
     [ -d "$ENV" ] && { warn "Removing existing environment..."; conda env remove -p "$ENV" -y; }
 
-    info "Creating Python 3.11 environment..."
+    info "Creating Python 3.11 environment (first run may take 15–30 minutes)..."
     conda create -p "$ENV" python=3.11 -y || die "Failed to create environment"
 
     local py
-    if [ "$OS" = "windows" ]; then
-        py="$ENV/Scripts/python.exe"
-    else
-        py="$ENV/bin/python"
-    fi
+    py=$(resolve_env_python "$ENV") || die "Python not found in environment at $ENV"
 
     info "Installing core packages..."
     "$py" -m pip install \
@@ -232,8 +261,9 @@ else
         || install_java || exit 1
 fi
 
+info "Checking for Miniconda..."
 if require_conda; then
-    ok "Conda found"
+    ok "Conda found ($(conda info --base 2>/dev/null))"
 else
     confirm "Miniconda required. Install now? (Y/n): "
     [[ $REPLY =~ ^[Nn]$ ]] && warn "Skipped — conda required for Python dependencies" \
