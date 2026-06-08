@@ -80,13 +80,15 @@ def process_effect(instr: dict):
             raise ImportError(f"Failed to load dependency {dependency}: {e}")
 
     # Process image
-    image_path = project_path / f"stroke/{stroke_id}_input.png"
 
-    if not image_path.is_file():
-        raise FileNotFoundError(f"Image file not found at {image_path}")
-    
-    with Image.open(image_path) as img:
-        req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA")) # Ensure the image is in RGBA format
+    import base64
+    b64_data   = instr.get("stroke_input", {}).get("image_rgba")
+    img_width  = instr.get("stroke_input", {}).get("width")
+    img_height = instr.get("stroke_input", {}).get("height")
+    if b64_data is None or img_width is None or img_height is None:
+        raise ValueError("image_rgba, width, or height missing from stroke_input in instructions.")
+    img_bytes = base64.b64decode(b64_data)
+    req["stroke_input"]["image_rgba"] = np.frombuffer(img_bytes, dtype=np.uint8).reshape(img_height, img_width, 4)
 
 
     # Process user_input and stroke_input
@@ -121,7 +123,7 @@ def process_effect(instr: dict):
     # Add a few flags needed to apply the effects
     req["effect_id"] = effect_id
     req["effect_script_path"] = effect_path / f"{effect_id}.py"
-    req["stroke_output_path"] = project_path / f"stroke/{stroke_id}_output.png"
+    
 
     return req
 
@@ -141,9 +143,12 @@ def apply_effect(req: dict):
     mask = np.all(new_image == input_image, axis=-1)  
     new_image[mask] = [0, 0, 0, 0]  # Set differing pixels to [0, 0, 0, 0]
     
-    output_path = req["stroke_output_path"]
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
-    Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
+    
+    import base64
+    result_bytes = new_image.astype(np.uint8).tobytes()
+    req["stroke_result_b64"]    = base64.b64encode(result_bytes).decode("ascii")
+    req["stroke_result_width"]  = int(new_image.shape[1])
+    req["stroke_result_height"] = int(new_image.shape[0])
 
     return True
 
@@ -228,7 +233,14 @@ if __name__ == "__main__":
             #Apply the effect
             success = apply_effect(data)
 
+            
+
+
             instructions["effect_success"] = success
+            if success:
+                instructions["stroke_result_b64"]    = data.get("stroke_result_b64", "")
+                instructions["stroke_result_width"]  = data.get("stroke_result_width", 0)
+                instructions["stroke_result_height"] = data.get("stroke_result_height", 0)
             dump_json(instructions, args.stroke_path)
 
         except Exception as e:

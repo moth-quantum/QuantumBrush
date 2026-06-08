@@ -506,23 +506,35 @@ public class StrokeManager {
         }
         DebugLogger.log("=== END FINAL SAVED JSON DEBUG ===\n");
         
-        // Save input image
+        
+        
+
+
+        // Embed image as base64 in JSON — no PNG file written to disk
         if (app.getCurrentImage() != null) {
-            String inputPath = strokeDir.getPath() + "/" + strokeId + "_input.png";
-            app.getCurrentImage().save(inputPath);
-            
-            // Update JSON with image paths
+            PImage img = app.getCurrentImage();
+            img.loadPixels();
+            int W = img.width;
+            int H = img.height;
+            byte[] rgba = new byte[W * H * 4];
+            for (int i = 0; i < W * H; i++) {
+                int px = img.pixels[i];
+                rgba[i*4]   = (byte)((px >> 16) & 0xFF); // R
+                rgba[i*4+1] = (byte)((px >> 8)  & 0xFF); // G
+                rgba[i*4+2] = (byte)( px        & 0xFF); // B
+                rgba[i*4+3] = (byte)((px >> 24) & 0xFF); // A
+            }
+            String b64 = java.util.Base64.getEncoder().encodeToString(rgba);
             instructions = app.loadJSONObject(instructionsPath);
             JSONObject strokeInput = instructions.getJSONObject("stroke_input");
-            strokeInput.setString("input_location", inputPath);
-            strokeInput.setString(
-            "output_location", 
-            strokeDir.getPath() + "/" + strokeId + "_output.png"
-            );
+            strokeInput.setString("image_rgba", b64);
+            strokeInput.setInt("width", W);
+            strokeInput.setInt("height", H);
             instructions.setJSONObject("stroke_input", strokeInput);
             app.saveJSONObject(instructions, instructionsPath);
         }
-        
+
+
         // Set current stroke index
         currentStrokeIndex = strokes.size() - 1;
         
@@ -1254,19 +1266,16 @@ public void runStroke(Stroke stroke) {
             
             // Check the effect_success flag in the JSON file
             JSONObject instructions = app.loadJSONObject(instructionsFilePath);
-            String projectId = instructions.getString("project_id", "");
-            String strokeId = instructions.getString("stroke_id", "");
-            String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-            File outputFile = new File(outputPath);
             String effectSuccess = instructions.getString("effect_success", "false");
             
-            boolean success = exitCode == 0 && "true".equals(effectSuccess) && outputFile.exists();
+            boolean success = exitCode == 0 && "true".equals(effectSuccess);
             
             if (!success) {
                 System.err.println("Python script execution failed with exit code: " + exitCode);
                 System.err.println("Effect success flag: " + effectSuccess);
-                System.err.println("Output file exists: " + outputFile.exists());
-                
+
+
+
                 // Read error log
                 if (stderrLog.exists()) {
                     try (BufferedReader reader = new BufferedReader(new FileReader(stderrLog))) {
@@ -1347,19 +1356,33 @@ public void runStroke(Stroke stroke) {
         }
         
         // Get the effect output image (just the effect, not layered)
-        String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-        PImage effectImage = app.loadImage(outputPath);
-        
-        if (effectImage == null) {
-            System.err.println("Failed to load effect output image: " + outputPath);
+        // Decode effect output from base64 stored in the instructions JSON
+        String b64result = instructions.getString("stroke_result_b64", "");
+        int rW = instructions.getInt("stroke_result_width", 0);
+        int rH = instructions.getInt("stroke_result_height", 0);
+
+        if (b64result.isEmpty() || rW == 0 || rH == 0) {
+            System.err.println("No result data found in instructions JSON for stroke: " + strokeId);
             JOptionPane.showMessageDialog(
-                null, 
-                "Failed to load effect output image.", 
-                "Error", 
+                null,
+                "Failed to load effect output: result data missing from JSON.\nPlease re-run the effect.",
+                "Error",
                 JOptionPane.ERROR_MESSAGE
             );
             return false;
         }
+
+        byte[] resultBytes = java.util.Base64.getDecoder().decode(b64result);
+        PImage effectImage = app.createImage(rW, rH, PConstants.ARGB);
+        effectImage.loadPixels();
+        for (int i = 0; i < rW * rH; i++) {
+            int r = resultBytes[i*4]   & 0xFF;
+            int g = resultBytes[i*4+1] & 0xFF;
+            int b = resultBytes[i*4+2] & 0xFF;
+            int a = resultBytes[i*4+3] & 0xFF;
+            effectImage.pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
+        }
+        effectImage.updatePixels();
         
         // Get the current image (which may already have previous effects applied)
         PImage currentImage = app.getCurrentImage();
@@ -1450,18 +1473,10 @@ public void runStroke(Stroke stroke) {
             // Delete stroke files
             String strokeDir = "project/" + projectId + "/stroke/";
             File instructionsFile = new File(strokeDir + strokeId + "_instructions.json");
-            File inputFile = new File(strokeDir + strokeId + "_input.png");
-            File outputFile = new File(strokeDir + strokeId + "_output.png");
-            
+
             boolean success = true;
             if (instructionsFile.exists()) {
                 success &= instructionsFile.delete();
-            }
-            if (inputFile.exists()) {
-                success &= inputFile.delete();
-            }
-            if (outputFile.exists()) {
-                success &= outputFile.delete();
             }
             
             // Update current stroke index if needed
