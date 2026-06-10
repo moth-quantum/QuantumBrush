@@ -1,4 +1,5 @@
 #!/bin/bash
+set +H
 
 [ -t 1 ] && { R=$'\033[31m' G=$'\033[32m' Y=$'\033[33m' B=$'\033[34m' N=$'\033[0m'; }
 : "${R:=}" "${G:=}" "${Y:=}" "${B:=}" "${N:=}"
@@ -37,7 +38,7 @@ install_java() {
             if   command -v apt    &>/dev/null; then sudo apt update && sudo apt install -y openjdk-21-jdk
             elif command -v dnf    &>/dev/null; then sudo dnf install -y java-21-openjdk-devel
             elif command -v pacman &>/dev/null; then sudo pacman -S --noconfirm jdk-openjdk
-            else die "No package manager found. Install Java 11+ manually."
+            else die "Java not found. Install Java manually from Microsoft OpenJDK."
             fi
             ;;
         windows)
@@ -142,9 +143,9 @@ setup_env() {
         ok "JAX installed"
         "$py" -m pip install \
             "pennylane>=0.43.0,<0.44.0" "optax>=0.1.0,<0.2.0" "equinox" \
-            || warn "PennyLane stack failed — quantum ML effects unavailable"
+            || warn "PennyLane stack failed — Advanced quantum algorithms unavailable"
     else
-        warn "JAX/jaxlib failed — common on some hardware. Core features unaffected."
+        warn "JAX/jaxlib failed — common on some hardware. Most brushes are unaffected."
     fi
 
     # IQM hardware execution (optional). Installed in its own pip command so
@@ -160,7 +161,7 @@ setup_env() {
     # being cosmetic.
     info "Installing IQM client (optional, for hardware execution)..."
     "$py" -m pip install "iqm-client[qiskit]>=22.10,<35.0" 2>&1 \
-        | grep -v -E "^(ERROR: pip's dependency resolver does not currently take into account|(qiskit-ibm-runtime|samplomatic|ibm-quantum-schemas) [0-9.]+ requires qiskit[<>=!,. 0-9]+, but you have qiskit [0-9.]+ which is incompatible\.)"
+        | grep -v -E '^(ERROR: pip'\''s dependency resolver does not currently take into account|(qiskit-ibm-runtime|samplomatic|ibm-quantum-schemas) [0-9.]+ requires qiskit[<>=!,. 0-9]+, but you have qiskit [0-9.]+ which is incompatible\.)'
     pip_ec=${PIPESTATUS[0]}
     if [ "$pip_ec" = "0" ] && "$py" -c "import iqm.qiskit_iqm" 2>/dev/null; then
         ok "IQM client installed"
@@ -187,12 +188,12 @@ setup_env() {
         && ok "IQM client verified" || warn "IQM client not available (optional)"
 
     "$py" -c "import jax, pennylane, optax, equinox" 2>/dev/null \
-        && ok "ML packages verified" || warn "ML packages not available (optional)"
+        && ok "Advanced packages verified" || warn "Advanced packages not available (optional)"
 }
 
 echo
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║                    QuantumBrush Setup                       ║"
+echo "║                    QuantumBrush Setup                        ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo
 
@@ -203,7 +204,7 @@ if java_ok; then
 else
     printf "Java 11+ required. Install now? (Y/n): "
     read -r -n 1 REPLY; echo
-    [[ $REPLY =~ ^[Nn]$ ]] && warn "Skipped — QuantumBrush requires Java 11+" \
+    [[ $REPLY =~ ^[Nn]$ ]] && warn "QuantumBrush requires Java 11+" \
         || install_java || exit 1
 fi
 
@@ -212,13 +213,13 @@ if require_conda; then
 else
     printf "Miniconda required. Install now? (Y/n): "
     read -r -n 1 REPLY; echo
-    [[ $REPLY =~ ^[Nn]$ ]] && warn "Skipped — conda required for Python dependencies" \
+    [[ $REPLY =~ ^[Nn]$ ]] && warn "Conda is required for Python dependencies!" \
         || install_conda || exit 1
 fi
 
 if [ "$RESTART" = true ]; then
     echo
-    echo "  Tools installed. Close this window, open a new terminal, then run ./setup.sh again."
+    echo "  Close this window, open a new terminal, then run ./setup.sh again."
     echo
     exit 0
 fi
@@ -227,4 +228,4 @@ setup_env
 
 echo
 ok "Setup complete!"
-printf "${B}To run:${N} java -jar QuantumBrush.jar\n\n"
+printf "${B}To run:${N} Open up HOME/QuantumBrush/QuantumBrush.jar \n\n"
