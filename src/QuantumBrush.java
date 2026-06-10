@@ -136,6 +136,8 @@ public class QuantumBrush extends PApplet {
     }
     
     private void setupUI() {
+        ModernWorkspacePanel.installLookAndFeel();
+
         // Get the JFrame from Processing for canvas
         PSurfaceAWT.SmoothCanvas smoothCanvas = (PSurfaceAWT.SmoothCanvas) ((PSurfaceAWT)surface).getNative();
         canvasFrame = (JFrame) smoothCanvas.getFrame();
@@ -355,6 +357,7 @@ public class QuantumBrush extends PApplet {
         int controlHeight = Math.min(700, (int)(screenSize.height * 0.8));
         controlFrame.setSize(controlWidth, controlHeight);
         controlFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        ModernWorkspacePanel.styleControlWindow(controlFrame);
         
         // Position the control frame on the left side of the screen
         controlFrame.setLocation(screenSize.width/4, screenSize.height/4);
@@ -472,6 +475,7 @@ public class QuantumBrush extends PApplet {
         // Create main panel with BorderLayout
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        mainPanel.setOpaque(false);
         
         // Create effects panel without titled border
         JPanel effectsPanel = new JPanel(new BorderLayout(10, 10));
@@ -540,6 +544,7 @@ public class QuantumBrush extends PApplet {
         tabbedPane.addTab("Effect", effectsPanel);
         tabbedPane.addTab("Hardware", ui.createHardwareTab());
 
+        mainPanel.add(ModernWorkspacePanel.createHeaderPanel(), BorderLayout.NORTH);
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
         mainPanel.add(zoomInfoPanel, BorderLayout.SOUTH);
 
