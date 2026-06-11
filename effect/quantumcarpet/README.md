@@ -4,8 +4,7 @@ Quantum Carpet paints the interference pattern of a quantum particle confined
 to a one-dimensional box. The transverse direction across the brush is the
 particle's position, while progress along the stroke acts as time.
 
-![Input example](example_before.png)
-![Quantum Carpet output](example_after.png)
+![Quantum Carpet before and after](https://github.com/user-attachments/assets/c95217d1-f798-4782-99e9-222d39506cf5)
 
 ## Quantum background
 
