@@ -1,0 +1,48 @@
+{
+    "name": "Quantum Carpet",
+    "id": "quantumcarpet",
+    "author": "Ryan Lin",
+    "version": "1.0.0",
+    "description": "Paint a particle-in-a-box quantum carpet along the stroke. Interference between energy eigenstates creates bands, canals, and revival structures that evolve as the stroke advances.\n\nRadius controls the ribbon width. Modes controls the complexity of the superposition. Evolution controls how quickly the quantum state changes along the stroke. Strength blends the selected color with the canvas.",
+    "dependencies": {
+        "numpy": ">=2.1.0"
+    },
+    "user_input": {
+        "Radius": {
+            "type": "int",
+            "min": 4,
+            "max": 100,
+            "default": 28
+        },
+        "Modes": {
+            "type": "int",
+            "min": 2,
+            "max": 16,
+            "default": 7
+        },
+        "Evolution": {
+            "type": "float",
+            "min": 0.1,
+            "max": 4.0,
+            "default": 1.25
+        },
+        "Strength": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.85
+        },
+        "Color": {
+            "type": "color",
+            "default": "#43D9FF"
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array",
+        "clicks": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}
