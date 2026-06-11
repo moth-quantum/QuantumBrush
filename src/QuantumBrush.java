@@ -544,7 +544,17 @@ public class QuantumBrush extends PApplet {
         tabbedPane.addTab("Effect", effectsPanel);
         tabbedPane.addTab("Hardware", ui.createHardwareTab());
 
-        mainPanel.add(ModernWorkspacePanel.createHeaderPanel(), BorderLayout.NORTH);
+        JPanel workspaceTopPanel = new JPanel(new BorderLayout(0, 10));
+        workspaceTopPanel.setOpaque(false);
+        workspaceTopPanel.add(ModernWorkspacePanel.createHeaderPanel(), BorderLayout.NORTH);
+        workspaceTopPanel.add(ModernWorkspacePanel.createQuickActionsPanel(
+            e -> newFile(),
+            e -> openFile(),
+            e -> strokes.showStrokeManager(),
+            e -> exportFile()
+        ), BorderLayout.CENTER);
+
+        mainPanel.add(workspaceTopPanel, BorderLayout.NORTH);
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
         mainPanel.add(zoomInfoPanel, BorderLayout.SOUTH);
 

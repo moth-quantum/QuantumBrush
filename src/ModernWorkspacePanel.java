@@ -1,15 +1,18 @@
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import java.awt.event.ActionListener;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridLayout;
 
 public final class ModernWorkspacePanel {
     private static final String[] WORKFLOW_STEPS = {
@@ -17,6 +20,12 @@ public final class ModernWorkspacePanel {
         "Canvas",
         "Effect",
         "Stroke",
+        "Export"
+    };
+    private static final String[] QUICK_ACTIONS = {
+        "New Project",
+        "Open Project",
+        "Stroke Manager",
         "Export"
     };
     private static final Color SURFACE = new Color(248, 250, 252);
@@ -38,6 +47,10 @@ public final class ModernWorkspacePanel {
 
     public static String[] getWorkflowStepLabels() {
         return WORKFLOW_STEPS.clone();
+    }
+
+    public static String[] getQuickActionLabels() {
+        return QUICK_ACTIONS.clone();
     }
 
     public static String getWorkflowSummaryText() {
@@ -85,6 +98,21 @@ public final class ModernWorkspacePanel {
         return panel;
     }
 
+    public static JPanel createQuickActionsPanel(
+        ActionListener newProjectAction,
+        ActionListener openProjectAction,
+        ActionListener strokeManagerAction,
+        ActionListener exportAction
+    ) {
+        JPanel panel = new JPanel(new GridLayout(2, 2, 8, 8));
+        panel.setOpaque(false);
+        panel.add(createQuickActionButton(QUICK_ACTIONS[0], newProjectAction));
+        panel.add(createQuickActionButton(QUICK_ACTIONS[1], openProjectAction));
+        panel.add(createQuickActionButton(QUICK_ACTIONS[2], strokeManagerAction));
+        panel.add(createQuickActionButton(QUICK_ACTIONS[3], exportAction));
+        return panel;
+    }
+
     private static JLabel createStepLabel(int index, String label) {
         JLabel step = new JLabel(index + "  " + label, SwingConstants.CENTER);
         step.setOpaque(true);
@@ -96,5 +124,22 @@ public final class ModernWorkspacePanel {
             new EmptyBorder(6, 10, 6, 10)
         ));
         return step;
+    }
+
+    private static JButton createQuickActionButton(String label, ActionListener action) {
+        JButton button = new JButton(label);
+        button.setActionCommand(label);
+        button.setFocusPainted(false);
+        button.setFont(button.getFont().deriveFont(Font.BOLD, 12f));
+        button.setForeground(TEXT);
+        button.setBackground(Color.WHITE);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER),
+            new EmptyBorder(8, 10, 8, 10)
+        ));
+        if (action != null) {
+            button.addActionListener(action);
+        }
+        return button;
     }
 }
