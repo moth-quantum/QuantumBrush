@@ -75,6 +75,39 @@ To update you will need to run a similar process, but this time using the `updat
 1. Open a terminal, as in step 2 above.
 2. Write `sh ~/QuantumBrush/update.sh` (or copy-paste from here) and then press Enter to run the update script.
 
+## Release packaging
+
+Maintainers can build user-facing installer artifacts from this branch without
+asking artists to download `setup.sh` from the Releases page first:
+
+```bash
+chmod +x packaging/build-installers.sh
+QUANTUMBRUSH_VERSION=v0.0.3 packaging/build-installers.sh
+```
+
+The packaging script writes artifacts to `dist-installers/`:
+
+- `QuantumBrush-<version>-macos.dmg` on macOS. The DMG contains a
+  `QuantumBrush.app` wrapper. On first launch it copies the release payload into
+  `$HOME/QuantumBrush` and opens the setup flow for Java/Miniconda/Python
+  dependencies. Later launches run `QuantumBrush.jar` directly.
+- `QuantumBrush-<version>-windows-portable.zip`, which contains the app payload
+  and a `QuantumBrush.bat` launcher for Git Bash/Windows environments.
+- `QuantumBrush-<version>-linux.tar.gz`, which contains the app payload and a
+  `quantumbrush` launcher.
+
+The GitHub Actions workflow in `.github/workflows/package-installers.yml`
+builds the same artifacts on tags and manual dispatches, then uploads them as
+release-ready artifacts.
+
+macOS signing is intentionally wired as a maintainer-owned hook. If the
+repository has a valid Developer ID certificate available on the runner, set the
+`MACOS_CODESIGN_IDENTITY` secret and the workflow will sign the app bundle before
+creating the DMG. Without that secret, the workflow still produces unsigned
+artifacts for testing, but maintainers should sign and notarize public releases.
+Set `QUANTUMBRUSH_OUT_DIR=/path/to/output` to build artifacts outside the
+repository, which is useful for local smoke tests.
+
 # Examples
 
 The combination of the stroke and the quantum brush that we choose, the result is this!

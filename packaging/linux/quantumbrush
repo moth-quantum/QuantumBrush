@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+APP_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+INSTALL_DIR="${HOME}/QuantumBrush"
+
+if [ ! -d "$INSTALL_DIR" ]; then
+  mkdir -p "$INSTALL_DIR"
+  cp -R "$APP_DIR"/. "$INSTALL_DIR"/
+  chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/update.sh" 2>/dev/null || true
+fi
+
+if [ ! -f "$INSTALL_DIR/config/python_path.txt" ]; then
+  printf '%s\n' "QuantumBrush is not set up yet. Starting setup..."
+  cd "$INSTALL_DIR"
+  ./setup.sh
+  exit $?
+fi
+
+exec java -jar "$INSTALL_DIR/QuantumBrush.jar"

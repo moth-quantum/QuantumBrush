@@ -1,10 +1,12 @@
 .DS_Store
+._*
 install.sh
 .code-workspace
 test.ipynb
 **/__pycache__/
 __pycache__/
 config/
+dist-installers/
 log/
 metadata/
 project/

@@ -1,0 +1,30 @@
+#!/bin/bash
+set -euo pipefail
+
+APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RESOURCES_DIR="$APP_DIR/Resources"
+INSTALL_DIR="$HOME/QuantumBrush"
+
+run_setup() {
+  osascript <<APPLESCRIPT
+tell application "Terminal"
+  activate
+  do script "cd \"${INSTALL_DIR}\" && ./setup.sh"
+end tell
+APPLESCRIPT
+}
+
+if [ ! -d "$INSTALL_DIR" ]; then
+  mkdir -p "$INSTALL_DIR"
+  cp -R "$RESOURCES_DIR/QuantumBrush"/. "$INSTALL_DIR/"
+  chmod +x "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/update.sh" "$INSTALL_DIR/Setup.command" "$INSTALL_DIR/Update.command" 2>/dev/null || true
+  run_setup
+  exit 0
+fi
+
+if [ ! -f "$INSTALL_DIR/config/python_path.txt" ]; then
+  run_setup
+  exit 0
+fi
+
+exec /usr/bin/java -jar "$INSTALL_DIR/QuantumBrush.jar"

@@ -1,0 +1,29 @@
+name: Package installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  package:
+    name: Build installer artifacts
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build installer artifacts
+        env:
+          QUANTUMBRUSH_VERSION: ${{ github.ref_name }}
+          MACOS_CODESIGN_IDENTITY: ${{ secrets.MACOS_CODESIGN_IDENTITY }}
+        run: |
+          chmod +x packaging/build-installers.sh
+          packaging/build-installers.sh
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantumbrush-installers
+          path: dist-installers/*
