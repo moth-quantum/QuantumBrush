@@ -1,4 +1,5 @@
 #!/bin/bash
+set +H
 
 NONINTERACTIVE=false
 for arg in "$@"; do
@@ -208,7 +209,7 @@ setup_env() {
     # being cosmetic.
     info "Installing IQM client (optional, for hardware execution)..."
     "$py" -m pip install "iqm-client[qiskit]>=22.10,<35.0" 2>&1 \
-        | grep -v -E "^(ERROR: pip's dependency resolver does not currently take into account|(qiskit-ibm-runtime|samplomatic|ibm-quantum-schemas) [0-9.]+ requires qiskit[<>=!,. 0-9]+, but you have qiskit [0-9.]+ which is incompatible\.)"
+        | grep -v -E '^(ERROR: pip'\''s dependency resolver does not currently take into account|(qiskit-ibm-runtime|samplomatic|ibm-quantum-schemas) [0-9.]+ requires qiskit[<>=!,. 0-9]+, but you have qiskit [0-9.]+ which is incompatible\.)'
     pip_ec=${PIPESTATUS[0]}
     if [ "$pip_ec" = "0" ] && "$py" -c "import iqm.qiskit_iqm" 2>/dev/null; then
         ok "IQM client installed"
@@ -247,7 +248,7 @@ setup_env() {
 
 echo
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║                    QuantumBrush Setup                       ║"
+echo "║                    QuantumBrush Setup                        ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo
 
