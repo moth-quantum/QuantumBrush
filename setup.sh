@@ -65,7 +65,10 @@ require_conda() {
         done
         if [ "$OS" = "windows" ]; then
             local win
-            win=$(cygpath -u "$(cmd.exe /C 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null)
+            # Use the inherited $USERPROFILE env var rather than shelling out to
+            # cmd.exe — invoking cmd.exe from mintty (Git Bash) can hang the
+            # session indefinitely waiting on console I/O.
+            win=$(cygpath -u "$USERPROFILE" 2>/dev/null)
             for p in \
                 "$win/miniconda3/condabin/conda" \
                 "$win/Miniconda3/condabin/conda" \
