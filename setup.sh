@@ -82,21 +82,19 @@ add_windows_conda_to_path() {
 require_conda() {
     if ! command -v conda &>/dev/null; then
         if [ "$OS" = "windows" ]; then
+            local win
+            # Use the inherited $USERPROFILE env var rather than shelling out to
+            # cmd.exe — invoking cmd.exe from mintty (Git Bash) can hang the
+            # session indefinitely waiting on console I/O.
+            win=$(cygpath -u "$USERPROFILE" 2>/dev/null)
             for root in \
                 "$HOME/miniconda3" "$HOME/Miniconda3" \
                 "$HOME/anaconda3" "$HOME/Anaconda3" \
-                "$HOME/miniforge3" "$HOME/AppData/Local/miniconda3"; do
+                "$HOME/miniforge3" "$HOME/AppData/Local/miniconda3" \
+                "$win/miniconda3" "$win/Miniconda3" \
+                "$win/anaconda3" "$win/AppData/Local/miniconda3"; do
                 add_windows_conda_to_path "$root" && break
             done
-            if ! command -v conda &>/dev/null; then
-                local win
-                win=$(cygpath -u "$(cmd.exe /C 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null)
-                for root in \
-                    "$win/miniconda3" "$win/Miniconda3" \
-                    "$win/anaconda3" "$win/AppData/Local/miniconda3"; do
-                    add_windows_conda_to_path "$root" && break
-                done
-            fi
         else
             for p in \
                 "$HOME/miniconda3/bin/conda" \
