@@ -573,11 +573,23 @@ public class UIManager {
         if (projectId != null) {
             // Input Image
             String inputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_input.png";
-            addImageWithOverlay(imagesPanel, inputPath, "Input", stroke);
+            if (new java.io.File(inputPath).exists()) {
+                addImageWithOverlay(imagesPanel, inputPath, "Input", stroke);
+            } else if (strokeManager.hasInMemoryInput(stroke.getId())) {
+                addImagePlaceholder(imagesPanel, "Input kept in memory", "Input");
+            } else {
+                addImagePlaceholder(imagesPanel, "Input will be captured when run", "Input");
+            }
 
             // Output Image
             String outputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_output.png";
-            addImageWithOverlay(imagesPanel, outputPath, "Output", null);
+            if (new java.io.File(outputPath).exists()) {
+                addImageWithOverlay(imagesPanel, outputPath, "Output", null);
+            } else if (strokeManager.hasInMemoryResult(stroke.getId())) {
+                addImagePlaceholder(imagesPanel, "Processed result kept in memory", "Output");
+            } else {
+                addImagePlaceholder(imagesPanel, "Not processed yet", "Output");
+            }
         }
         detailsPanel.add(imagesPanel);
         detailsPanel.add(Box.createVerticalStrut(10));

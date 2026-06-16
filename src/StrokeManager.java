@@ -4,8 +4,11 @@ import java.util.*;
 import java.io.*;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
+import javax.imageio.ImageIO;
 
 public class StrokeManager {
   private QuantumBrush app;
@@ -19,6 +22,8 @@ public class StrokeManager {
   
   // Map to track which strokes are currently being processed
   private Map<String, Future<?>> processingStrokes;
+  private Map<String, PImage> strokeInputImages;
+  private Map<String, PImage> strokeResultImages;
   
   // Callback interface for UI updates
   public interface ProcessingCallback {
@@ -32,6 +37,8 @@ public class StrokeManager {
       this.strokes = new ArrayList<>();
       this.executorService = Executors.newFixedThreadPool(3); // Allow up to 3 concurrent processes
       this.processingStrokes = new ConcurrentHashMap<>();
+      this.strokeInputImages = new ConcurrentHashMap<>();
+      this.strokeResultImages = new ConcurrentHashMap<>();
       this.callbacks = new ArrayList<>();
       
       // Initialize Python command on startup
@@ -506,19 +513,14 @@ public class StrokeManager {
         }
         DebugLogger.log("=== END FINAL SAVED JSON DEBUG ===\n");
         
-        // Save input image
+        // Keep the input image in memory. The persistent stroke JSON remains
+        // lightweight and no per-stroke input PNG is written to disk.
         if (app.getCurrentImage() != null) {
-            String inputPath = strokeDir.getPath() + "/" + strokeId + "_input.png";
-            app.getCurrentImage().save(inputPath);
-            
-            // Update JSON with image paths
+            strokeInputImages.put(strokeId, app.getCurrentImage().copy());
+
             instructions = app.loadJSONObject(instructionsPath);
             JSONObject strokeInput = instructions.getJSONObject("stroke_input");
-            strokeInput.setString("input_location", inputPath);
-            strokeInput.setString(
-            "output_location", 
-            strokeDir.getPath() + "/" + strokeId + "_output.png"
-            );
+            strokeInput.setString("transport", "stdio_png");
             instructions.setJSONObject("stroke_input", strokeInput);
             app.saveJSONObject(instructions, instructionsPath);
         }
@@ -626,6 +628,20 @@ public class StrokeManager {
                 // ✅ FIXED: Extract path data correctly - preserve separate paths
                 // ✅ CRITICAL FIX: Reconstruct SEPARATE paths correctly
                 JSONObject strokeInput = instructions.getJSONObject("stroke_input");
+                String transport = strokeInput.getString("transport", "");
+                boolean usesInMemoryTransport = "stdio_png".equals(transport);
+                boolean completedWithoutAvailableResult =
+                    usesInMemoryTransport &&
+                    "completed".equals(instructions.getString("processing_status", "")) &&
+                    !strokeResultImages.containsKey(strokeId) &&
+                    !new File("project/" + projectId + "/stroke/" + strokeId + "_output.png").exists();
+
+                if (completedWithoutAvailableResult) {
+                    instructions.setString("processing_status", "pending");
+                    instructions.setString("effect_success", "null");
+                    app.saveJSONObject(instructions, file.getAbsolutePath());
+                }
+
                 JSONArray pathArray = strokeInput.getJSONArray("path");
                 JSONArray clicksArray = strokeInput.getJSONArray("clicks");
 
@@ -905,7 +921,7 @@ public void runStroke(Stroke stroke) {
             
             try {
                 // Execute Python script with absolute path
-                success = executeApplyEffectScript(instructionsFile.getAbsolutePath());
+                success = executeApplyEffectScriptInMemory(instructionsFile.getAbsolutePath());
                 
                 // Update status based on result
                 JSONObject updatedInstructions = app.loadJSONObject(instructionsPath);
@@ -1307,6 +1323,217 @@ public void runStroke(Stroke stroke) {
         }
     }
     
+    private boolean executeApplyEffectScriptInMemory(String instructionsFilePath)
+            throws InterruptedException, IOException {
+        Process process = null;
+        File stderrLog = new File("log/python_stderr.log");
+
+        try {
+            if (pythonCommand == null) {
+                initializePythonCommand();
+            }
+
+            File logDir = new File("log");
+            if (!logDir.exists()) {
+                logDir.mkdirs();
+            }
+
+            ProcessBuilder versionProcessBuilder = new ProcessBuilder(pythonCommand, "--version");
+            versionProcessBuilder.redirectErrorStream(true);
+
+            Process versionProcess = versionProcessBuilder.start();
+            BufferedReader versionReader = new BufferedReader(
+                new InputStreamReader(versionProcess.getInputStream())
+            );
+            String versionLine;
+            while ((versionLine = versionReader.readLine()) != null) {
+                System.out.println(
+                    "Using Python: " + versionLine + " (from: " + pythonCommand + ")"
+                );
+
+                if (versionLine.matches(".*Python 3\\.[0-9](\\..*)?")) {
+                    String minorVersionStr = versionLine.replaceAll(
+                        ".*Python 3\\.([0-9])(\\..*)?", "$1"
+                    );
+                    try {
+                        int minorVersion = Integer.parseInt(minorVersionStr);
+                        if (minorVersion < 10) {
+                            System.err.println(
+                                "WARNING: Python version is " + versionLine +
+                                " but match-case syntax requires Python 3.10 or higher!"
+                            );
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        System.err.println("Could not parse Python version: " + versionLine);
+                    }
+                }
+            }
+            versionProcess.waitFor();
+
+            JSONObject instructions = app.loadJSONObject(instructionsFilePath);
+            String strokeId = instructions.getString("stroke_id", "");
+            PImage inputImage = strokeInputImages.get(strokeId);
+            if (inputImage == null) {
+                inputImage = app.getCurrentImage();
+            }
+            if (inputImage == null) {
+                throw new IOException("No input image is available for stroke " + strokeId);
+            }
+
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                pythonCommand, "effect/apply_effect.py", "--stdio"
+            );
+            processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(stderrLog));
+
+            app.getHardwareManager().applyToProcessEnv(processBuilder.environment());
+
+            process = processBuilder.start();
+
+            System.out.println("Starting in-memory effect processing...");
+            writeBinaryRequest(process.getOutputStream(), instructions, pImageToPngBytes(inputImage));
+            BinaryResponse binaryResponse = readBinaryResponse(process.getInputStream());
+            process.waitFor();
+
+            int exitCode = process.exitValue();
+            JSONObject response = JSONObject.parse(binaryResponse.json);
+            String effectSuccess = response.getString("effect_success", "false");
+            boolean success = exitCode == 0 && "true".equals(effectSuccess);
+
+            if (success) {
+                strokeResultImages.put(strokeId, pngBytesToPImage(binaryResponse.imageBytes));
+            } else {
+                System.err.println("Python script execution failed with exit code: " + exitCode);
+                System.err.println("Effect success flag: " + effectSuccess);
+                logPythonErrors(stderrLog);
+            }
+
+            return success;
+        } catch (InterruptedException e) {
+            System.err.println("Process execution interrupted");
+
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+                System.out.println("Forcibly terminated process due to cancellation");
+            }
+
+            try {
+                JSONObject instructions = app.loadJSONObject(instructionsFilePath);
+                instructions.setString("effect_success", "false");
+                instructions.setString("processing_status", "canceled");
+                instructions.setString("error_message", "Process was cancelled by user");
+                app.saveJSONObject(instructions, instructionsFilePath);
+            } catch (Exception ex) {
+                System.err.println("Error updating instructions file after cancellation: " + ex.getMessage());
+            }
+
+            throw e;
+        }
+    }
+
+    private void logPythonErrors(File stderrLog) {
+        if (!stderrLog.exists()) {
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(stderrLog))) {
+            String line;
+            System.err.println("Python error log:");
+            while ((line = reader.readLine()) != null) {
+                System.err.println("  " + line);
+            }
+        } catch (IOException e) {
+            System.err.println("Could not read error log: " + e.getMessage());
+        }
+    }
+
+    private static class BinaryResponse {
+        String json;
+        byte[] imageBytes;
+
+        BinaryResponse(String json, byte[] imageBytes) {
+            this.json = json;
+            this.imageBytes = imageBytes;
+        }
+    }
+
+    private void writeBinaryRequest(
+        OutputStream outputStream,
+        JSONObject instructions,
+        byte[] imageBytes
+    ) throws IOException {
+        byte[] jsonBytes = instructions.toString().getBytes(StandardCharsets.UTF_8);
+        DataOutputStream output = new DataOutputStream(new BufferedOutputStream(outputStream));
+        output.writeInt(jsonBytes.length);
+        output.write(jsonBytes);
+        output.writeInt(imageBytes.length);
+        output.write(imageBytes);
+        output.flush();
+        output.close();
+    }
+
+    private BinaryResponse readBinaryResponse(InputStream inputStream) throws IOException {
+        DataInputStream input = new DataInputStream(new BufferedInputStream(inputStream));
+        int jsonLength = input.readInt();
+        if (jsonLength < 0) {
+            throw new IOException("Python returned an invalid response header.");
+        }
+
+        byte[] jsonBytes = new byte[jsonLength];
+        input.readFully(jsonBytes);
+
+        int imageLength = input.readInt();
+        if (imageLength < 0) {
+            throw new IOException("Python returned an invalid image payload header.");
+        }
+
+        byte[] imageBytes = new byte[imageLength];
+        if (imageLength > 0) {
+            input.readFully(imageBytes);
+        }
+
+        return new BinaryResponse(new String(jsonBytes, StandardCharsets.UTF_8), imageBytes);
+    }
+
+    private byte[] pImageToPngBytes(PImage image) throws IOException {
+        BufferedImage bufferedImage = new BufferedImage(
+            image.width,
+            image.height,
+            BufferedImage.TYPE_INT_ARGB
+        );
+        image.loadPixels();
+        for (int y = 0; y < image.height; y++) {
+            for (int x = 0; x < image.width; x++) {
+                bufferedImage.setRGB(x, y, image.pixels[y * image.width + x]);
+            }
+        }
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(bufferedImage, "png", output);
+        return output.toByteArray();
+    }
+
+    private PImage pngBytesToPImage(byte[] imageBytes) throws IOException {
+        BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (bufferedImage == null) {
+            throw new IOException("Python returned an invalid PNG payload.");
+        }
+
+        PImage image = app.createImage(
+            bufferedImage.getWidth(),
+            bufferedImage.getHeight(),
+            PConstants.ARGB
+        );
+        image.loadPixels();
+        for (int y = 0; y < bufferedImage.getHeight(); y++) {
+            for (int x = 0; x < bufferedImage.getWidth(); x++) {
+                image.pixels[y * bufferedImage.getWidth() + x] = bufferedImage.getRGB(x, y);
+            }
+        }
+        image.updatePixels();
+        return image;
+    }
+
     /**
      * FIXED: Apply effect to canvas by properly layering on top of current image
      * This method now correctly preserves previous effects and creates proper undo states
@@ -1346,15 +1573,20 @@ public void runStroke(Stroke stroke) {
             return false;
         }
         
-        // Get the effect output image (just the effect, not layered)
-        String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-        PImage effectImage = app.loadImage(outputPath);
+        // Get the effect output image (just the effect, not layered). New
+        // strokes keep the full-resolution result in memory instead of writing
+        // a per-stroke output PNG. Legacy projects can still load output files.
+        PImage effectImage = strokeResultImages.get(strokeId);
+        if (effectImage == null) {
+            String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
+            effectImage = app.loadImage(outputPath);
+        }
         
         if (effectImage == null) {
-            System.err.println("Failed to load effect output image: " + outputPath);
+            System.err.println("No processed effect output is available for stroke: " + strokeId);
             JOptionPane.showMessageDialog(
                 null, 
-                "Failed to load effect output image.", 
+                "No processed effect output is available. Please re-run the effect.",
                 "Error", 
                 JOptionPane.ERROR_MESSAGE
             );
@@ -1409,16 +1641,6 @@ public void runStroke(Stroke stroke) {
         // Update project metadata to reflect the change
         app.getFileManager().updateProjectMetadata(projectId);
 
-        // IMPORTANT: Save the current state to disk
-        if (projectId != null) {
-            String projectPath = "project/" + projectId;
-            File projectDir = new File(projectPath);
-            if (projectDir.exists()) {
-                resultImage.save(projectPath + "/current.png");
-                System.out.println("Saved current state after applying effect");
-            }
-        }
-
         // Clear drawing paths (but don't save this as a project state)
         app.getCanvasManager().clearPaths();
         
@@ -1446,6 +1668,8 @@ public void runStroke(Stroke stroke) {
             
             // Remove from strokes list
             strokes.removeIf(stroke -> stroke.getId().equals(strokeId));
+            strokeInputImages.remove(strokeId);
+            strokeResultImages.remove(strokeId);
             
             // Delete stroke files
             String strokeDir = "project/" + projectId + "/stroke/";
@@ -1493,11 +1717,21 @@ public void runStroke(Stroke stroke) {
     public boolean hasStrokes() {
         return !strokes.isEmpty();
     }
+
+    public boolean hasInMemoryInput(String strokeId) {
+        return strokeInputImages.containsKey(strokeId);
+    }
+
+    public boolean hasInMemoryResult(String strokeId) {
+        return strokeResultImages.containsKey(strokeId);
+    }
     
     public void clearStrokes() {
         strokes.clear();
         currentStrokeIndex = -1;
         processingStrokes.clear();
+        strokeInputImages.clear();
+        strokeResultImages.clear();
     }
     
     /**
