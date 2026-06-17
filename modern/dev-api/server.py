@@ -443,7 +443,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path.startswith("/media/"):
-            rel = parsed.path[len("/media/") :]
+            rel = unquote(parsed.path[len("/media/") :]).split("?")[0]
             file_path = resolve_media_file(rel)
             if file_path is None:
                 self.send_error(404)

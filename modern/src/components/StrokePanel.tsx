@@ -39,9 +39,8 @@ export function StrokePanel({ strokes, effects, onRefresh }: Props) {
   const parameters = useAppStore((s) => s.parameters);
   const setSelectedStrokeId = useAppStore((s) => s.setSelectedStrokeId);
   const setStatusMessage = useAppStore((s) => s.setStatusMessage);
-  const setProject = useAppStore((s) => s.setProject);
+  const setImagePath = useAppStore((s) => s.setImagePath);
   const setStrokes = useAppStore((s) => s.setStrokes);
-  const projectName = useAppStore((s) => s.projectName);
   const paths = useAppStore((s) => s.paths);
   const clearPaths = useAppStore((s) => s.clearPaths);
   const [panelError, setPanelError] = useState<string | null>(null);
@@ -149,7 +148,7 @@ export function StrokePanel({ strokes, effects, onRefresh }: Props) {
       const dataUrl = await blendImages(opened.image_path, stroke.output_path);
       await saveProjectImage(projectId, dataUrl);
       const refreshed = await openProject(projectId);
-      setProject(projectId, projectName ?? projectId, refreshed.image_path);
+      setImagePath(refreshed.image_path);
       clearPaths();
       setStatusMessage("Effect applied to canvas");
     } catch (e) {

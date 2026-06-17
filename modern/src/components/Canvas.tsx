@@ -16,6 +16,7 @@ interface Props {
  */
 export function Canvas({ width, height }: Props) {
   const imagePath = useAppStore((s) => s.imagePath);
+  const imageVersion = useAppStore((s) => s.imageVersion);
   const paths = useAppStore((s) => s.paths);
   const addPath = useAppStore((s) => s.addPath);
   const projectId = useAppStore((s) => s.projectId);
@@ -39,7 +40,8 @@ export function Canvas({ width, height }: Props) {
       return;
     }
     const img = new window.Image();
-    img.src = resolveImageUrl(imagePath);
+    img.crossOrigin = "anonymous";
+    img.src = resolveImageUrl(imagePath, imageVersion);
     img.onload = () => {
       setImage(img);
       const fit = Math.min(
@@ -53,7 +55,7 @@ export function Canvas({ width, height }: Props) {
         y: (height - img.height * fit) / 2,
       });
     };
-  }, [imagePath, width, height]);
+  }, [imagePath, imageVersion, width, height]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

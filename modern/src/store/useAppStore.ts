@@ -16,6 +16,7 @@ interface AppStore {
   projectId: string | null;
   projectName: string | null;
   imagePath: string | null;
+  imageVersion: number;
   paths: DrawPath[];
   selectedEffectId: string | null;
   parameters: Record<string, unknown>;
@@ -30,6 +31,7 @@ interface AppStore {
     projectName: string,
     imagePath: string,
   ) => void;
+  setImagePath: (imagePath: string) => void;
   clearProject: () => void;
   setPaths: (paths: DrawPath[]) => void;
   addPath: (path: DrawPath) => void;
@@ -49,6 +51,7 @@ export const useAppStore = create<AppStore>((set) => ({
   projectId: null,
   projectName: null,
   imagePath: null,
+  imageVersion: 0,
   paths: [],
   selectedEffectId: null,
   parameters: {},
@@ -63,14 +66,21 @@ export const useAppStore = create<AppStore>((set) => ({
       projectId,
       projectName,
       imagePath,
+      imageVersion: 0,
       paths: [],
       selectedStrokeId: null,
     }),
+  setImagePath: (imagePath) =>
+    set((s) => ({
+      imagePath,
+      imageVersion: s.imageVersion + 1,
+    })),
   clearProject: () =>
     set({
       projectId: null,
       projectName: null,
       imagePath: null,
+      imageVersion: 0,
       paths: [],
       strokes: [],
       selectedStrokeId: null,

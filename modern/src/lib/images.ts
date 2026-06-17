@@ -3,6 +3,8 @@ import { resolveImageUrl } from "./imageUrl";
 function loadImage(path: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    // Required for canvas blend when UI and API are on different origins (Vercel + Render)
+    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load ${path}`));
     img.src = resolveImageUrl(path);
@@ -24,6 +26,7 @@ export async function blendImages(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No 2d context");
   ctx.drawImage(base, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(overlay, 0, 0, base.width, base.height);
   return canvas.toDataURL("image/png");
 }
