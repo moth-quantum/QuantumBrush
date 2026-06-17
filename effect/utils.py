@@ -1,13 +1,26 @@
 import numpy as np
-from qiskit import generate_preset_pass_manager
-from qiskit.primitives import BackendEstimatorV2 as Estimator
 import os
-from qiskit_aer import AerSimulator
 import colorsys 
 from itertools import product
-import matplotlib.pyplot as plt
-from matplotlib.path import Path as plt_path
-from scipy.ndimage import distance_transform_edt
+
+try:
+    from matplotlib.path import Path as plt_path
+except ImportError:
+    plt_path = None
+
+try:
+    from scipy.ndimage import distance_transform_edt
+except ImportError:
+    distance_transform_edt = None
+
+try:
+    from qiskit import generate_preset_pass_manager
+    from qiskit.primitives import BackendEstimatorV2 as Estimator
+    from qiskit_aer import AerSimulator
+except ImportError:
+    generate_preset_pass_manager = None
+    Estimator = None
+    AerSimulator = None
 
 def svd(matrix=None,U=None,S=None,Vt=None):
     if U is not None:
@@ -90,25 +103,46 @@ def points_within_radius(points, radius=10, border = None, return_distance = Fal
     mask = np.zeros((height, width), dtype=bool)
     mask[shifted[:, 0], shifted[:, 1]] = True  # y, x
     
-    # Distance transform
-    dist = distance_transform_edt(~mask)
-    # Find pixels within offset
-    region_mask = dist <= radius
-    ys, xs = np.nonzero(region_mask)
+    if distance_transform_edt is not None:
+        # Distance transform
+        dist = distance_transform_edt(~mask)
+        # Find pixels within offset
+        region_mask = dist <= radius
+        ys, xs = np.nonzero(region_mask)
 
-    # Shift back to original coordinates
-    coords = np.stack([ys, xs], axis=1) + min_yx
-    #print(coords)
+        # Shift back to original coordinates
+        coords = np.stack([ys, xs], axis=1) + min_yx
+        distances = dist[ys, xs] / radius
+    else:
+        line_points = np.argwhere(mask)
+        grid_y, grid_x = np.indices((height, width))
+        grid = np.stack([grid_y.ravel(), grid_x.ravel()], axis=1)
+
+        min_dist_sq = np.empty(grid.shape[0], dtype=np.float64)
+        chunk_size = 2048
+        for start in range(0, grid.shape[0], chunk_size):
+            end = start + chunk_size
+            chunk = grid[start:end]
+            diff = chunk[:, None, :] - line_points[None, :, :]
+            dist_sq = np.sum(diff * diff, axis=2)
+            min_dist_sq[start:end] = dist_sq.min(axis=1)
+
+        region_mask = min_dist_sq <= radius ** 2
+        coords = grid[region_mask] + min_yx
+        distances = np.sqrt(min_dist_sq[region_mask]) / radius
+
     if border is not None:
         coords = np.clip(coords, [0, 0], [border[0] - 1, border[1] - 1])
 
     if return_distance:
-        distances = dist[ys, xs] / radius
         return coords, distances
 
     return coords
 
 def points_within_lasso(points,border = None):
+    if plt_path is None:
+        raise ImportError("matplotlib is required to use lasso paths.")
+
     min_x = np.min(points[:,1])
     max_x = np.max(points[:,1])+1
     min_y = np.min(points[:,0])
@@ -152,7 +186,9 @@ def run_estimator(circuits, operators, backend=None, options = None):
     It can receive a single circuit or a list of circuits.
     It can receive a single operator or a list of operators or a list of list of operators (one for each circuit).
     '''
-    
+    if generate_preset_pass_manager is None or Estimator is None or AerSimulator is None:
+        raise ImportError("Qiskit and qiskit-aer are required to run estimator-based effects.")
+
     #iqm_server_url = "https://cocos.resonance.meetiqm.com/garnet:mock"  # Replace this with the correct URL
     #provider = IQMProvider(iqm_server_url)
     #backend = provider.get_backend('garnet')
@@ -352,4 +388,3 @@ def apply_patch_to_image(original_image: np.ndarray, new_patch: np.ndarray, blur
     new_patch[..., :3] = (1 - alpha) * original_float[..., :3] + alpha * new_patch[..., :3]
 
     return (new_patch * 255).astype(np.uint8)
-    
