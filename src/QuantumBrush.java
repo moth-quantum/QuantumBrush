@@ -6,8 +6,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.io.*;
+import java.net.URISyntaxException;
+import java.nio.file.*;
+import java.util.jar.*;
 
 public class QuantumBrush extends PApplet {
+    private static File appRootDirectory = new File(".").getAbsoluteFile();
+
     // Managers
     private CanvasManager canvas;
     private EffectManager effects;
@@ -19,6 +24,9 @@ public class QuantumBrush extends PApplet {
     // UI components
     private JFrame controlFrame;
     private JFrame canvasFrame;
+    private Component processingCanvas;
+    private JSplitPane workspaceSplit;
+    private JPanel canvasPanel;
     private JMenuBar menuBar;
     private JComboBox<String> effectsDropdown;
     private JButton createButton;
@@ -42,6 +50,8 @@ public class QuantumBrush extends PApplet {
     private static final int CANVAS_HEIGHT = 600;
     private static final int MIN_CANVAS_WIDTH = 320;
     private static final int MIN_CANVAS_HEIGHT = 240;
+    private static final int CONTROL_PANEL_WIDTH = 420;
+    private static final int CONTROL_PANEL_MIN_WIDTH = 320;
     private static final float CANVAS_SCREEN_WIDTH_RATIO = 0.6f;
     private static final float CANVAS_SCREEN_HEIGHT_RATIO = 0.8f;
     
@@ -55,7 +65,74 @@ public class QuantumBrush extends PApplet {
     private float strokeWeight = 2.0f;
     
     public static void main(String[] args) {
+        configureAppRoot();
+        ensureBundledEffectsAvailable();
         PApplet.main("QuantumBrush");
+    }
+
+    public static File getAppRootDirectory() {
+        return appRootDirectory;
+    }
+
+    public static File appFile(String path) {
+        File file = new File(path);
+        return file.isAbsolute() ? file : new File(appRootDirectory, path);
+    }
+
+    private static void configureAppRoot() {
+        try {
+            File codeSource = new File(
+                QuantumBrush.class.getProtectionDomain().getCodeSource().getLocation().toURI()
+            );
+            appRootDirectory = codeSource.isFile()
+                ? codeSource.getParentFile().getAbsoluteFile()
+                : new File(".").getAbsoluteFile();
+            System.setProperty("user.dir", appRootDirectory.getAbsolutePath());
+        } catch (URISyntaxException e) {
+            appRootDirectory = new File(".").getAbsoluteFile();
+        }
+    }
+
+    private static void ensureBundledEffectsAvailable() {
+        File effectDir = appFile("effect");
+        if (effectDir.isDirectory()) {
+            return;
+        }
+
+        try {
+            File codeSource = new File(
+                QuantumBrush.class.getProtectionDomain().getCodeSource().getLocation().toURI()
+            );
+            if (!codeSource.isFile()) {
+                return;
+            }
+
+            try (JarFile jar = new JarFile(codeSource)) {
+                Enumeration<JarEntry> entries = jar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    String name = entry.getName();
+                    if (!name.startsWith("effect/") || name.contains("__pycache__")) {
+                        continue;
+                    }
+
+                    File output = appFile(name);
+                    if (entry.isDirectory()) {
+                        output.mkdirs();
+                    } else {
+                        File parent = output.getParentFile();
+                        if (parent != null) {
+                            parent.mkdirs();
+                        }
+                        try (InputStream in = jar.getInputStream(entry)) {
+                            Files.copy(in, output.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not extract bundled effects: " + e.getMessage());
+        }
     }
     
     public void settings() {
@@ -138,9 +215,10 @@ public class QuantumBrush extends PApplet {
     private void setupUI() {
         // Get the JFrame from Processing for canvas
         PSurfaceAWT.SmoothCanvas smoothCanvas = (PSurfaceAWT.SmoothCanvas) ((PSurfaceAWT)surface).getNative();
+        processingCanvas = smoothCanvas;
         canvasFrame = (JFrame) smoothCanvas.getFrame();
-        canvasFrame.setTitle("Quantum Brush - Canvas");
-        canvasFrame.setMinimumSize(new Dimension(MIN_CANVAS_WIDTH, MIN_CANVAS_HEIGHT));
+        canvasFrame.setTitle("Quantum Brush");
+        canvasFrame.setMinimumSize(new Dimension(CONTROL_PANEL_MIN_WIDTH + MIN_CANVAS_WIDTH, MIN_CANVAS_HEIGHT));
         surface.setResizable(true);
         canvasFrame.addWindowFocusListener(new WindowAdapter() {
             @Override
@@ -149,11 +227,7 @@ public class QuantumBrush extends PApplet {
             }
         });
         
-        // Position the canvas frame on the right side of the screen
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        canvasFrame.setLocation(screenSize.width/2, screenSize.height/4);
-        
-        // Create control frame
+        // Create a single workspace with controls and canvas in the Processing frame.
         createControlFrame();
         
         // Add keyboard shortcuts for undo/redo and zoom/pan
@@ -205,7 +279,7 @@ public class QuantumBrush extends PApplet {
             }
         });
         
-        canvasFrame.setVisible(true);
+        fitWorkspaceToCanvasSize(CANVAS_WIDTH, CANVAS_HEIGHT);
     }
     
     // Zoom and Pan methods
@@ -273,7 +347,7 @@ public class QuantumBrush extends PApplet {
             zoomLevel = 1.0f;
             panX = 0;
             panY = 0;
-            keepCanvasFrameOnScreen();
+            fitWorkspaceToCanvasSize(CANVAS_WIDTH, CANVAS_HEIGHT);
             return;
         }
 
@@ -303,7 +377,7 @@ public class QuantumBrush extends PApplet {
         );
 
         surface.setSize(targetWidth, targetHeight);
-        keepCanvasFrameOnScreen();
+        fitWorkspaceToCanvasSize(targetWidth, targetHeight);
         calculateInitialZoomAndPan(targetWidth, targetHeight);
     }
 
@@ -318,7 +392,38 @@ public class QuantumBrush extends PApplet {
         int y = Math.max(0, Math.min(frameLocation.y, maxY));
         canvasFrame.setLocation(x, y);
     }
-    
+
+    private void fitWorkspaceToCanvasSize(int canvasWidth, int canvasHeight) {
+        if (canvasFrame == null || workspaceSplit == null) {
+            keepCanvasFrameOnScreen();
+            return;
+        }
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Insets insets = canvasFrame.getInsets();
+        int frameDecorationsWidth = insets.left + insets.right;
+        int frameDecorationsHeight = insets.top + insets.bottom;
+        int maxWidth = Math.max(
+            CONTROL_PANEL_MIN_WIDTH + MIN_CANVAS_WIDTH,
+            screenSize.width - 80
+        );
+        int maxHeight = Math.max(MIN_CANVAS_HEIGHT, screenSize.height - 80);
+        int targetWidth = Math.min(
+            maxWidth,
+            CONTROL_PANEL_WIDTH + Math.max(canvasWidth, MIN_CANVAS_WIDTH) + frameDecorationsWidth + 40
+        );
+        int targetHeight = Math.min(
+            maxHeight,
+            Math.max(canvasHeight, MIN_CANVAS_HEIGHT) + frameDecorationsHeight + 80
+        );
+
+        canvasFrame.setSize(targetWidth, targetHeight);
+        workspaceSplit.setDividerLocation(Math.min(CONTROL_PANEL_WIDTH, targetWidth / 2));
+        keepCanvasFrameOnScreen();
+        canvasFrame.revalidate();
+        canvasFrame.repaint();
+    }
+
     // Coordinate transformation methods
     private PVector screenToImage(float screenX, float screenY) {
         if (currentImage == null) return new PVector(screenX, screenY);
@@ -348,16 +453,12 @@ public class QuantumBrush extends PApplet {
     }
     
     private void createControlFrame() {
-        // Create main control window
-        controlFrame = new JFrame("Quantum Brush - Control Panel");
+        controlFrame = canvasFrame;
+        controlFrame.setTitle("Quantum Brush");
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int controlWidth = Math.min(500, (int)(screenSize.width * 0.4));
+        int controlWidth = Math.min(CONTROL_PANEL_WIDTH, Math.max(CONTROL_PANEL_MIN_WIDTH, (int)(screenSize.width * 0.35)));
         int controlHeight = Math.min(700, (int)(screenSize.height * 0.8));
-        controlFrame.setSize(controlWidth, controlHeight);
         controlFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-        // Position the control frame on the left side of the screen
-        controlFrame.setLocation(screenSize.width/4, screenSize.height/4);
         
         // Set references for UI manager
         ui.setMainControlFrame(controlFrame);
@@ -542,8 +643,28 @@ public class QuantumBrush extends PApplet {
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
         mainPanel.add(zoomInfoPanel, BorderLayout.SOUTH);
+        mainPanel.setMinimumSize(new Dimension(CONTROL_PANEL_MIN_WIDTH, MIN_CANVAS_HEIGHT));
+        mainPanel.setPreferredSize(new Dimension(controlWidth, controlHeight));
 
-        controlFrame.add(mainPanel);
+        canvasPanel = new JPanel(new BorderLayout());
+        canvasPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createEmptyBorder(10, 0, 10, 10),
+            BorderFactory.createTitledBorder("Canvas")
+        ));
+        canvasPanel.setMinimumSize(new Dimension(MIN_CANVAS_WIDTH, MIN_CANVAS_HEIGHT));
+        canvasPanel.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
+        canvasPanel.add(processingCanvas, BorderLayout.CENTER);
+
+        workspaceSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mainPanel, canvasPanel);
+        workspaceSplit.setContinuousLayout(true);
+        workspaceSplit.setResizeWeight(0.0);
+        workspaceSplit.setDividerLocation(controlWidth);
+        workspaceSplit.setBorder(BorderFactory.createEmptyBorder());
+
+        controlFrame.getContentPane().removeAll();
+        controlFrame.getContentPane().setLayout(new BorderLayout());
+        controlFrame.getContentPane().add(workspaceSplit, BorderLayout.CENTER);
+        fitWorkspaceToCanvasSize(CANVAS_WIDTH, CANVAS_HEIGHT);
 
         // Belt-and-braces: clear the in-memory IQM token if the user closes the
         // control window (the shutdown hook covers SIGTERM/exit() paths too).
@@ -557,6 +678,11 @@ public class QuantumBrush extends PApplet {
         });
 
         controlFrame.setVisible(true);
+        fitWorkspaceToCanvasSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        controlFrame.setLocation(
+            Math.max(0, (screenSize.width - controlFrame.getWidth()) / 2),
+            Math.max(0, (screenSize.height - controlFrame.getHeight()) / 2)
+        );
     }
     
     private void showLiveDebugViewer() {
@@ -1054,9 +1180,9 @@ public class QuantumBrush extends PApplet {
     private void saveCurrentImageToDisk() {
         if (projectId != null && currentImage != null) {
             String projectPath = "project/" + projectId;
-            File projectDir = new File(projectPath);
+            File projectDir = appFile(projectPath);
             if (projectDir.exists()) {
-                currentImage.save(projectPath + "/current.png");
+                currentImage.save(appFile(projectPath + "/current.png").getAbsolutePath());
                 System.out.println("Saved current image state to disk: project/" + projectId + "/current.png");
             }
         }
@@ -1149,16 +1275,41 @@ public class QuantumBrush extends PApplet {
             canvas.draw(zoomLevel, panX, panY);
         } else {
             // Show "no image" message
+            float placeholderX = getVisibleCanvasWidth() / 2.0f;
+            float placeholderY = getVisibleCanvasHeight() / 2.0f;
+
             fill(200);
             textAlign(CENTER, CENTER);
             textSize(18);
-            text("Load an image or project to begin", width/2, height/2);
+            text("Load an image or project to begin", placeholderX, placeholderY);
             
             fill(150);
             textSize(14);
-            text("Use File > New to load an image", width/2, height/2 + 30);
-            text("Use keyboard shortcuts to zoom: Ctrl/Cmd + Plus/Minus", width/2, height/2 + 50);
+            text("Use File > New to load an image", placeholderX, placeholderY + 30);
+            text("Use keyboard shortcuts to zoom: Ctrl/Cmd + Plus/Minus", placeholderX, placeholderY + 50);
         }
+    }
+
+    private int getVisibleCanvasWidth() {
+        if (canvasPanel != null && canvasPanel.getWidth() > 0) {
+            Insets insets = canvasPanel.getInsets();
+            return Math.max(1, canvasPanel.getWidth() - insets.left - insets.right);
+        }
+        if (processingCanvas != null && processingCanvas.getWidth() > 0) {
+            return processingCanvas.getWidth();
+        }
+        return width;
+    }
+
+    private int getVisibleCanvasHeight() {
+        if (canvasPanel != null && canvasPanel.getHeight() > 0) {
+            Insets insets = canvasPanel.getInsets();
+            return Math.max(1, canvasPanel.getHeight() - insets.top - insets.bottom);
+        }
+        if (processingCanvas != null && processingCanvas.getHeight() > 0) {
+            return processingCanvas.getHeight();
+        }
+        return height;
     }
     
     // Mouse event handling with coordinate transformation

@@ -18,22 +18,23 @@ public class FileManager {
     public void saveProject(String projectId, PImage originalImage) {
         String projectPath = "project/" + projectId;
         ensureDirectoryExists(projectPath);
+        File projectDir = QuantumBrush.appFile(projectPath);
         
         // Save original image
         if (originalImage != null) {
-            originalImage.save(projectPath + "/original.png");
+            originalImage.save(new File(projectDir, "original.png").getAbsolutePath());
         }
         
         // IMPORTANT: Also save the current state (with all effects applied)
         PImage currentImage = app.getCurrentImage();
         if (currentImage != null) {
-            currentImage.save(projectPath + "/current.png");
+            currentImage.save(new File(projectDir, "current.png").getAbsolutePath());
             System.out.println("Saved current state to: " + projectPath + "/current.png");
         }
     }
     
     public boolean ensureDirectoryExists(String path) {
-        File directory = new File(path);
+        File directory = QuantumBrush.appFile(path);
         if (!directory.exists()) {
             return directory.mkdirs();
         }
@@ -51,17 +52,17 @@ public class FileManager {
         
         // Save instructions
         String instructionsPath = strokeDirPath + "/" + strokeId + "_instructions.json";
-        app.saveJSONObject(instructions, instructionsPath);
+        app.saveJSONObject(instructions, QuantumBrush.appFile(instructionsPath).getAbsolutePath());
         
         // Save input image
         if (inputImage != null) {
             String imagePath = strokeDirPath + "/" + strokeId + "_input.png";
-            inputImage.save(imagePath);
+            inputImage.save(QuantumBrush.appFile(imagePath).getAbsolutePath());
         }
     }
     
     public JSONObject loadEffectRequirements(String effectName) {
-        File requirementsFile = new File(
+        File requirementsFile = QuantumBrush.appFile(
             "effect/" + effectName + "/" + effectName + "_requirements.json"
         );
         if (requirementsFile.exists()) {
@@ -89,18 +90,18 @@ public class FileManager {
         metadata.setLong("modified_time", currentTime);
         
         // Save metadata
-        app.saveJSONObject(metadata, "metadata/" + projectId + ".json");
+        app.saveJSONObject(metadata, QuantumBrush.appFile("metadata/" + projectId + ".json").getAbsolutePath());
     }
 
     public void updateProjectMetadata(String projectId) {
         String metadataPath = "metadata/" + projectId + ".json";
-        File metadataFile = new File(metadataPath);
+        File metadataFile = QuantumBrush.appFile(metadataPath);
         
         if (metadataFile.exists()) {
             try {
-                JSONObject metadata = app.loadJSONObject(metadataPath);
+                JSONObject metadata = app.loadJSONObject(metadataFile.getAbsolutePath());
                 metadata.setLong("modified_time", System.currentTimeMillis());
-                app.saveJSONObject(metadata, metadataPath);
+                app.saveJSONObject(metadata, metadataFile.getAbsolutePath());
             } catch (Exception e) {
                 System.err.println("Error updating metadata: " + e.getMessage());
             }
@@ -110,7 +111,7 @@ public class FileManager {
     public ArrayList<JSONObject> getProjectsMetadata() {
         ArrayList<JSONObject> projects = new ArrayList<>();
         
-        File metadataDir = new File("metadata");
+        File metadataDir = QuantumBrush.appFile("metadata");
         if (!metadataDir.exists()) {
             ensureDirectoryExists("metadata");
             return projects;
@@ -126,7 +127,7 @@ public class FileManager {
                     // Check if the corresponding project directory exists
                     JSONObject metadata = app.loadJSONObject(file.getAbsolutePath());
                     String projectId = metadata.getString("project_id", "");
-                    File projectDir = new File("project/" + projectId);
+                    File projectDir = QuantumBrush.appFile("project/" + projectId);
                     
                     // Only add to the list if the project directory exists
                     if (projectDir.exists() && projectDir.isDirectory()) {
@@ -174,11 +175,11 @@ public class FileManager {
 
     public JSONObject getProjectMetadata(String projectId) {
         String metadataPath = "metadata/" + projectId + ".json";
-        File metadataFile = new File(metadataPath);
+        File metadataFile = QuantumBrush.appFile(metadataPath);
         
         if (metadataFile.exists()) {
             try {
-                return app.loadJSONObject(metadataPath);
+                return app.loadJSONObject(metadataFile.getAbsolutePath());
             } catch (Exception e) {
                 System.err.println("Error loading metadata: " + e.getMessage());
             }
@@ -190,15 +191,15 @@ public class FileManager {
     // Add a method to load strokes when a project is loaded
     public boolean loadProject(String projectId) {
         String projectPath = "project/" + projectId;
-        File projectDir = new File(projectPath);
+        File projectDir = QuantumBrush.appFile(projectPath);
         
         if (!projectDir.exists()) {
             return false;
         }
         
         // Try to load current state first (with all effects applied)
-        File currentImageFile = new File(projectPath + "/current.png");
-        File originalImageFile = new File(projectPath + "/original.png");
+        File currentImageFile = QuantumBrush.appFile(projectPath + "/current.png");
+        File originalImageFile = QuantumBrush.appFile(projectPath + "/original.png");
         
         PImage loadedImage = null;
         
@@ -246,13 +247,13 @@ public class FileManager {
         
         try {
             // Delete project directory and all its contents
-            File projectDir = new File("project/" + projectId);
+            File projectDir = QuantumBrush.appFile("project/" + projectId);
             if (projectDir.exists()) {
                 success &= deleteDirectory(projectDir);
             }
             
             // Delete metadata file
-            File metadataFile = new File("metadata/" + projectId + ".json");
+            File metadataFile = QuantumBrush.appFile("metadata/" + projectId + ".json");
             if (metadataFile.exists()) {
                 success &= metadataFile.delete();
             }
@@ -294,7 +295,7 @@ public class FileManager {
     public int cleanupOrphanedMetadata() {
         int cleanedCount = 0;
         
-        File metadataDir = new File("metadata");
+        File metadataDir = QuantumBrush.appFile("metadata");
         if (!metadataDir.exists()) {
             return 0;
         }
@@ -308,7 +309,7 @@ public class FileManager {
                 try {
                     JSONObject metadata = app.loadJSONObject(file.getAbsolutePath());
                     String projectId = metadata.getString("project_id", "");
-                    File projectDir = new File("project/" + projectId);
+                    File projectDir = QuantumBrush.appFile("project/" + projectId);
                     
                     // Only delete if project directory truly doesn't exist
                     if (!projectDir.exists()) {
