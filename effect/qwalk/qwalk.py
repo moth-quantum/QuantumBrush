@@ -31,15 +31,18 @@ except ImportError:
 
 
 def _line_hamiltonian(n_sites):
-    """Adjacency operator of a 1D path graph on `n_sites` sites, as a dense
-    Hermitian matrix. This is the quantum-walk Hamiltonian: H[i, j] = 1 for
-    neighbouring sites. e^{-iHt} is a continuous-time quantum walk; e^{-Ht}
-    (no i) is the classical heat kernel on the same graph."""
-    H = np.zeros((n_sites, n_sites), dtype=np.float64)
+    """Graph Laplacian L = D - A of a 1D path graph on `n_sites` sites, as a
+    dense Hermitian matrix (A is the adjacency, D the diagonal of site degrees).
+    This is the generator for both walks on the same graph: e^{-iLt} is the
+    continuous-time quantum walk and e^{-Lt} is the classical heat kernel, so
+    the two differ only by the factor of i. Using the Laplacian rather than the
+    bare adjacency is what makes the classical limit an exact, probability
+    conserving random walk (e^{-Lt} is column-stochastic since L @ 1 = 0)."""
+    A = np.zeros((n_sites, n_sites), dtype=np.float64)
     idx = np.arange(n_sites - 1)
-    H[idx, idx + 1] = 1.0
-    H[idx + 1, idx] = 1.0
-    return H
+    A[idx, idx + 1] = 1.0
+    A[idx + 1, idx] = 1.0
+    return np.diag(A.sum(axis=1)) - A
 
 
 def _pad_to_power_of_two(H):
@@ -68,25 +71,47 @@ def _walk_distribution_qiskit(H_padded, n_qubits, start_site, t, steps):
     return np.abs(evolved.data) ** 2
 
 
-def _walk_distribution_exact(H_padded, start_site, t, coherence):
-    """Reference distribution via direct matrix exponential. coherence=1 is the
-    pure quantum walk e^{-iHt}; coherence=0 is the classical heat kernel e^{-Ht}
-    (real, diffusive). Intermediate values interpolate the generator phase, so
-    the artist can dial interference fringes in and out."""
-    import warnings
-
+def _quantum_distribution(H_padded, start_site, t):
+    """Continuous-time quantum walk distribution |<j|e^{-iHt}|start>|^2 via a
+    direct matrix exponential. This is the reference the Trotter circuit is
+    checked against."""
     from scipy.linalg import expm
 
     dim = H_padded.shape[0]
     psi0 = np.zeros(dim, dtype=np.complex128)
     psi0[start_site] = 1.0
+    psi = expm(-1j * H_padded * t) @ psi0
+    return np.abs(psi) ** 2
 
-    phase = np.exp(1j * np.pi * 0.5 * coherence)  # 1 -> -i (quantum), 0 -> 1 (classical)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        U = expm(-phase * H_padded * t)
-    psi = U @ psi0
-    p = np.abs(psi) ** 2
+
+def _classical_distribution(H_padded, start_site, t):
+    """Classical continuous-time random walk distribution e^{-Lt} applied to the
+    start site, where L = H is the graph Laplacian. This solves the heat
+    equation dp/dt = -L p, so e^{-Lt} is a stochastic matrix and the result is
+    already a probability vector (read linearly, never squared). It is the exact
+    classical counterpart of the quantum walk on the same graph."""
+    from scipy.linalg import expm
+
+    p0 = np.zeros(H_padded.shape[0], dtype=np.float64)
+    p0[start_site] = 1.0
+    p = (expm(-H_padded * t) @ p0).real
+    p = np.clip(p, 0.0, None)
+    s = p.sum()
+    return p / s if s > 0 else p
+
+
+def _walk_distribution_exact(H_padded, start_site, t, coherence):
+    """Site distribution for a given coherence, as a convex blend of the two
+    genuine walks on the same Laplacian H. coherence=1 is the pure quantum walk
+    |e^{-iHt}|^2 (ballistic, interfering); coherence=0 is the exact classical
+    heat kernel e^{-Ht} (diffusive, single-peaked). Intermediate values mix the
+    two probability distributions, so the blend stays a valid distribution and
+    the artist can dial interference in and out. Both endpoints are exact
+    physics rather than an interpolated generator phase."""
+    c = float(np.clip(coherence, 0.0, 1.0))
+    p_q = _quantum_distribution(H_padded, start_site, t)
+    p_c = _classical_distribution(H_padded, start_site, t)
+    p = (1.0 - c) * p_c + c * p_q
     s = p.sum()
     return p / s if s > 0 else p
 
