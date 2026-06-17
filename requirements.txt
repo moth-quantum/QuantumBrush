@@ -1,0 +1,15 @@
+# Quantum Brush — Python dependencies (modern app)
+
+# Core image + effect runner
+numpy>=2.1.0
+Pillow>=10.0.0
+matplotlib>=3.8.0
+scipy>=1.11.0
+
+# Brushes (install subset for demo; full set for all effects)
+# Minimal demo: acrylic only needs numpy
+
+# Quantum brushes (heisenbrush, clone, etc.)
+qiskit>=1.0.0
+qiskit-aer>=0.17.0
+qiskit-ibm-runtime>=0.20.0

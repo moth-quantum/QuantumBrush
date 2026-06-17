@@ -234,6 +234,7 @@ if __name__ == "__main__":
         except Exception as e:
             record_error(e)
             instructions["effect_success"] = False
+            instructions["error_message"] = str(e)
             dump_json(instructions, args.stroke_path)
             success = False
 
@@ -247,9 +248,9 @@ if __name__ == "__main__":
         record_error(e)
         if instructions:
             instructions["effect_success"] = False
+            instructions["error_message"] = str(e)
             dump_json(instructions, args.stroke_path)
         success = False
-        # Redirect stdout and stderr to a log file
 
     
     if success:

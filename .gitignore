@@ -1,5 +1,25 @@
-DS_Store
+.DS_Store
 metadata
 project
 log
 config
+.venv
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Modern app — dependencies & build output (do not commit)
+modern/node_modules/
+modern/dist/
+modern/dist-ssr/
+modern/.vite/
+modern/src-tauri/target/
+modern/src-tauri/gen/schemas/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
