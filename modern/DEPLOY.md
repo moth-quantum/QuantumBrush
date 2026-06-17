@@ -23,15 +23,19 @@ docker run -p 8787:8787 quantum-brush-api
 
 Or on Render: Web Service, Docker, path `modern/Dockerfile.api`, port `8787`.
 
+**Render Python (native):** start `python modern/dev-api/server.py`, health `/api/health`, env `QUANTUMBRUSH_ROOT=/opt/render/project/src`. Server must bind `0.0.0.0` (uses `PORT` from Render).
+
 ### 3. Connect frontend → API
 
-In **Vercel → Settings → Environment Variables**:
+In **Vercel → Project → Settings → Environment Variables** (not in source code):
 
 ```
-VITE_API_URL=https://your-api.onrender.com
+VITE_API_URL=https://quantumbrush.onrender.com
 ```
 
-Redeploy Vercel after setting. No trailing slash.
+Apply to **Production** (and Preview if you want). **Redeploy** Vercel after saving — Vite bakes env at build time.
+
+No trailing slash. Do not put the Render URL in `vercel.json` or `.tsx` files.
 
 ### 4. Verify
 

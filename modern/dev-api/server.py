@@ -491,13 +491,15 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> None:
     port = int(os.environ.get("PORT", os.environ.get("QB_DEV_API_PORT", "8787")))
+    # Render/cloud need 0.0.0.0; local dev proxy still works
+    host = os.environ.get("QB_DEV_API_HOST", "0.0.0.0")
     ensure_dir(METADATA)
     ensure_dir(PROJECTS)
     print(f"Quantum Brush dev API")
     print(f"  root:   {ROOT}")
     print(f"  python: {PYTHON}")
-    print(f"  listen: http://127.0.0.1:{port}")
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    print(f"  listen: http://{host}:{port}")
+    server = ThreadingHTTPServer((host, port), Handler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
