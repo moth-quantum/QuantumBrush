@@ -402,7 +402,7 @@ public class StrokeManager {
   
   private String loadCustomPythonPath() {
       try {
-          File configFile = new File("config/python_path.txt");
+          File configFile = QuantumBrush.appFile("config/python_path.txt");
           if (configFile.exists()) {
               return new String(Files.readAllBytes(configFile.toPath())).trim();
           }
@@ -414,12 +414,12 @@ public class StrokeManager {
   
   private void saveCustomPythonPath(String path) {
       try {
-          File configDir = new File("config");
+          File configDir = QuantumBrush.appFile("config");
           if (!configDir.exists()) {
               configDir.mkdirs();
           }
           
-          File configFile = new File("config/python_path.txt");
+          File configFile = QuantumBrush.appFile("config/python_path.txt");
           Files.write(configFile.toPath(), path.getBytes());
           System.out.println("Saved custom Python path: " + path);
       } catch (Exception e) {
@@ -468,14 +468,14 @@ public class StrokeManager {
         }
         
         // Create project directory structure
-        File projectDir = new File("project/" + projectId);
+        File projectDir = QuantumBrush.appFile("project/" + projectId);
         if (!projectDir.exists()) {
             projectDir.mkdirs();
             
             // Save original image
             if (app.getCurrentImage() != null) {
-                String originalPath = projectDir.getPath() + "/original.png";
-                app.getCurrentImage().save(originalPath);
+                File originalPath = new File(projectDir, "original.png");
+                app.getCurrentImage().save(originalPath.getAbsolutePath());
             }
         }
         
@@ -488,7 +488,7 @@ public class StrokeManager {
         // Generate and save JSON instructions
         String instructionsPath = strokeDir.getPath() + "/" + strokeId + "_instructions.json";
         JSONObject instructions = stroke.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
-        app.saveJSONObject(instructions, instructionsPath);
+        app.saveJSONObject(instructions, new File(instructionsPath).getAbsolutePath());
 
         // DEBUG: Show the final JSON that was saved
         DebugLogger.log("\n=== FINAL SAVED JSON DEBUG ===");
@@ -509,10 +509,10 @@ public class StrokeManager {
         // Save input image
         if (app.getCurrentImage() != null) {
             String inputPath = strokeDir.getPath() + "/" + strokeId + "_input.png";
-            app.getCurrentImage().save(inputPath);
+            app.getCurrentImage().save(new File(inputPath).getAbsolutePath());
             
             // Update JSON with image paths
-            instructions = app.loadJSONObject(instructionsPath);
+            instructions = app.loadJSONObject(new File(instructionsPath).getAbsolutePath());
             JSONObject strokeInput = instructions.getJSONObject("stroke_input");
             strokeInput.setString("input_location", inputPath);
             strokeInput.setString(
@@ -520,7 +520,7 @@ public class StrokeManager {
             strokeDir.getPath() + "/" + strokeId + "_output.png"
             );
             instructions.setJSONObject("stroke_input", strokeInput);
-            app.saveJSONObject(instructions, instructionsPath);
+            app.saveJSONObject(instructions, new File(instructionsPath).getAbsolutePath());
         }
         
         // Set current stroke index
@@ -536,7 +536,7 @@ public class StrokeManager {
         }
         
         String projectId = app.getProjectId();
-        File strokeDir = new File("project/" + projectId + "/stroke");
+        File strokeDir = QuantumBrush.appFile("project/" + projectId + "/stroke");
         
         if (!strokeDir.exists() || !strokeDir.isDirectory()) {
             return;
@@ -846,11 +846,11 @@ public void runStroke(Stroke stroke) {
         
         // Define instructionsPath once here to use throughout the method
         final String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
-        File instructionsFile = new File(instructionsPath);
+        File instructionsFile = QuantumBrush.appFile(instructionsPath);
         
         // Check if the stroke is in a failed state and needs cleanup
         if (instructionsFile.exists()) {
-            JSONObject instructions = app.loadJSONObject(instructionsPath);
+            JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
             String processingStatus = instructions.getString("processing_status", "");
             
             // If the stroke is in a "running" state but not in our processing map,
@@ -858,15 +858,15 @@ public void runStroke(Stroke stroke) {
             if ("running".equals(processingStatus) && !processingStrokes.containsKey(strokeId)) {
                 // Reset the status to allow reprocessing
                 instructions.setString("processing_status", "pending");
-                app.saveJSONObject(instructions, instructionsPath);
+                app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
             }
         }
         
         // Check if Python script exists
-        File pythonScript = new File("effect/" + folderName + "/" + effectId + ".py");
+        File pythonScript = QuantumBrush.appFile("effect/" + folderName + "/" + effectId + ".py");
         if (!pythonScript.exists()) {
             // Try with folder name as fallback
-            pythonScript = new File("effect/" + folderName + "/" + folderName + ".py");
+            pythonScript = QuantumBrush.appFile("effect/" + folderName + "/" + folderName + ".py");
             if (!pythonScript.exists()) {
                 JOptionPane.showMessageDialog(
                     null, 
@@ -879,7 +879,7 @@ public void runStroke(Stroke stroke) {
         }
         
         // Ensure directories exist
-        File projectDir = new File("project/" + projectId);
+        File projectDir = QuantumBrush.appFile("project/" + projectId);
         File strokeDir = new File(projectDir, "stroke");
         if (!projectDir.exists()) projectDir.mkdirs();
         if (!strokeDir.exists()) strokeDir.mkdirs();
@@ -887,17 +887,17 @@ public void runStroke(Stroke stroke) {
         // Ensure instructions file exists
         if (!instructionsFile.exists()) {
             JSONObject instructions = stroke.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
-            app.saveJSONObject(instructions, instructionsPath);
+            app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
         }
         
         // Update status fields to indicate processing has started
-        JSONObject instructions = app.loadJSONObject(instructionsPath);
+        JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
         instructions.setBoolean("created", true);
         instructions.setString("effect_received", "null");
         instructions.setString("effect_processed", "null");
         instructions.setString("effect_success", "null");
         instructions.setString("processing_status", "running");
-        app.saveJSONObject(instructions, instructionsPath);
+        app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
         
         // Create a task to execute the Python script asynchronously
         Runnable task = () -> {
@@ -1163,10 +1163,10 @@ public void runStroke(Stroke stroke) {
         try {
             String projectId = app.getProjectId();
             String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
-            File instructionsFile = new File(instructionsPath);
+            File instructionsFile = QuantumBrush.appFile(instructionsPath);
             
             if (instructionsFile.exists()) {
-                JSONObject instructions = app.loadJSONObject(instructionsFile);
+                JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
                 return instructions.getString("processing_status", "unknown");
             }
         } catch (Exception e) {
@@ -1184,14 +1184,14 @@ public void runStroke(Stroke stroke) {
             }
             
             // Create log directory if it doesn't exist
-            File logDir = new File("log");
+            File logDir = QuantumBrush.appFile("log");
             if (!logDir.exists()) {
                 logDir.mkdirs();
             }
             
             // Create log files for stdout and stderr
-            File stdoutLog = new File("log/python_stdout.log");
-            File stderrLog = new File("log/python_stderr.log");
+            File stdoutLog = QuantumBrush.appFile("log/python_stdout.log");
+            File stderrLog = QuantumBrush.appFile("log/python_stderr.log");
             
             // Display Python version information
             ProcessBuilder versionProcessBuilder = new ProcessBuilder(pythonCommand, "--version");
@@ -1231,9 +1231,13 @@ public void runStroke(Stroke stroke) {
             versionProcess.waitFor();
             
             // Create command to execute Python script
+            File instructionsFile = QuantumBrush.appFile(instructionsFilePath);
             ProcessBuilder processBuilder = new ProcessBuilder(
-                pythonCommand, "effect/apply_effect.py", instructionsFilePath
+                pythonCommand,
+                QuantumBrush.appFile("effect/apply_effect.py").getAbsolutePath(),
+                instructionsFile.getAbsolutePath()
             );
+            processBuilder.directory(QuantumBrush.getAppRootDirectory());
             processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(stdoutLog));
             processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(stderrLog));
 
@@ -1253,11 +1257,11 @@ public void runStroke(Stroke stroke) {
             int exitCode = process.exitValue();
             
             // Check the effect_success flag in the JSON file
-            JSONObject instructions = app.loadJSONObject(instructionsFilePath);
+            JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
             String projectId = instructions.getString("project_id", "");
             String strokeId = instructions.getString("stroke_id", "");
             String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-            File outputFile = new File(outputPath);
+            File outputFile = QuantumBrush.appFile(outputPath);
             String effectSuccess = instructions.getString("effect_success", "false");
             
             boolean success = exitCode == 0 && "true".equals(effectSuccess) && outputFile.exists();
@@ -1321,7 +1325,7 @@ public void runStroke(Stroke stroke) {
         // Check if the effect was successful
         String instructionsPath = "project/" + projectId + "/stroke/" + 
                                  strokeId + "_instructions.json";
-        File instructionsFile = new File(instructionsPath);
+        File instructionsFile = QuantumBrush.appFile(instructionsPath);
         
         if (!instructionsFile.exists()) {
             JOptionPane.showMessageDialog(
@@ -1333,7 +1337,7 @@ public void runStroke(Stroke stroke) {
             return false;
         }
         
-        JSONObject instructions = app.loadJSONObject(instructionsPath);
+        JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
         String effectSuccess = instructions.getString("effect_success", "false");
         
         if (!"true".equals(effectSuccess)) {
@@ -1348,7 +1352,7 @@ public void runStroke(Stroke stroke) {
         
         // Get the effect output image (just the effect, not layered)
         String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-        PImage effectImage = app.loadImage(outputPath);
+        PImage effectImage = app.loadImage(QuantumBrush.appFile(outputPath).getAbsolutePath());
         
         if (effectImage == null) {
             System.err.println("Failed to load effect output image: " + outputPath);
@@ -1412,9 +1416,9 @@ public void runStroke(Stroke stroke) {
         // IMPORTANT: Save the current state to disk
         if (projectId != null) {
             String projectPath = "project/" + projectId;
-            File projectDir = new File(projectPath);
+            File projectDir = QuantumBrush.appFile(projectPath);
             if (projectDir.exists()) {
-                resultImage.save(projectPath + "/current.png");
+                resultImage.save(QuantumBrush.appFile(projectPath + "/current.png").getAbsolutePath());
                 System.out.println("Saved current state after applying effect");
             }
         }
@@ -1449,9 +1453,9 @@ public void runStroke(Stroke stroke) {
             
             // Delete stroke files
             String strokeDir = "project/" + projectId + "/stroke/";
-            File instructionsFile = new File(strokeDir + strokeId + "_instructions.json");
-            File inputFile = new File(strokeDir + strokeId + "_input.png");
-            File outputFile = new File(strokeDir + strokeId + "_output.png");
+            File instructionsFile = QuantumBrush.appFile(strokeDir + strokeId + "_instructions.json");
+            File inputFile = QuantumBrush.appFile(strokeDir + strokeId + "_input.png");
+            File outputFile = QuantumBrush.appFile(strokeDir + strokeId + "_output.png");
             
             boolean success = true;
             if (instructionsFile.exists()) {
@@ -1547,13 +1551,14 @@ public void runStroke(Stroke stroke) {
                 String projectId = app.getProjectId();
                 JSONObject instructions = strokeToUpdate.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
                 String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
+                File instructionsFile = QuantumBrush.appFile(instructionsPath);
                 
                 // Mark the stroke as pending again, as its parameters have changed.
                 // This is important so it can be re-run.
                 instructions.setString("processing_status", "pending");
                 instructions.setString("effect_success", "null"); // Reset success flag
                 
-                app.saveJSONObject(instructions, instructionsPath);
+                app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
 
                 System.out.println("Stroke " + strokeId + " updated successfully. Its status has been reset to 'pending'.");
                 return true;

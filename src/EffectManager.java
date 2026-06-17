@@ -17,7 +17,7 @@ public class EffectManager {
         // Clear existing effects to prevent contamination
         effects.clear();
         
-        File effectsDir = new File("effect");
+        File effectsDir = QuantumBrush.appFile("effect");
         if (!effectsDir.exists() || !effectsDir.isDirectory()) {
             System.err.println("Error: effect directory not found or not a directory");
             return;

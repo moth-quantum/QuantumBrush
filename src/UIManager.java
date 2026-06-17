@@ -530,10 +530,10 @@ public class UIManager {
         String projectIdForCost = app.getProjectId();
         if (projectIdForCost != null) {
             String instrPath = "project/" + projectIdForCost + "/stroke/" + stroke.getId() + "_instructions.json";
-            java.io.File instrFile = new java.io.File(instrPath);
+            java.io.File instrFile = QuantumBrush.appFile(instrPath);
             if (instrFile.exists()) {
                 try {
-                    JSONObject instr = app.loadJSONObject(instrPath);
+                    JSONObject instr = app.loadJSONObject(instrFile.getAbsolutePath());
                     if (instr.hasKey("cost_estimate_qpu_seconds")) {
                         float cost = instr.getFloat("cost_estimate_qpu_seconds", 0.0f);
                         JSONObject hwBlock = instr.hasKey("hardware") ? instr.getJSONObject("hardware") : null;
@@ -573,11 +573,11 @@ public class UIManager {
         if (projectId != null) {
             // Input Image
             String inputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_input.png";
-            addImageWithOverlay(imagesPanel, inputPath, "Input", stroke);
+            addImageWithOverlay(imagesPanel, QuantumBrush.appFile(inputPath).getAbsolutePath(), "Input", stroke);
 
             // Output Image
             String outputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_output.png";
-            addImageWithOverlay(imagesPanel, outputPath, "Output", null);
+            addImageWithOverlay(imagesPanel, QuantumBrush.appFile(outputPath).getAbsolutePath(), "Output", null);
         }
         detailsPanel.add(imagesPanel);
         detailsPanel.add(Box.createVerticalStrut(10));
