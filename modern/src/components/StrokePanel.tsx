@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { resolveImageUrl } from "../lib/imageUrl";
+import { useEffect, useState } from "react";
 import {
   createStroke,
   deleteStroke,
+  listStrokes,
   openProject,
   runStroke,
   saveProjectImage,
 } from "../api/client";
+import { resolveImageUrl } from "../lib/imageUrl";
 import { blendImages } from "../lib/images";
 import { validateStrokePaths } from "../lib/strokeValidation";
 import { useAppStore } from "../store/useAppStore";
@@ -17,6 +18,9 @@ interface Props {
   effects: EffectSummary[];
   onRefresh: () => void;
 }
+
+const POLL_MS = 1500;
+const TERMINAL_STATUS = new Set(["completed", "failed", "canceled"]);
 
 function statusClass(status: string) {
   if (status === "completed") return "status-ok";
@@ -36,13 +40,39 @@ export function StrokePanel({ strokes, effects, onRefresh }: Props) {
   const setSelectedStrokeId = useAppStore((s) => s.setSelectedStrokeId);
   const setStatusMessage = useAppStore((s) => s.setStatusMessage);
   const setProject = useAppStore((s) => s.setProject);
+  const setStrokes = useAppStore((s) => s.setStrokes);
   const projectName = useAppStore((s) => s.projectName);
   const paths = useAppStore((s) => s.paths);
   const clearPaths = useAppStore((s) => s.clearPaths);
   const [panelError, setPanelError] = useState<string | null>(null);
+  const [runningStrokeId, setRunningStrokeId] = useState<string | null>(null);
 
   const selected = strokes.find((s) => s.stroke_id === selectedStrokeId);
   const effect = effects.find((e) => e.id === selectedEffectId);
+  const hasRunningStroke =
+    runningStrokeId !== null ||
+    strokes.some((s) => s.processing_status === "running");
+
+  // Auto-refresh stroke list while Python effect runs (legacy StrokeManager callback)
+  useEffect(() => {
+    if (!projectId || !hasRunningStroke) return;
+
+    const poll = async () => {
+      try {
+        const data = await listStrokes(projectId);
+        setStrokes(data);
+        const current = data.find((s) => s.stroke_id === runningStrokeId);
+        if (current && TERMINAL_STATUS.has(current.processing_status)) {
+          setRunningStrokeId(null);
+        }
+      } catch {
+        // ignore transient poll errors
+      }
+    };
+
+    const id = window.setInterval(poll, POLL_MS);
+    return () => window.clearInterval(id);
+  }, [projectId, hasRunningStroke, runningStrokeId, setStrokes]);
 
   const handleCreate = async () => {
     setPanelError(null);
@@ -78,14 +108,33 @@ export function StrokePanel({ strokes, effects, onRefresh }: Props) {
   const handleRun = async (strokeId: string) => {
     if (!projectId) return;
     setPanelError(null);
+    setRunningStrokeId(strokeId);
+    // Optimistic running state until first poll / runStroke returns
+    setStrokes(
+      strokes.map((s) =>
+        s.stroke_id === strokeId
+          ? { ...s, processing_status: "running" }
+          : s,
+      ),
+    );
     setStatusMessage("Running quantum brush (Python)…");
     try {
       const result = await runStroke(projectId, strokeId);
-      onRefresh();
-      setStatusMessage(result.success ? "Processing completed" : "Processing failed");
+      const data = await listStrokes(projectId);
+      setStrokes(data);
+      const stroke = data.find((s) => s.stroke_id === strokeId);
+      if (!result.success && stroke?.error_message) {
+        setPanelError(stroke.error_message);
+      }
+      setStatusMessage(
+        result.success ? "Processing completed" : "Processing failed",
+      );
     } catch (e) {
       setPanelError(String(e));
       setStatusMessage(`Run error: ${e}`);
+    } finally {
+      setRunningStrokeId(null);
+      await onRefresh();
     }
   };
 
@@ -119,6 +168,11 @@ export function StrokePanel({ strokes, effects, onRefresh }: Props) {
   const strokeError =
     selected?.processing_status === "failed" ? selected.error_message : null;
   const displayError = panelError || strokeError;
+  const isRunning = Boolean(
+    selected &&
+      (selected.processing_status === "running" ||
+        runningStrokeId === selected.stroke_id),
+  );
 
   return (
     <aside className="panel stroke-panel">
@@ -191,12 +245,15 @@ export function StrokePanel({ strokes, effects, onRefresh }: Props) {
         {selected && (
           <div className="stroke-detail">
             <p className="mono">{selected.stroke_id}</p>
+            {isRunning && (
+              <p className="status-run small">Processing… updating previews</p>
+            )}
             <div className="stroke-actions">
               <button
                 type="button"
                 className="btn"
                 onClick={() => handleRun(selected.stroke_id)}
-                disabled={selected.processing_status === "running"}
+                disabled={isRunning}
               >
                 Run
               </button>
@@ -232,7 +289,9 @@ export function StrokePanel({ strokes, effects, onRefresh }: Props) {
                     alt="Stroke output"
                   />
                 ) : (
-                  <div className="preview-placeholder">Not processed yet</div>
+                  <div className="preview-placeholder">
+                    {isRunning ? "Processing…" : "Not processed yet"}
+                  </div>
                 )}
               </figure>
             </div>

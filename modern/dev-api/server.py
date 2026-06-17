@@ -17,7 +17,7 @@ import time
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 
 def find_app_root() -> Path:
@@ -71,6 +71,22 @@ def write_json(path: Path, data: dict) -> None:
 def media_url(rel: str) -> str:
     return "/media/" + rel.replace("\\", "/")
 
+
+def resolve_media_file(rel: str) -> Path | None:
+    """Resolve /media/ path under ROOT; block traversal outside project/."""
+    rel = unquote(rel).replace("\\", "/").lstrip("/")
+    if not rel or ".." in Path(rel).parts:
+        return None
+    if not rel.startswith("project/"):
+        return None
+    try:
+        file_path = (ROOT / rel).resolve()
+        file_path.relative_to(ROOT.resolve())
+    except (OSError, ValueError):
+        return None
+    if not file_path.is_file():
+        return None
+    return file_path
 
 def list_effects() -> list:
     effects = []
@@ -428,8 +444,8 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path.startswith("/media/"):
             rel = parsed.path[len("/media/") :]
-            file_path = ROOT / rel
-            if not file_path.is_file():
+            file_path = resolve_media_file(rel)
+            if file_path is None:
                 self.send_error(404)
                 return
             data = file_path.read_bytes()
