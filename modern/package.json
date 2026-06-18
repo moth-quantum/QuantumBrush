@@ -9,7 +9,7 @@
     "server": "node server.js",
     "frontend": "npm run dev --prefix frontend",
     "dev": "concurrently \"npm run server\" \"npm run frontend\"",
-    "dist": "electron-builder",
+    "dist": "npm run build --prefix frontend && electron-builder",
     "start-electron": "electron ."
   },
   "dependencies": {
