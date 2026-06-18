@@ -1,0 +1,61 @@
+- generic [ref=e3]:
+  - region "Quantum Brush editor window" [ref=e4]:
+    - generic [ref=e8]:
+      - img [ref=e9]
+      - heading "Quantum Brush" [level=2] [ref=e11]
+      - paragraph [ref=e12]: Click the menu top-left to initialize or open a project.
+  - generic [ref=e13]:
+    - button "MAIN MENU" [ref=e14]:
+      - img [ref=e15]
+      - text: MAIN MENU
+    - generic [ref=e16]:
+      - button "Undo (Ctrl+Z)" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - button "Redo" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "Draw Tool" [ref=e26] [cursor=pointer]:
+        - img [ref=e27]
+      - button "Color Wheel" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+      - generic [ref=e39]:
+        - generic [ref=e40]: 10px
+        - slider [ref=e41] [cursor=pointer]: "10"
+      - button "Zoom In" [ref=e44] [cursor=pointer]:
+        - img [ref=e45]
+      - button "Zoom Out" [ref=e48] [cursor=pointer]:
+        - img [ref=e49]
+      - button "Fit to Screen" [ref=e52] [cursor=pointer]:
+        - img [ref=e53]
+      - button "Reset Pan & Zoom" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+    - button "Layers" [ref=e62] [cursor=pointer]:
+      - img [ref=e63]
+  - generic [ref=e67]:
+    - generic [ref=e68]:
+      - button "01 Project" [ref=e69] [cursor=pointer]:
+        - generic [ref=e70]: "01"
+        - generic [ref=e71]: Project
+      - button "02 Canvas" [ref=e72] [cursor=pointer]:
+        - generic [ref=e73]: "02"
+        - generic [ref=e74]: Canvas
+      - button "03 Effect" [ref=e75] [cursor=pointer]:
+        - generic [ref=e76]: "03"
+        - generic [ref=e77]: Effect
+      - button "04 Stroke" [ref=e78] [cursor=pointer]:
+        - generic [ref=e79]: "04"
+        - generic [ref=e80]: Stroke
+      - button "05 Export" [ref=e81] [cursor=pointer]:
+        - generic [ref=e82]: "05"
+        - generic [ref=e83]: Export
+    - button "Open Project Manager" [ref=e84] [cursor=pointer]:
+      - generic [ref=e85]: Open Project Manager
+      - img [ref=e86]
+  - generic [ref=e88]:
+    - generic [ref=e89]: 100%
+    - generic [ref=e90]: "X: 0px Y: 0px"
+    - generic [ref=e91]:
+      - img [ref=e92]
+      - text: 0 paths
+    - generic [ref=e96]:
+      - img [ref=e97]
+      - text: Local Aer

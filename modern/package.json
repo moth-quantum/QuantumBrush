@@ -1,0 +1,64 @@
+{
+  "name": "quantum-brush-modern",
+  "version": "1.0.0",
+  "description": "Modern web/desktop interface for Quantum Brush",
+  "author": "Matvei <matvei@quantumbrush.com>",
+  "main": "main.js",
+  "scripts": {
+    "install-all": "npm install && npm install --prefix frontend",
+    "server": "node server.js",
+    "frontend": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
+    "dist": "electron-builder",
+    "start-electron": "electron ."
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "cross-env": "^10.1.0",
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.3",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.mothquantum.quantumbrush",
+    "productName": "Quantum Brush",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "main.js",
+      "server.js",
+      "frontend/dist/**/*",
+      "frontend/public/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../effect",
+        "to": "effect",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "frontend/public/favicon.ico"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "frontend/public/favicon.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "frontend/public/favicon.png"
+    },
+    "publish": null
+  },
+  "repository": "https://github.com/moth-quantum/QuantumBrush"
+}

@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: QuantumBrush
+Class-Path: ../lib/core-4.4.1.jar
+

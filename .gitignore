@@ -3,3 +3,8 @@ metadata
 project
 log
 config
+build/
+.venv/
+apply_effect.spec
+effect/apply_effect.exe
+modern/dist-electron/

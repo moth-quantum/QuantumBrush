@@ -153,6 +153,10 @@ def run(params):
   
     # Run Heisenberg simulation to get colors
     color_shifts = run_heisenberg_hardware(normalized_distances, radius, phi, theta)
+    
+    if color_shifts is None:
+        print("Heisenberg hardware run failed. Returning original image.")
+        return image
 
     new_hls = np.array([[(h + shift) % 1.0, (l + shift) % 1, (s + shift) % 1.0] for shift in color_shifts])
     new_hls = np.array([(1 - strength) * np.array([h,l,s]) + strength * new for new in new_hls])

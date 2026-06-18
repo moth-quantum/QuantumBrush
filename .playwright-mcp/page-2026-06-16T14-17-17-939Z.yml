@@ -1,0 +1,60 @@
+- generic [ref=e3]:
+  - region "Quantum Brush editor window" [ref=e4]:
+    - generic [ref=e8]:
+      - img [ref=e9]
+      - heading "Quantum Brush" [level=2] [ref=e11]
+      - paragraph [ref=e12]: Click the menu top-left to initialize or open a project.
+  - generic [ref=e13]:
+    - button "Main Menu" [ref=e14] [cursor=pointer]:
+      - img [ref=e15]
+    - generic [ref=e16]:
+      - button "Undo (Ctrl+Z)" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - button "Redo" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "Draw Tool" [ref=e26] [cursor=pointer]:
+        - img [ref=e27]
+      - button "Color Wheel" [ref=e32] [cursor=pointer]:
+        - img [ref=e33]
+      - generic [ref=e39]:
+        - generic [ref=e40]: 10px
+        - slider [ref=e41] [cursor=pointer]: "10"
+      - button "Zoom In" [ref=e43] [cursor=pointer]:
+        - img [ref=e44]
+      - button "Zoom Out" [ref=e47] [cursor=pointer]:
+        - img [ref=e48]
+      - button "Fit to Screen" [ref=e51] [cursor=pointer]:
+        - img [ref=e52]
+      - button "Reset Pan & Zoom" [ref=e57] [cursor=pointer]:
+        - img [ref=e58]
+    - button "Layers" [ref=e61] [cursor=pointer]:
+      - img [ref=e62]
+  - generic [ref=e66]:
+    - generic [ref=e67]:
+      - button "01 Project" [ref=e68] [cursor=pointer]:
+        - generic [ref=e69]: "01"
+        - generic [ref=e70]: Project
+      - button "02 Canvas" [ref=e71] [cursor=pointer]:
+        - generic [ref=e72]: "02"
+        - generic [ref=e73]: Canvas
+      - button "03 Effect" [ref=e74] [cursor=pointer]:
+        - generic [ref=e75]: "03"
+        - generic [ref=e76]: Effect
+      - button "04 Stroke" [ref=e77] [cursor=pointer]:
+        - generic [ref=e78]: "04"
+        - generic [ref=e79]: Stroke
+      - button "05 Export" [ref=e80] [cursor=pointer]:
+        - generic [ref=e81]: "05"
+        - generic [ref=e82]: Export
+    - button "Open Project Manager" [ref=e83] [cursor=pointer]:
+      - generic [ref=e84]: Open Project Manager
+      - img [ref=e85]
+  - generic [ref=e87]:
+    - generic [ref=e88]: 100%
+    - generic [ref=e89]: "X: 0px Y: 0px"
+    - generic [ref=e90]:
+      - img [ref=e91]
+      - text: 0 paths
+    - generic [ref=e95]:
+      - img [ref=e96]
+      - text: Local Aer

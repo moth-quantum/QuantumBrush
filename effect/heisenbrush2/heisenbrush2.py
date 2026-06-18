@@ -148,15 +148,23 @@ def run(params):
     strength = params["user_input"]["Strength"]
     assert strength > 0, "Strength must be greater than 0"
 
-    clicks = params["stroke_input"]["clicks"]
-    assert len(clicks) < 11, "There can be no more than 10 clicks in a stroke"
+    clicks = params["stroke_input"].get("clicks", [])
+    
+    if len(clicks) > 10:
+        clicks = clicks[:10]
 
     split_paths = utils.split_path_from_clicks(path,clicks)
+    if not split_paths:
+        return image
 
     normalized_distances = [0.1] * len(split_paths) #dt*path_length
   
     # Run Heisenberg simulation to get colors
     color_shifts = run_heisenberg_hardware(normalized_distances, radius, phi, theta)
+    
+    if color_shifts is None:
+        print("Heisenberg hardware run failed. Returning original image.")
+        return image
 
     new_hls = np.array([[(h + shift) % 1.0, (l + shift) % 1, (s + shift) % 1.0] for shift in color_shifts])
     new_hls = np.array([(1 - strength) * np.array([h,l,s]) + strength * new for new in new_hls])

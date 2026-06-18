@@ -77,7 +77,10 @@ def points_within_radius(points, radius=10, border = None, return_distance = Fal
     returns all pixel coordinates within `offset` pixels of the line.
     """
     points = np.array(points, dtype=int)
-    #print("initial points ", points)
+    if points.size == 0 or points.ndim != 2:
+        if return_distance:
+            return np.array([]), np.array([])
+        return np.array([])
     # Compute canvas bounds
     min_yx = points.min(axis=0) - radius - 1
     max_yx = points.max(axis=0) + radius + 1
@@ -109,6 +112,9 @@ def points_within_radius(points, radius=10, border = None, return_distance = Fal
     return coords
 
 def points_within_lasso(points,border = None):
+    points = np.array(points)
+    if points.size == 0 or points.ndim != 2:
+        return np.array([])
     min_x = np.min(points[:,1])
     max_x = np.max(points[:,1])+1
     min_y = np.min(points[:,0])

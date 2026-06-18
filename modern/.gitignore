@@ -1,0 +1,6 @@
+﻿node_modules/
+dist/
+dist-electron/*
+!dist-electron/*.exe
+.env
+release/

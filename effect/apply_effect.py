@@ -7,14 +7,21 @@ import traceback
 import numpy as np
 from PIL import Image
 import numpy as np
-import sys 
+import sys
 import argparse
 import os
 import time
+import base64
+import io
 from utils import *
 import contextlib
 
-app_path = Path(sys.path[0] + "/..") # Path to the app folder
+if getattr(sys, 'frozen', False):
+    # If running as a PyInstaller bundle, sys.executable is the standalone binary (e.g., effect/apply_effect.exe)
+    app_path = Path(sys.executable).parent.parent
+else:
+    # If running normally as a python script
+    app_path = Path(sys.path[0] + "/..") # Path to the app folder
 
 def process_variable(var_type: str, variable: any):
     match var_type:
@@ -79,14 +86,22 @@ def process_effect(instr: dict):
         except ImportError as e:
             raise ImportError(f"Failed to load dependency {dependency}: {e}")
 
-    # Process image
-    image_path = project_path / f"stroke/{stroke_id}_input.png"
-
-    if not image_path.is_file():
-        raise FileNotFoundError(f"Image file not found at {image_path}")
-    
-    with Image.open(image_path) as img:
-        req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA")) # Ensure the image is in RGBA format
+    # Process image — prefer in-memory base64 transport (Issue #47)
+    # If the instruction carries image_b64, decode directly to numpy array
+    # without touching disk. Fall back to the legacy PNG file path if absent.
+    if "image_b64" in instr:
+        print("[apply_effect] Using in-memory base64 image transport (no PNG read).")
+        raw_bytes = base64.b64decode(instr["image_b64"])
+        with Image.open(io.BytesIO(raw_bytes)) as img:
+            req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA"))
+    else:
+        # Legacy path: read from {stroke_id}_input.png on disk
+        image_path = project_path / f"stroke/{stroke_id}_input.png"
+        if not image_path.is_file():
+            raise FileNotFoundError(f"Image file not found at {image_path}")
+        print(f"[apply_effect] Reading image from disk (legacy): {image_path}")
+        with Image.open(image_path) as img:
+            req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA"))
 
 
     # Process user_input and stroke_input
@@ -125,11 +140,23 @@ def process_effect(instr: dict):
 
     return req
 
-def apply_effect(req: dict):
-    # Save the input image to apply mask
+def apply_effect(req: dict, instructions: dict = None, instr_path: str = None):
+    """
+    Execute the brush effect and return the result.
+
+    In-memory transport (Issue #47):
+    When `instructions` and `instr_path` are provided, the result image is
+    base64-encoded and written back into the JSON instruction file as
+    `result_b64`, avoiding writing `_output.png` to disk entirely.
+
+    Legacy mode (backward compat):
+    When called without `instructions` / `instr_path`, the result is saved
+    to `req["stroke_output_path"]` as a PNG file.
+    """
+    # Save the input image to compute the change mask
     input_image = copy(req["stroke_input"]["image_rgba"])
 
-    # Load and execute the effect
+    # Load and execute the effect module
     spec = importlib.util.spec_from_file_location(req["effect_id"], req["effect_script_path"])
     effect_module = importlib.util.module_from_spec(spec)
     sys.modules[req["effect_id"]] = effect_module
@@ -137,13 +164,27 @@ def apply_effect(req: dict):
 
     new_image = effect_module.run(req)
 
-    # Merge the new image with the original image
-    mask = np.all(new_image == input_image, axis=-1)  
-    new_image[mask] = [0, 0, 0, 0]  # Set differing pixels to [0, 0, 0, 0]
-    
-    output_path = req["stroke_output_path"]
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
-    Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
+    # Mask unchanged pixels to transparent (compositing handled by Java/JS)
+    mask = np.all(new_image == input_image, axis=-1)
+    new_image[mask] = [0, 0, 0, 0]
+
+    # --- Output strategy ---
+    use_in_memory = (instructions is not None) and (instr_path is not None)
+
+    if use_in_memory:
+        # Encode result to base64 PNG in memory — no disk write
+        print("[apply_effect] Encoding result as base64 (in-memory transport).")
+        buf = io.BytesIO()
+        Image.fromarray(new_image.astype(np.uint8)).save(buf, format="PNG")
+        instructions["result_b64"] = base64.b64encode(buf.getvalue()).decode("utf-8")
+        dump_json(instructions, instr_path)
+        print("[apply_effect] result_b64 written to instruction JSON. No PNG written.")
+    else:
+        # Legacy: write _output.png to disk
+        output_path = req["stroke_output_path"]
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
+        print(f"[apply_effect] Wrote output PNG to {output_path} (legacy mode).")
 
     return True
 
@@ -219,14 +260,20 @@ if __name__ == "__main__":
         dump_json(instructions, args.stroke_path)
 
         try:
-            #Process the effect
+            # Process the effect (decode image — in-memory or from disk)
             data = process_effect(instructions)
 
             instructions["effect_processed"] = True
             dump_json(instructions, args.stroke_path)
 
-            #Apply the effect
-            success = apply_effect(data)
+            # Determine transport mode
+            in_memory = "image_b64" in instructions
+
+            # Apply the effect; pass instruction dict + path for in-memory mode
+            if in_memory:
+                success = apply_effect(data, instructions=instructions, instr_path=args.stroke_path)
+            else:
+                success = apply_effect(data)
 
             instructions["effect_success"] = success
             dump_json(instructions, args.stroke_path)
