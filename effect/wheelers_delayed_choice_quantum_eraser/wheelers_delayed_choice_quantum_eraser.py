@@ -1,7 +1,6 @@
 import numpy as np
 import colorsys
 import math
-import random
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import SparsePauliOp
 import importlib.util
@@ -18,21 +17,25 @@ def get_eraser_circuit(theta, measurement_type):
     """
     qc = QuantumCircuit(2)
     
-    # 1. First beam splitter (creates superposition of paths)
+    # 1. First beam splitter (creates superposition of paths for signal)
     qc.h(0)
     
     # 2. Phase accumulation based on stroke path length (theta)
     qc.p(theta, 0)
     
     # 3. Entanglement (generates which-path info by correlating signal to idler)
+    # Physically, this represents SPDC (Spontaneous Parametric Down-Conversion)
     qc.cx(0, 1)
     
-    # 4. Delayed Choice
+    # 4. Delayed Choice on Idler Photon
     if measurement_type == "interference":
-        # Eraser ON: Erase the which-path info from the idler photon!
+        # Eraser ON: Erase the which-path info from the idler photon by applying a Hadamard
         qc.h(1)
+    elif measurement_type == "which-path":
+        # Eraser OFF: Do nothing, preserving which-path info in the idler
+        pass
         
-    # 5. Second beam splitter (recombination)
+    # 5. Second beam splitter (recombination of signal)
     qc.h(0)
     
     return qc
@@ -40,20 +43,35 @@ def get_eraser_circuit(theta, measurement_type):
 def run_wheelers_hardware(theta_list, measurement_type):
     """
     Executes the quantum circuits for each point along the stroke.
+    Calculates coincidence probabilities P(Signal=0 | Idler=0).
     """
     circuits = []
     for theta in theta_list:
         circ = get_eraser_circuit(theta, measurement_type)
         circuits.append(circ)
         
-    # We measure ZZ (correlation between signal and idler)
-    # If eraser is ON, ZZ oscillates with cos(theta)
-    # If eraser is OFF (which-path), ZZ is 0 (interference destroyed)
-    observables = [SparsePauliOp("ZZ")] * len(circuits)
+    # We want to measure coincidence counts between Signal and Idler.
+    # Specifically, the probability P(Signal=0 | Idler=0)
+    # Using Pauli Z observables:
+    # Z0 = IZ (Z on Signal qubit 0)
+    # Z1 = ZI (Z on Idler qubit 1)
+    # ZZ = ZZ (Z on both)
+    operators = [SparsePauliOp("IZ"), SparsePauliOp("ZI"), SparsePauliOp("ZZ")]
     
-    values = utils.run_estimator(circuits, observables, backend=None)
-    values = np.array([val[0] for val in values])
-    return values
+    values = utils.run_estimator(circuits, operators, backend=None)
+    
+    probabilities = []
+    for val in values:
+        e_z0, e_z1, e_zz = val[0], val[1], val[2]
+        # Calculate projector probabilities
+        p_00 = (1 + e_z0 + e_z1 + e_zz) / 4
+        p_idl0 = (1 + e_z1) / 2
+        
+        # P(Signal=0 | Idler=0)
+        prob = p_00 / p_idl0 if p_idl0 > 1e-6 else 0.5
+        probabilities.append(prob)
+        
+    return np.array(probabilities)
 
 def run(params):
     image = params["stroke_input"]["image_rgba"].copy()
@@ -81,47 +99,53 @@ def run(params):
     max_theta = slit_count * 2 * math.pi
     theta_list = np.linspace(0, max_theta, total_points)
     
-    # Quantum simulation
-    zz_expectations = run_wheelers_hardware(theta_list, measurement)
+    # Quantum simulation: array of P(Signal=0 | Idler=0)
+    probs = run_wheelers_hardware(theta_list, measurement)
     
-    for i, p in enumerate(path):
-        region = utils.points_within_radius([p], radius, border=(height, width))
+    # Chunk the path like Heisenbrush for smooth execution
+    split_size = max(1, len(path) // len(probs))
+    split_paths = [path[i * split_size : (i + 1) * split_size] for i in range(len(probs) - 1)]
+    split_paths.append(path[(len(probs) - 1) * split_size :])
+    
+    for i, p_chunk in enumerate(split_paths):
+        # We need to map the sub-path back to region
+        region, distances = utils.points_within_radius(p_chunk, radius, border=(height, width), return_distance=True)
         if len(region) == 0: continue
         
-        expected_z = zz_expectations[i] * coherence
+        # Base quantum probability
+        prob = probs[i]
+        
+        # Apply Coherence (quantum decoherence limits interference contrast)
+        prob = 0.5 + (prob - 0.5) * coherence
         
         # Calculate visual shift based on measurement mode
         if measurement == "interference":
-            # Interference pattern (fringes)
-            shift = expected_z * strength
-            new_l = max(0, min(1, l + shift * 0.4)) # Modulate lightness
+            # Wave behavior: probability smoothly modulates the color intensity/lightness
+            shift = (prob - 0.5) * strength
+            new_l = max(0, min(1, l + shift * 0.8)) # Modulate lightness
             new_s = max(0, min(1, s + shift * 0.4)) # Modulate saturation
-            new_h = h
             
             # Create a smooth continuous brush stroke
-            new_rgb = colorsys.hls_to_rgb(new_h, new_l, new_s)
+            new_rgb = colorsys.hls_to_rgb(h, new_l, new_s)
             new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
             new_patch[...,:3] = new_rgb
-            image[region[:, 0], region[:, 1]] = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch)
+            image[region[:, 0], region[:, 1]] = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch, blur=True, distance=distances)
             
         else:
-            # Which-path collapse (particle-like scatter)
-            # expected_z is 0 from the circuit, so no macroscopic interference.
-            # We simulate particle strikes using random binomial scatter
-            new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
+            # Particle behavior: Which-path wave function collapsed.
+            # Instead of a smooth wave, we get individual photon impacts (discrete points).
+            # We simulate particle strikes using random binomial scatter based on the probability.
             
-            # For which-path, each point on the canvas acts as a discrete particle detector
-            # The density of dots depends on strength
-            probs = np.random.rand(len(region))
-            hit_mask = probs < (strength * 0.3) # 30% hit rate scaled by strength
+            hit_prob = prob * (strength * 0.5) * np.exp(-distances**2) # Scale hit probability by Gaussian falloff
+            hit_mask = np.random.rand(len(region)) < hit_prob
             
             if np.any(hit_mask):
+                new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
                 new_rgb = colorsys.hls_to_rgb(h, l, s)
                 new_patch[hit_mask, :3] = new_rgb
                 
-                # We need to manually blend the scattered dots into the original image
+                # Blend only the exact pixels hit
                 orig_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
-                # Only apply the new_patch where hit_mask is true
                 blended_patch = np.where(hit_mask[:, None], new_patch, orig_patch)
                 image[region[:, 0], region[:, 1]] = (blended_patch * 255).astype(np.uint8)
 
