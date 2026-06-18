@@ -13,12 +13,17 @@ import os
 import time
 import base64
 import io
-from utils import *
+import sys
+from pathlib import Path
 import contextlib
+
 if getattr(sys, 'frozen', False):
     app_path = Path(sys.executable).parent.parent
 else:
     app_path = Path(sys.path[0] + "/..")
+sys.path.insert(0, str(app_path / "effect"))
+
+from utils import *
 
 def process_variable(var_type: str, variable: any):
     match var_type:

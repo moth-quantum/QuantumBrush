@@ -874,6 +874,10 @@ input[type="number"] {
   cursor: pointer;
   outline: none;
   flex-shrink: 0;
+  border: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   transition: background 0.2s ease;
 }
 
@@ -909,12 +913,12 @@ input[type="number"] {
 }
 
 .unified-options {
+  border: 1px solid var(--accent) !important;
   border-top: none !important;
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
   border-bottom-left-radius: 20px !important;
   border-bottom-right-radius: 20px !important;
-  border: 1px solid var(--accent) !important;
   animation: popoverIn 0.15s ease-out;
   transform-origin: top;
   background: var(--panel) !important;

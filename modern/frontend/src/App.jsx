@@ -135,7 +135,7 @@ function SortableLayerItem({ stroke, isRunning, isHidden, toggleStrokeVisibility
 }
 function App() {
   // application state
-  const [activeStep, setActiveStep] = useState(0); // 0 to 4
+  const [showTerminal, setShowTerminal] = useState(false);
   const [theme, setTheme] = useState('light'); // 'light' | 'dark'
   const [activeAccordion, setActiveAccordion] = useState(null);
 
@@ -287,7 +287,7 @@ function App() {
   const colorPickerRef = useRef(null);
   const [layersListAnimateRef] = useAutoAnimate();
   const [mainMenuAnimateRef] = useAutoAnimate();
-  const isTerminalOpen = activeStep === 1 || runningStrokeId;
+  const isTerminalOpen = showTerminal || runningStrokeId;
 
   // Load initial settings
   useEffect(() => {
@@ -630,7 +630,7 @@ function App() {
 
     // pan trigger on Space+Click, Middle click, or Right click
     const isPanAction = isSpacePressed || e.button === 1 || e.button === 2 || (!isDrawingMode && e.button === 0);
-    const allowDraw = isDrawingMode && activeStep === 0 && !isPanAction;
+    const allowDraw = isDrawingMode && !isPanAction;
 
     if (isPanAction) {
       setIsPanning(true);
@@ -847,6 +847,7 @@ function App() {
 
     setLogs('');
     setRunningStrokeId(strokeId);
+    setShowTerminal(true);
 
     setCurrentProject(prev => {
       if (!prev) return null;
@@ -1018,21 +1019,6 @@ function App() {
   };
 
   // dynamically map buttons
-  const handleWorkflowStepClick = (idx) => {
-    if (!currentProject && idx > 0) {
-      return;
-    }
-    setActiveStep(idx);
-  };
-
-  const handleNextStepAction = () => {
-    if (activeStep === 0) {
-      setActiveStep(1);
-    } else {
-      setActiveStep(0);
-    }
-  };
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -1091,11 +1077,16 @@ function App() {
               )}
 
               {/* console */}
-              {(activeStep === 1 || runningStrokeId) && (
+              {(showTerminal || runningStrokeId) && (
                 <div className="terminal-drawer">
                   <div className="terminal-header">
                     <span>Live Simulation Shell stdout/stderr logs</span>
-                    {runningStrokeId && <span style={{ color: 'var(--warning)', fontWeight: 600 }}>Executing... (Backend generation may take up to a minute)</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {runningStrokeId && <span style={{ color: 'var(--warning)', fontWeight: 600 }}>Executing... (Backend generation may take up to a minute)</span>}
+                      <button className="round-icon-btn" style={{ background: 'transparent' }} onClick={() => setShowTerminal(false)} title="Close Terminal">
+                        <X size={16} />
+                      </button>
+                    </div>
                   </div>
                   <div className="terminal-output">
                     {logs || 'Ready to run strokes. Open the Layers menu and click the Play button next to a stroke card to see output logs.'}
@@ -1405,16 +1396,6 @@ function App() {
 
           </div>
         )}
-
-        {/* next below header on right side */}
-        <div className="workflow-widget" style={{ top: "auto", bottom: isTerminalOpen ? 184 : 16, right: 16, transition: 'bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-          <button className="primary-action" type="button" onClick={handleNextStepAction}>
-            <span>
-              {activeStep === 0 ? 'Next: Live Simulation' : 'Back to Canvas'}
-            </span>
-            <ChevronRight size={16} />
-          </button>
-        </div>
 
 
       </div>
