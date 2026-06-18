@@ -99,9 +99,9 @@ def run_heisenberg_hardware(dt_list, radius, phi, theta):
         observables = get_mean_magnetization(n_qubits)
 
         # Run the estimator
-        values=utils.run_estimator(circuits, observables, backend=None)
-
-        values=np.array([val[0] for val in values])
+        values = np.asarray(utils.run_estimator(circuits, observables, backend=None))
+        if values.ndim > 1:
+            values = values[:, 0]
 
         print(f"Values: {values}")
         return values

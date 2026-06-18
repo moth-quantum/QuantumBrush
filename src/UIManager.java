@@ -573,20 +573,20 @@ public class UIManager {
         if (projectId != null) {
             // Input Image
             String inputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_input.png";
-            if (new java.io.File(inputPath).exists()) {
-                addImageWithOverlay(imagesPanel, inputPath, "Input", stroke);
+            if (QuantumBrush.appFile(inputPath).exists()) {
+                addImageWithOverlay(imagesPanel, QuantumBrush.appFile(inputPath).getAbsolutePath(), "Input", stroke);
             } else if (strokeManager.hasInMemoryInput(stroke.getId())) {
-                addImagePlaceholder(imagesPanel, "Input kept in memory", "Input");
+                addPImageWithOverlay(imagesPanel, strokeManager.getInMemoryInput(stroke.getId()), "Input", stroke);
             } else {
                 addImagePlaceholder(imagesPanel, "Input will be captured when run", "Input");
             }
 
             // Output Image
             String outputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_output.png";
-            if (new java.io.File(outputPath).exists()) {
-                addImageWithOverlay(imagesPanel, outputPath, "Output", null);
+            if (QuantumBrush.appFile(outputPath).exists()) {
+                addImageWithOverlay(imagesPanel, QuantumBrush.appFile(outputPath).getAbsolutePath(), "Output", null);
             } else if (strokeManager.hasInMemoryResult(stroke.getId())) {
-                addImagePlaceholder(imagesPanel, "Processed result kept in memory", "Output");
+                addPImageWithOverlay(imagesPanel, strokeManager.getInMemoryResult(stroke.getId()), "Output", null);
             } else {
                 addImagePlaceholder(imagesPanel, "Not processed yet", "Output");
             }
@@ -659,6 +659,47 @@ public class UIManager {
             String message = title.equals("Output") ? "Not processed yet" : "Image not found";
             addImagePlaceholder(container, message, title);
         }
+    }
+
+    private void addPImageWithOverlay(JPanel container, PImage image, String title, StrokeManager.Stroke stroke) {
+        if (image == null) {
+            addImagePlaceholder(container, "Image not available", title);
+            return;
+        }
+
+        BufferedImage bImg = pImageToBufferedImage(image);
+        if (stroke != null) {
+            bImg = createImageWithExactPathOverlay(bImg, stroke);
+        }
+
+        addBufferedImagePreview(container, bImg, title);
+    }
+
+    private BufferedImage pImageToBufferedImage(PImage image) {
+        BufferedImage bufferedImage = new BufferedImage(
+            image.width,
+            image.height,
+            BufferedImage.TYPE_INT_ARGB
+        );
+        image.loadPixels();
+        for (int y = 0; y < image.height; y++) {
+            for (int x = 0; x < image.width; x++) {
+                bufferedImage.setRGB(x, y, image.pixels[y * image.width + x]);
+            }
+        }
+        return bufferedImage;
+    }
+
+    private void addBufferedImagePreview(JPanel container, BufferedImage bImg, String title) {
+        int maxSize = 300;
+        float scale = Math.min(1, (float)maxSize / Math.max(bImg.getWidth(), bImg.getHeight()));
+        int displayWidth = (int)(bImg.getWidth() * scale);
+        int displayHeight = (int)(bImg.getHeight() * scale);
+
+        ImageIcon icon = new ImageIcon(bImg.getScaledInstance(displayWidth, displayHeight, Image.SCALE_SMOOTH));
+        JLabel label = new JLabel(icon);
+        label.setBorder(BorderFactory.createTitledBorder(title));
+        container.add(label);
     }
 
     private BufferedImage createImageWithExactPathOverlay(BufferedImage baseImage, StrokeManager.Stroke stroke) {

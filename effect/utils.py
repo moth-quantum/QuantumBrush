@@ -16,10 +16,12 @@ except ImportError:
 try:
     from qiskit import generate_preset_pass_manager
     from qiskit.primitives import BackendEstimatorV2 as Estimator
+    from qiskit.quantum_info import Statevector
     from qiskit_aer import AerSimulator
 except ImportError:
     generate_preset_pass_manager = None
     Estimator = None
+    Statevector = None
     AerSimulator = None
 
 def svd(matrix=None,U=None,S=None,Vt=None):
@@ -140,19 +142,30 @@ def points_within_radius(points, radius=10, border = None, return_distance = Fal
     return coords
 
 def points_within_lasso(points,border = None):
-    if plt_path is None:
-        raise ImportError("matplotlib is required to use lasso paths.")
-
     min_x = np.min(points[:,1])
     max_x = np.max(points[:,1])+1
     min_y = np.min(points[:,0])
     max_y = np.max(points[:,0])+1
 
     grid = list(product(np.arange(min_y,max_y), np.arange(min_x,max_x)))
-    # Create path from polygon
-    path = plt_path(points)
-    # Test which points are inside the path
-    mask = path.contains_points(grid)
+    if plt_path is not None:
+        # Create path from polygon
+        path = plt_path(points)
+        # Test which points are inside the path
+        mask = path.contains_points(grid)
+    else:
+        x = np.array([point[1] for point in grid], dtype=float)
+        y = np.array([point[0] for point in grid], dtype=float)
+        poly_x = points[:, 1].astype(float)
+        poly_y = points[:, 0].astype(float)
+        mask = np.zeros(len(grid), dtype=bool)
+        j = len(points) - 1
+        for i in range(len(points)):
+            intersects = ((poly_y[i] > y) != (poly_y[j] > y)) & (
+                x < (poly_x[j] - poly_x[i]) * (y - poly_y[i]) / (poly_y[j] - poly_y[i] + 1e-12) + poly_x[i]
+            )
+            mask ^= intersects
+            j = i
 
     # Get the pixel coordinates that are inside
     result = np.array(grid)[mask]
@@ -186,8 +199,30 @@ def run_estimator(circuits, operators, backend=None, options = None):
     It can receive a single circuit or a list of circuits.
     It can receive a single operator or a list of operators or a list of list of operators (one for each circuit).
     '''
-    if generate_preset_pass_manager is None or Estimator is None or AerSimulator is None:
+    if Statevector is None:
         raise ImportError("Qiskit and qiskit-aer are required to run estimator-based effects.")
+
+    circuit_list = circuits if isinstance(circuits, list) else [circuits]
+    n_circuits = len(circuit_list)
+
+    if isinstance(operators, list):
+        if operators and isinstance(operators[0], list):
+            assert len(operators) == n_circuits, "Number of circuits and operators must match"
+            operator_lists = operators
+        else:
+            operator_lists = [operators for _ in range(n_circuits)]
+    else:
+        operator_lists = [[operators] for _ in range(n_circuits)]
+
+    obs = []
+    for circuit, ops in zip(circuit_list, operator_lists):
+        state = Statevector.from_instruction(circuit)
+        obs.append(np.array([np.real(state.expectation_value(op)) for op in ops]))
+
+    if n_circuits == 1:
+        return obs[0]
+
+    return obs
 
     #iqm_server_url = "https://cocos.resonance.meetiqm.com/garnet:mock"  # Replace this with the correct URL
     #provider = IQMProvider(iqm_server_url)

@@ -475,7 +475,7 @@ public class StrokeManager {
         }
         
         // Create project directory structure
-        File projectDir = new File("project/" + projectId);
+        File projectDir = QuantumBrush.appFile("project/" + projectId);
         if (!projectDir.exists()) {
             projectDir.mkdirs();
             
@@ -493,9 +493,10 @@ public class StrokeManager {
         }
         
         // Generate and save JSON instructions
-        String instructionsPath = strokeDir.getPath() + "/" + strokeId + "_instructions.json";
+        String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
+        File instructionsFile = QuantumBrush.appFile(instructionsPath);
         JSONObject instructions = stroke.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
-        app.saveJSONObject(instructions, instructionsPath);
+        app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
 
         // DEBUG: Show the final JSON that was saved
         DebugLogger.log("\n=== FINAL SAVED JSON DEBUG ===");
@@ -518,11 +519,11 @@ public class StrokeManager {
         if (app.getCurrentImage() != null) {
             strokeInputImages.put(strokeId, app.getCurrentImage().copy());
 
-            instructions = app.loadJSONObject(instructionsPath);
+            instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
             JSONObject strokeInput = instructions.getJSONObject("stroke_input");
             strokeInput.setString("transport", "stdio_png");
             instructions.setJSONObject("stroke_input", strokeInput);
-            app.saveJSONObject(instructions, instructionsPath);
+            app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
         }
         
         // Set current stroke index
@@ -538,7 +539,7 @@ public class StrokeManager {
         }
         
         String projectId = app.getProjectId();
-        File strokeDir = new File("project/" + projectId + "/stroke");
+        File strokeDir = QuantumBrush.appFile("project/" + projectId + "/stroke");
         
         if (!strokeDir.exists() || !strokeDir.isDirectory()) {
             return;
@@ -628,19 +629,7 @@ public class StrokeManager {
                 // ✅ FIXED: Extract path data correctly - preserve separate paths
                 // ✅ CRITICAL FIX: Reconstruct SEPARATE paths correctly
                 JSONObject strokeInput = instructions.getJSONObject("stroke_input");
-                String transport = strokeInput.getString("transport", "");
-                boolean usesInMemoryTransport = "stdio_png".equals(transport);
-                boolean completedWithoutAvailableResult =
-                    usesInMemoryTransport &&
-                    "completed".equals(instructions.getString("processing_status", "")) &&
-                    !strokeResultImages.containsKey(strokeId) &&
-                    !new File("project/" + projectId + "/stroke/" + strokeId + "_output.png").exists();
-
-                if (completedWithoutAvailableResult) {
-                    instructions.setString("processing_status", "pending");
-                    instructions.setString("effect_success", "null");
-                    app.saveJSONObject(instructions, file.getAbsolutePath());
-                }
+                restorePersistentStrokeImages(strokeId, instructions);
 
                 JSONArray pathArray = strokeInput.getJSONArray("path");
                 JSONArray clicksArray = strokeInput.getJSONArray("clicks");
@@ -862,11 +851,11 @@ public void runStroke(Stroke stroke) {
         
         // Define instructionsPath once here to use throughout the method
         final String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
-        File instructionsFile = new File(instructionsPath);
+        File instructionsFile = QuantumBrush.appFile(instructionsPath);
         
         // Check if the stroke is in a failed state and needs cleanup
         if (instructionsFile.exists()) {
-            JSONObject instructions = app.loadJSONObject(instructionsPath);
+            JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
             String processingStatus = instructions.getString("processing_status", "");
             
             // If the stroke is in a "running" state but not in our processing map,
@@ -874,15 +863,15 @@ public void runStroke(Stroke stroke) {
             if ("running".equals(processingStatus) && !processingStrokes.containsKey(strokeId)) {
                 // Reset the status to allow reprocessing
                 instructions.setString("processing_status", "pending");
-                app.saveJSONObject(instructions, instructionsPath);
+                app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
             }
         }
         
         // Check if Python script exists
-        File pythonScript = new File("effect/" + folderName + "/" + effectId + ".py");
+        File pythonScript = QuantumBrush.appFile("effect/" + folderName + "/" + effectId + ".py");
         if (!pythonScript.exists()) {
             // Try with folder name as fallback
-            pythonScript = new File("effect/" + folderName + "/" + folderName + ".py");
+            pythonScript = QuantumBrush.appFile("effect/" + folderName + "/" + folderName + ".py");
             if (!pythonScript.exists()) {
                 JOptionPane.showMessageDialog(
                     null, 
@@ -895,7 +884,7 @@ public void runStroke(Stroke stroke) {
         }
         
         // Ensure directories exist
-        File projectDir = new File("project/" + projectId);
+        File projectDir = QuantumBrush.appFile("project/" + projectId);
         File strokeDir = new File(projectDir, "stroke");
         if (!projectDir.exists()) projectDir.mkdirs();
         if (!strokeDir.exists()) strokeDir.mkdirs();
@@ -903,17 +892,17 @@ public void runStroke(Stroke stroke) {
         // Ensure instructions file exists
         if (!instructionsFile.exists()) {
             JSONObject instructions = stroke.generateJSON(projectId, app.getHardwareManager().snapshotForStroke());
-            app.saveJSONObject(instructions, instructionsPath);
+            app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
         }
         
         // Update status fields to indicate processing has started
-        JSONObject instructions = app.loadJSONObject(instructionsPath);
+        JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
         instructions.setBoolean("created", true);
         instructions.setString("effect_received", "null");
         instructions.setString("effect_processed", "null");
         instructions.setString("effect_success", "null");
         instructions.setString("processing_status", "running");
-        app.saveJSONObject(instructions, instructionsPath);
+        app.saveJSONObject(instructions, instructionsFile.getAbsolutePath());
         
         // Create a task to execute the Python script asynchronously
         Runnable task = () -> {
@@ -924,13 +913,13 @@ public void runStroke(Stroke stroke) {
                 success = executeApplyEffectScriptInMemory(instructionsFile.getAbsolutePath());
                 
                 // Update status based on result
-                JSONObject updatedInstructions = app.loadJSONObject(instructionsPath);
+                JSONObject updatedInstructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
                 if (success) {
                     updatedInstructions.setString("effect_received", "true");
                     updatedInstructions.setString("effect_processed", "true");
                     updatedInstructions.setString("effect_success", "true");
                     updatedInstructions.setString("processing_status", "completed");
-                    app.saveJSONObject(updatedInstructions, instructionsPath);
+                    app.saveJSONObject(updatedInstructions, instructionsFile.getAbsolutePath());
                     
                     // Notify on the Event Dispatch Thread
                     SwingUtilities.invokeLater(() -> {
@@ -941,7 +930,7 @@ public void runStroke(Stroke stroke) {
                     updatedInstructions.setString("effect_processed", "true");
                     updatedInstructions.setString("effect_success", "false");
                     updatedInstructions.setString("processing_status", "failed");
-                    app.saveJSONObject(updatedInstructions, instructionsPath);
+                    app.saveJSONObject(updatedInstructions, instructionsFile.getAbsolutePath());
                     
                     // Notify on the Event Dispatch Thread
                     SwingUtilities.invokeLater(() -> {
@@ -954,11 +943,11 @@ public void runStroke(Stroke stroke) {
                 
                 // Update the instructions file to reflect cancellation
                 try {
-                    JSONObject updatedInstructions = app.loadJSONObject(instructionsPath);
+                    JSONObject updatedInstructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
                     updatedInstructions.setString("effect_success", "false");
                     updatedInstructions.setString("processing_status", "canceled");
                     updatedInstructions.setString("error_message", "Process was cancelled by user");
-                    app.saveJSONObject(updatedInstructions, instructionsPath);
+                    app.saveJSONObject(updatedInstructions, instructionsFile.getAbsolutePath());
                 } catch (Exception ex) {
                     System.err.println("Error updating instructions file after cancellation: " + ex.getMessage());
                 }
@@ -975,11 +964,11 @@ public void runStroke(Stroke stroke) {
                 e.printStackTrace();
                 
                 try {
-                    JSONObject updatedInstructions = app.loadJSONObject(instructionsPath);
+                    JSONObject updatedInstructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
                     updatedInstructions.setString("effect_success", "false");
                     updatedInstructions.setString("processing_status", "failed");
                     updatedInstructions.setString("error_message", e.getMessage());
-                    app.saveJSONObject(updatedInstructions, instructionsPath);
+                    app.saveJSONObject(updatedInstructions, instructionsFile.getAbsolutePath());
                 } catch (Exception ex) {
                     System.err.println("Error updating instructions file: " + ex.getMessage());
                 }
@@ -1200,14 +1189,14 @@ public void runStroke(Stroke stroke) {
             }
             
             // Create log directory if it doesn't exist
-            File logDir = new File("log");
+            File logDir = QuantumBrush.appFile("log");
             if (!logDir.exists()) {
                 logDir.mkdirs();
             }
             
             // Create log files for stdout and stderr
-            File stdoutLog = new File("log/python_stdout.log");
-            File stderrLog = new File("log/python_stderr.log");
+            File stdoutLog = QuantumBrush.appFile("log/python_stdout.log");
+            File stderrLog = QuantumBrush.appFile("log/python_stderr.log");
             
             // Display Python version information
             ProcessBuilder versionProcessBuilder = new ProcessBuilder(pythonCommand, "--version");
@@ -1248,14 +1237,18 @@ public void runStroke(Stroke stroke) {
             
             // Create command to execute Python script
             ProcessBuilder processBuilder = new ProcessBuilder(
-                pythonCommand, "effect/apply_effect.py", instructionsFilePath
+                pythonCommand,
+                QuantumBrush.appFile("effect/apply_effect.py").getAbsolutePath(),
+                QuantumBrush.appFile(instructionsFilePath).getAbsolutePath()
             );
+            processBuilder.directory(QuantumBrush.getAppRootDirectory());
             processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(stdoutLog));
             processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(stderrLog));
 
             // Pass the IQM token through the subprocess environment when the
             // user has chosen the IQM backend. The token never lands on disk.
             app.getHardwareManager().applyToProcessEnv(processBuilder.environment());
+            addLocalPythonPackages(processBuilder.environment());
 
             // Execute process
             process = processBuilder.start();
@@ -1273,7 +1266,7 @@ public void runStroke(Stroke stroke) {
             String projectId = instructions.getString("project_id", "");
             String strokeId = instructions.getString("stroke_id", "");
             String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-            File outputFile = new File(outputPath);
+            File outputFile = QuantumBrush.appFile(outputPath);
             String effectSuccess = instructions.getString("effect_success", "false");
             
             boolean success = exitCode == 0 && "true".equals(effectSuccess) && outputFile.exists();
@@ -1325,15 +1318,33 @@ public void runStroke(Stroke stroke) {
     
     private boolean executeApplyEffectScriptInMemory(String instructionsFilePath)
             throws InterruptedException, IOException {
+        JSONObject instructions = app.loadJSONObject(instructionsFilePath);
+        String strokeId = instructions.getString("stroke_id", "");
+        PImage inputImage = strokeInputImages.get(strokeId);
+        if (inputImage == null) {
+            inputImage = app.getCurrentImage();
+        }
+        if (inputImage == null) {
+            throw new IOException("No input image is available for stroke " + strokeId);
+        }
+
+        return executeApplyEffectScriptInMemory(instructionsFilePath, inputImage, true);
+    }
+
+    private boolean executeApplyEffectScriptInMemory(
+        String instructionsFilePath,
+        PImage inputImage,
+        boolean persistResult
+    ) throws InterruptedException, IOException {
         Process process = null;
-        File stderrLog = new File("log/python_stderr.log");
+        File stderrLog = QuantumBrush.appFile("log/python_stderr.log");
 
         try {
             if (pythonCommand == null) {
                 initializePythonCommand();
             }
 
-            File logDir = new File("log");
+            File logDir = QuantumBrush.appFile("log");
             if (!logDir.exists()) {
                 logDir.mkdirs();
             }
@@ -1373,20 +1384,20 @@ public void runStroke(Stroke stroke) {
 
             JSONObject instructions = app.loadJSONObject(instructionsFilePath);
             String strokeId = instructions.getString("stroke_id", "");
-            PImage inputImage = strokeInputImages.get(strokeId);
-            if (inputImage == null) {
-                inputImage = app.getCurrentImage();
-            }
             if (inputImage == null) {
                 throw new IOException("No input image is available for stroke " + strokeId);
             }
 
             ProcessBuilder processBuilder = new ProcessBuilder(
-                pythonCommand, "effect/apply_effect.py", "--stdio"
+                pythonCommand,
+                QuantumBrush.appFile("effect/apply_effect.py").getAbsolutePath(),
+                "--stdio"
             );
+            processBuilder.directory(QuantumBrush.getAppRootDirectory());
             processBuilder.redirectError(ProcessBuilder.Redirect.appendTo(stderrLog));
 
             app.getHardwareManager().applyToProcessEnv(processBuilder.environment());
+            addLocalPythonPackages(processBuilder.environment());
 
             process = processBuilder.start();
 
@@ -1401,7 +1412,11 @@ public void runStroke(Stroke stroke) {
             boolean success = exitCode == 0 && "true".equals(effectSuccess);
 
             if (success) {
-                strokeResultImages.put(strokeId, pngBytesToPImage(binaryResponse.imageBytes));
+                PImage resultImage = pngBytesToPImage(binaryResponse.imageBytes);
+                strokeResultImages.put(strokeId, resultImage);
+                if (persistResult) {
+                    persistStrokeImages(instructionsFilePath, inputImage, resultImage);
+                }
             } else {
                 System.err.println("Python script execution failed with exit code: " + exitCode);
                 System.err.println("Effect success flag: " + effectSuccess);
@@ -1428,6 +1443,21 @@ public void runStroke(Stroke stroke) {
             }
 
             throw e;
+        }
+    }
+
+    private void addLocalPythonPackages(Map<String, String> environment) {
+        File localPackages = QuantumBrush.appFile(".python-packages");
+        if (!localPackages.isDirectory()) {
+            return;
+        }
+
+        String packagePath = localPackages.getAbsolutePath();
+        String currentPath = environment.get("PYTHONPATH");
+        if (currentPath == null || currentPath.isEmpty()) {
+            environment.put("PYTHONPATH", packagePath);
+        } else if (!Arrays.asList(currentPath.split(File.pathSeparator)).contains(packagePath)) {
+            environment.put("PYTHONPATH", packagePath + File.pathSeparator + currentPath);
         }
     }
 
@@ -1534,6 +1564,282 @@ public void runStroke(Stroke stroke) {
         return image;
     }
 
+    private void persistStrokeImages(String instructionsFilePath, PImage inputImage, PImage resultImage) {
+        try {
+            JSONObject instructions = app.loadJSONObject(instructionsFilePath);
+            JSONObject serialized = new JSONObject();
+
+            PImage inputPreview = createPreviewImage(inputImage, 360);
+            serialized.setString("input_preview_png", pImageToBase64Png(inputPreview));
+            serialized.setInt("input_preview_width", inputPreview.width);
+            serialized.setInt("input_preview_height", inputPreview.height);
+
+            JSONObject resultPatch = createResultPatch(resultImage);
+            serialized.setJSONObject("result_patch", resultPatch);
+            instructions.setJSONObject("serialized_images", serialized);
+
+            app.saveJSONObject(instructions, instructionsFilePath);
+        } catch (Exception e) {
+            System.err.println("Could not persist in-memory stroke result: " + e.getMessage());
+        }
+    }
+
+    private void restorePersistentStrokeImages(String strokeId, JSONObject instructions) {
+        if (!instructions.hasKey("serialized_images")) {
+            return;
+        }
+
+        try {
+            JSONObject serialized = instructions.getJSONObject("serialized_images");
+            String inputPreview = serialized.getString("input_preview_png", "");
+            if (!inputPreview.isEmpty()) {
+                strokeInputImages.put(strokeId, base64PngToPImage(inputPreview));
+            }
+
+            if (serialized.hasKey("result_patch")) {
+                PImage resultImage = restoreResultPatch(serialized.getJSONObject("result_patch"));
+                if (resultImage != null) {
+                    strokeResultImages.put(strokeId, resultImage);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not restore serialized stroke images: " + e.getMessage());
+        }
+    }
+
+    private JSONObject createResultPatch(PImage image) throws IOException {
+        image.loadPixels();
+
+        int minX = image.width;
+        int minY = image.height;
+        int maxX = -1;
+        int maxY = -1;
+
+        for (int y = 0; y < image.height; y++) {
+            for (int x = 0; x < image.width; x++) {
+                int pixel = image.pixels[y * image.width + x];
+                int alpha = (pixel >>> 24) & 0xFF;
+                if (alpha != 0) {
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+
+        JSONObject patch = new JSONObject();
+        patch.setInt("canvas_width", image.width);
+        patch.setInt("canvas_height", image.height);
+
+        if (maxX < minX || maxY < minY) {
+            patch.setBoolean("empty", true);
+            patch.setInt("x", 0);
+            patch.setInt("y", 0);
+            patch.setInt("width", 0);
+            patch.setInt("height", 0);
+            patch.setString("png", "");
+            return patch;
+        }
+
+        int patchWidth = maxX - minX + 1;
+        int patchHeight = maxY - minY + 1;
+        PImage crop = app.createImage(patchWidth, patchHeight, PConstants.ARGB);
+        crop.loadPixels();
+        for (int y = 0; y < patchHeight; y++) {
+            for (int x = 0; x < patchWidth; x++) {
+                crop.pixels[y * patchWidth + x] = image.pixels[(minY + y) * image.width + minX + x];
+            }
+        }
+        crop.updatePixels();
+
+        patch.setBoolean("empty", false);
+        patch.setInt("x", minX);
+        patch.setInt("y", minY);
+        patch.setInt("width", patchWidth);
+        patch.setInt("height", patchHeight);
+        patch.setString("png", pImageToBase64Png(crop));
+        return patch;
+    }
+
+    private PImage restoreResultPatch(JSONObject patch) throws IOException {
+        int canvasWidth = patch.getInt("canvas_width", 0);
+        int canvasHeight = patch.getInt("canvas_height", 0);
+        if (canvasWidth <= 0 || canvasHeight <= 0) {
+            return null;
+        }
+
+        PImage image = app.createImage(canvasWidth, canvasHeight, PConstants.ARGB);
+        image.loadPixels();
+        Arrays.fill(image.pixels, 0);
+
+        if (!patch.getBoolean("empty", false)) {
+            PImage crop = base64PngToPImage(patch.getString("png", ""));
+            int offsetX = patch.getInt("x", 0);
+            int offsetY = patch.getInt("y", 0);
+            crop.loadPixels();
+            for (int y = 0; y < crop.height; y++) {
+                for (int x = 0; x < crop.width; x++) {
+                    int targetX = offsetX + x;
+                    int targetY = offsetY + y;
+                    if (targetX >= 0 && targetX < canvasWidth && targetY >= 0 && targetY < canvasHeight) {
+                        image.pixels[targetY * canvasWidth + targetX] = crop.pixels[y * crop.width + x];
+                    }
+                }
+            }
+        }
+
+        image.updatePixels();
+        return image;
+    }
+
+    private PImage createPreviewImage(PImage image, int maxSize) {
+        int width = image.width;
+        int height = image.height;
+        float scale = Math.min(1.0f, maxSize / (float)Math.max(width, height));
+        int previewWidth = Math.max(1, Math.round(width * scale));
+        int previewHeight = Math.max(1, Math.round(height * scale));
+
+        if (previewWidth == width && previewHeight == height) {
+            return image.copy();
+        }
+
+        PImage preview = image.copy();
+        preview.resize(previewWidth, previewHeight);
+        return preview;
+    }
+
+    private String pImageToBase64Png(PImage image) throws IOException {
+        return Base64.getEncoder().encodeToString(pImageToPngBytes(image));
+    }
+
+    private PImage base64PngToPImage(String encoded) throws IOException {
+        if (encoded == null || encoded.isEmpty()) {
+            throw new IOException("Missing encoded PNG data.");
+        }
+        return pngBytesToPImage(Base64.getDecoder().decode(encoded));
+    }
+
+    private PImage processStrokeImageInMemory(String instructionsFilePath, PImage inputImage)
+            throws InterruptedException, IOException {
+        boolean success = executeApplyEffectScriptInMemory(instructionsFilePath, inputImage, true);
+        if (!success) {
+            return null;
+        }
+
+        JSONObject instructions = app.loadJSONObject(instructionsFilePath);
+        return strokeResultImages.get(instructions.getString("stroke_id", ""));
+    }
+
+    private PImage resolveInputImageForStroke(String strokeId)
+            throws InterruptedException, IOException {
+        PImage inputImage = strokeInputImages.get(strokeId);
+        if (inputImage != null) {
+            return inputImage.copy();
+        }
+
+        inputImage = reconstructImageBeforeStroke(strokeId);
+        if (inputImage != null) {
+            strokeInputImages.put(strokeId, inputImage.copy());
+            return inputImage;
+        }
+
+        PImage currentImage = app.getCurrentImage();
+        return currentImage != null ? currentImage.copy() : null;
+    }
+
+    private PImage reconstructImageBeforeStroke(String targetStrokeId)
+            throws InterruptedException, IOException {
+        String projectId = app.getProjectId();
+        if (projectId == null || targetStrokeId == null || targetStrokeId.isEmpty()) {
+            return null;
+        }
+
+        PImage baseImage = app.loadImage(
+            QuantumBrush.appFile("project/" + projectId + "/original.png").getAbsolutePath()
+        );
+        if (baseImage == null) {
+            return null;
+        }
+
+        ArrayList<Stroke> orderedStrokes = new ArrayList<>(strokes);
+        orderedStrokes.sort((a, b) -> Long.compare(strokeTimestamp(a.getId()), strokeTimestamp(b.getId())));
+
+        PImage imageBeforeTarget = baseImage.copy();
+        for (Stroke stroke : orderedStrokes) {
+            String strokeId = stroke.getId();
+            if (strokeId.equals(targetStrokeId)) {
+                return imageBeforeTarget;
+            }
+
+            String instructionsPath = "project/" + projectId + "/stroke/" + strokeId + "_instructions.json";
+            File instructionsFile = QuantumBrush.appFile(instructionsPath);
+            if (!instructionsFile.exists()) {
+                continue;
+            }
+
+            JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
+            boolean appliedOrCompleted =
+                "true".equals(instructions.getString("effect_success", "false")) ||
+                "completed".equals(instructions.getString("processing_status", ""));
+            if (!appliedOrCompleted) {
+                continue;
+            }
+
+            PImage effectImage = strokeResultImages.get(strokeId);
+            if (effectImage == null) {
+                restorePersistentStrokeImages(strokeId, instructions);
+                effectImage = strokeResultImages.get(strokeId);
+            }
+            if (effectImage == null) {
+                String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
+                effectImage = app.loadImage(QuantumBrush.appFile(outputPath).getAbsolutePath());
+            }
+            if (effectImage == null) {
+                strokeInputImages.put(strokeId, imageBeforeTarget.copy());
+                effectImage = processStrokeImageInMemory(instructionsFile.getAbsolutePath(), imageBeforeTarget.copy());
+            }
+            if (effectImage != null) {
+                imageBeforeTarget = blendEffectOntoImage(imageBeforeTarget, effectImage);
+            }
+        }
+
+        return null;
+    }
+
+    private PImage blendEffectOntoImage(PImage baseImage, PImage effectImage) {
+        PImage resultImage = app.createImage(baseImage.width, baseImage.height, PConstants.ARGB);
+        resultImage.copy(
+            baseImage,
+            0, 0, baseImage.width, baseImage.height,
+            0, 0, resultImage.width, resultImage.height
+        );
+        resultImage.blend(
+            effectImage,
+            0, 0, effectImage.width, effectImage.height,
+            0, 0, resultImage.width, resultImage.height,
+            PConstants.BLEND
+        );
+        return resultImage;
+    }
+
+    private long strokeTimestamp(String strokeId) {
+        if (strokeId == null) {
+            return 0L;
+        }
+
+        int underscore = strokeId.indexOf('_');
+        if (underscore < 0 || underscore + 1 >= strokeId.length()) {
+            return 0L;
+        }
+
+        try {
+            return Long.parseLong(strokeId.substring(underscore + 1));
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
+    }
+
     /**
      * FIXED: Apply effect to canvas by properly layering on top of current image
      * This method now correctly preserves previous effects and creates proper undo states
@@ -1548,7 +1854,7 @@ public void runStroke(Stroke stroke) {
         // Check if the effect was successful
         String instructionsPath = "project/" + projectId + "/stroke/" + 
                                  strokeId + "_instructions.json";
-        File instructionsFile = new File(instructionsPath);
+        File instructionsFile = QuantumBrush.appFile(instructionsPath);
         
         if (!instructionsFile.exists()) {
             JOptionPane.showMessageDialog(
@@ -1560,7 +1866,7 @@ public void runStroke(Stroke stroke) {
             return false;
         }
         
-        JSONObject instructions = app.loadJSONObject(instructionsPath);
+        JSONObject instructions = app.loadJSONObject(instructionsFile.getAbsolutePath());
         String effectSuccess = instructions.getString("effect_success", "false");
         
         if (!"true".equals(effectSuccess)) {
@@ -1578,8 +1884,24 @@ public void runStroke(Stroke stroke) {
         // a per-stroke output PNG. Legacy projects can still load output files.
         PImage effectImage = strokeResultImages.get(strokeId);
         if (effectImage == null) {
+            restorePersistentStrokeImages(strokeId, instructions);
+            effectImage = strokeResultImages.get(strokeId);
+        }
+        if (effectImage == null) {
             String outputPath = "project/" + projectId + "/stroke/" + strokeId + "_output.png";
-            effectImage = app.loadImage(outputPath);
+            effectImage = app.loadImage(QuantumBrush.appFile(outputPath).getAbsolutePath());
+        }
+        if (effectImage == null) {
+            try {
+                PImage inputImage = resolveInputImageForStroke(strokeId);
+                if (inputImage != null) {
+                    effectImage = processStrokeImageInMemory(instructionsFile.getAbsolutePath(), inputImage);
+                }
+            } catch (Exception e) {
+                System.err.println(
+                    "Could not regenerate effect output for stroke " + strokeId + ": " + e.getMessage()
+                );
+            }
         }
         
         if (effectImage == null) {
@@ -1724,6 +2046,16 @@ public void runStroke(Stroke stroke) {
 
     public boolean hasInMemoryResult(String strokeId) {
         return strokeResultImages.containsKey(strokeId);
+    }
+
+    public PImage getInMemoryInput(String strokeId) {
+        PImage image = strokeInputImages.get(strokeId);
+        return image != null ? image.copy() : null;
+    }
+
+    public PImage getInMemoryResult(String strokeId) {
+        PImage image = strokeResultImages.get(strokeId);
+        return image != null ? image.copy() : null;
     }
     
     public void clearStrokes() {

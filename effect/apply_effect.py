@@ -109,7 +109,7 @@ def process_effect(instr: dict, image_rgba: np.ndarray | None = None):
     effect_path = app_path / f"effect/{effect_id}"
     req_path = effect_path / f"{effect_id}_requirements.json"
 
-    with open(req_path, 'r') as req_file:
+    with open(req_path, 'r', encoding='utf-8') as req_file:
         req = json.load(req_file)
 
     # Check dependencies with version control

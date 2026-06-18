@@ -71,19 +71,27 @@ def run(params):
     height = image.shape[0]
     width = image.shape[1]
 
-    # Extract the copy and past points
+    # Extract the copy and paste points
     clicks = params["stroke_input"]["clicks"]
-    assert len(clicks) == 2, "The number of clicks must 2, i.e. copy and paste"
+    path = params["stroke_input"]["path"]
+    if len(clicks) == 1 and len(path) > 1:
+        clicks = np.array([clicks[0], path[-1]])
+    elif len(clicks) > 2:
+        clicks = np.array([clicks[0], clicks[-1]])
+    assert len(clicks) >= 2, "The number of clicks must be at least 2, i.e. copy and paste"
 
     offset = clicks[1]-clicks[0]
 
     # Extract the lasso path
-    path = params["stroke_input"]["path"]
     
     # Remove any leftover points
-    while np.all(path[-1] != clicks[-1]):
+    while len(path) > 0 and np.all(path[-1] != clicks[-1]):
         path = path[:-1]
-    path = path[:-1] #Remove the last click
+    if len(path) > 0:
+        path = path[:-1] #Remove the last click
+
+    if len(path) == 0:
+        path = params["stroke_input"]["path"]
 
     # Create the region around those points
     copy_region = utils.points_within_lasso(path, border = (height, width))
@@ -127,6 +135,10 @@ def run(params):
 
 
     paste_region = utils.points_within_lasso(path + offset, border = (height, width))
-    image[paste_region[:, 0], paste_region[:, 1],:3] = (paste_selection * 255).astype(np.uint8)
+    paste_count = min(len(paste_region), len(paste_selection))
+    if paste_count > 0:
+        paste_region = paste_region[:paste_count]
+        paste_selection = paste_selection[:paste_count]
+        image[paste_region[:, 0], paste_region[:, 1],:3] = (paste_selection * 255).astype(np.uint8)
 
     return image
