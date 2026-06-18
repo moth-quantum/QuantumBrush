@@ -16,11 +16,9 @@ import io
 from utils import *
 import contextlib
 if getattr(sys, 'frozen', False):
-    # If running as a PyInstaller bundle, sys.executable is the standalone binary (e.g., effect/apply_effect.exe)
     app_path = Path(sys.executable).parent.parent
 else:
-    # If running normally as a python script
-    app_path = Path(sys.path[0] + "/..") # Path to the app folder
+    app_path = Path(sys.path[0] + "/..")
 
 def process_variable(var_type: str, variable: any):
     match var_type:
@@ -43,9 +41,7 @@ def process_variable(var_type: str, variable: any):
             else:
                 raise ValueError("Invalid array format")
         case "color":
-            # Assuming color is represented as a hex string
             if isinstance(variable, str) and variable.startswith("#") and len(variable) in {7, 9}:
-            # Convert hex to RGB(A) numpy array
                 hex_color = variable.lstrip("#")
                 if len(hex_color) == 6:  # RGB
                     return np.array([int(hex_color[i:i+2], 16) for i in (0, 2, 4)])
@@ -58,7 +54,6 @@ def process_variable(var_type: str, variable: any):
 
 
 def process_effect(instr: dict):
-    # Extract stroke_id and project_id from instructions
     stroke_id = instr.get("stroke_id", False)
     project_id = instr.get("project_id", False)
 
@@ -67,7 +62,6 @@ def process_effect(instr: dict):
     
     project_path = app_path / f"project/{project_id}"
   
-    # Get effect_id and load requirements
     effect_id = instr.get("effect_id")
 
     effect_path = app_path / f"effect/{effect_id}"
@@ -76,25 +70,21 @@ def process_effect(instr: dict):
     with open(req_path, 'r') as req_file:
         req = json.load(req_file)
 
-    # Check dependencies with version control
     for dependency, version in req.get("dependencies", {}).items():
         try:
             module = importlib.import_module(dependency)
-            #TODO: Check that the version is correct
                 
         except ImportError as e:
             raise ImportError(f"Failed to load dependency {dependency}: {e}")
 
-    # Process image — prefer in-memory base64 transport (Issue #47)
-    # If the instruction carries image_b64, decode directly to numpy array
-    # without touching disk. Fall back to the legacy PNG file path if absent.
+    # process image
     if "image_b64" in instr:
         print("[apply_effect] Using in-memory base64 image transport (no PNG read).")
         raw_bytes = base64.b64decode(instr["image_b64"])
         with Image.open(io.BytesIO(raw_bytes)) as img:
             req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA"))
     else:
-        # Legacy path: read from {stroke_id}_input.png on disk
+        # read from {stroke_id}_input.png on disk
         image_path = project_path / f"stroke/{stroke_id}_input.png"
         if not image_path.is_file():
             raise FileNotFoundError(f"Image file not found at {image_path}")
@@ -102,8 +92,6 @@ def process_effect(instr: dict):
         with Image.open(image_path) as img:
             req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA"))
 
-
-    # Process user_input and stroke_input
     for key in req["user_input"]:
         if key not in instr["user_input"]:
             raise KeyError(f"Key '{key}' not found in user_input field of stroke instructions.")
@@ -112,27 +100,23 @@ def process_effect(instr: dict):
 
     for key in req["stroke_input"]:
         if key == "image_rgba":
-            continue # Skip image_rgba as it's already processed
+            continue
 
         if key not in instr["stroke_input"]:
             raise KeyError(f"Key '{key}' not found in stroke_input of stroke instructions.")
         
         req["stroke_input"][key] = process_variable(req["stroke_input"][key], instr["stroke_input"][key])
 
-        # I need to rotate clicks and paths into (y,x) format
         if ( key == "clicks" or key == "path" ):
             req["stroke_input"][key] = req["stroke_input"][key][..., ::-1]
 
-
-    # Process any other flags
-    
     if req["flags"].get("smooth_path", False):
         req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
 
     if req["flags"].get("use_hls", False):
         req["stroke_input"]["path"] = interpolate_pixels(req["stroke_input"]["path"], numpy=True)
 
-    # Add a few flags needed to apply the effects
+    # Add a few flags
     req["effect_id"] = effect_id
     req["effect_script_path"] = effect_path / f"{effect_id}.py"
     req["stroke_output_path"] = project_path / f"stroke/{stroke_id}_output.png"
@@ -152,10 +136,9 @@ def apply_effect(req: dict, instructions: dict = None, instr_path: str = None):
     When called without `instructions` / `instr_path`, the result is saved
     to `req["stroke_output_path"]` as a PNG file.
     """
-    # Save the input image to compute the change mask
+
     input_image = copy(req["stroke_input"]["image_rgba"])
 
-    # Load and execute the effect module
     spec = importlib.util.spec_from_file_location(req["effect_id"], req["effect_script_path"])
     effect_module = importlib.util.module_from_spec(spec)
     sys.modules[req["effect_id"]] = effect_module
@@ -163,15 +146,13 @@ def apply_effect(req: dict, instructions: dict = None, instr_path: str = None):
 
     new_image = effect_module.run(req)
 
-    # Mask unchanged pixels to transparent (compositing handled by Java/JS)
     mask = np.all(new_image == input_image, axis=-1)
     new_image[mask] = [0, 0, 0, 0]
 
-    # --- Output strategy ---
+    # output strategy
     use_in_memory = (instructions is not None) and (instr_path is not None)
 
     if use_in_memory:
-        # Encode result to base64 PNG in memory — no disk write
         print("[apply_effect] Encoding result as base64 (in-memory transport).")
         buf = io.BytesIO()
         Image.fromarray(new_image.astype(np.uint8)).save(buf, format="PNG")
@@ -179,7 +160,6 @@ def apply_effect(req: dict, instructions: dict = None, instr_path: str = None):
         dump_json(instructions, instr_path)
         print("[apply_effect] result_b64 written to instruction JSON. No PNG written.")
     else:
-        # Legacy: write _output.png to disk
         output_path = req["stroke_output_path"]
         output_path.parent.mkdir(parents=True, exist_ok=True)
         Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
@@ -199,21 +179,17 @@ def record_error(error):
     print(error_message)    
 
 def dump_json(data, file_path):
-    # Make sure the directory exists
     Path(file_path).parent.mkdir(parents=True, exist_ok=True)
     
-    # Use a safer approach for atomic file operations
     temp_path = f"{file_path}.tmp"
     try:
         with open(temp_path, "w") as f:
             json.dump(data, f)
         
-        # On Windows, os.replace might fail if the destination exists
         if os.path.exists(file_path):
             os.remove(file_path)
         os.rename(temp_path, file_path)
     except Exception as e:
-        # If atomic operation fails, try direct write as fallback
         print(f"Warning: Atomic write failed ({str(e)}), using direct write")
         with open(file_path, "w") as f:
             json.dump(data, f)
@@ -239,7 +215,6 @@ if __name__ == "__main__":
     sys.stdout = Tee(sys.stdout, log_fh)
     sys.stderr = Tee(sys.stderr, log_fh)
     
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description="Apply an effect to a stroke in a project.")
     parser.add_argument("stroke_path", type=str, help="The ID of the stroke.")
     args = parser.parse_args()
@@ -251,7 +226,6 @@ if __name__ == "__main__":
         if not Path(args.stroke_path).is_file():
             raise FileNotFoundError(f"Stroke file not found at {args.stroke_path}")
 
-        #Read the stroke instructions from the provided path
         with open(args.stroke_path, 'r') as stroke_file:
             instructions = json.load(stroke_file)
 
@@ -259,16 +233,13 @@ if __name__ == "__main__":
         dump_json(instructions, args.stroke_path)
 
         try:
-            # Process the effect (decode image — in-memory or from disk)
             data = process_effect(instructions)
 
             instructions["effect_processed"] = True
             dump_json(instructions, args.stroke_path)
 
-            # Determine transport mode
             in_memory = "image_b64" in instructions
 
-            # Apply the effect; pass instruction dict + path for in-memory mode
             if in_memory:
                 success = apply_effect(data, instructions=instructions, instr_path=args.stroke_path)
             else:
@@ -295,7 +266,7 @@ if __name__ == "__main__":
             instructions["effect_success"] = False
             dump_json(instructions, args.stroke_path)
         success = False
-        # Redirect stdout and stderr to a log file
+        # redirect to log
 
     
     if success:
