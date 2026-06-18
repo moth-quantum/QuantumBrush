@@ -41,7 +41,7 @@ jobs:
         run: pip install qiskit>=1.0.0 qiskit-aer>=0.17.0 qiskit-ibm-runtime>=0.20.0 numpy>=2.1.0 Pillow scipy pyinstaller
 
       - name: Compile Backend with PyInstaller
-        run: python -m PyInstaller --onefile --distpath ./effect --collect-submodules effect effect/apply_effect.py
+        run: python -m PyInstaller --onefile --distpath ./effect --collect-submodules effect --collect-all qiskit --collect-all qiskit_aer --collect-all qiskit_ibm_runtime effect/apply_effect.py
 
       - name: Install Node Dependencies
         working-directory: ./modern
