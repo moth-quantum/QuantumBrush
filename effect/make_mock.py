@@ -1,4 +1,4 @@
-﻿import json
+import json
 import numpy as np
 import os
 from PIL import Image
@@ -6,9 +6,10 @@ from PIL import Image
 mock_data = {
     "project_id": "test_proj",
     "stroke_id": "test_stroke",
-    "effect_id": "wheelers_delayed_choice_quantum_eraser",
+    "effect_id": "wheelers_eraser",
     "stroke_input": {
-        "path": [[50, 20], [50, 50], [50, 80]]
+        "path": [[50, 20], [50, 50], [50, 80]],
+        "image_rgba": [[[255, 255, 255, 255] for _ in range(100)] for _ in range(100)]
     },
     "user_input": {
         "Radius": 10,

@@ -82,6 +82,12 @@ def run(params):
     
     radius = params["user_input"].get("Radius", 10)
     color = params["user_input"].get("Color", "#FF0000")
+    
+    # Parse hex string to RGB tuple if necessary
+    if isinstance(color, str):
+        color = color.lstrip('#')
+        color = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+        
     strength = params["user_input"].get("Strength", 0.8)
     
     # Wheeler's specific params
@@ -95,12 +101,21 @@ def run(params):
     total_points = len(path)
     if total_points == 0: return image
     
-    # theta frequency is scaled by slit_count
+    # OPTIMIZATION: Only simulate 100 quantum circuits max, then interpolate
+    num_quantum_samples = min(100, total_points)
     max_theta = slit_count * 2 * math.pi
-    theta_list = np.linspace(0, max_theta, total_points)
+    theta_list = np.linspace(0, max_theta, num_quantum_samples)
     
     # Quantum simulation: array of P(Signal=0 | Idler=0)
-    probs = run_wheelers_hardware(theta_list, measurement)
+    probs_sampled = run_wheelers_hardware(theta_list, measurement)
+    
+    # Interpolate the probabilities to match the full path length
+    if total_points > num_quantum_samples:
+        x_sampled = np.linspace(0, 1, num_quantum_samples)
+        x_full = np.linspace(0, 1, total_points)
+        probs = np.interp(x_full, x_sampled, probs_sampled)
+    else:
+        probs = probs_sampled
     
     # Chunk the path like Heisenbrush for smooth execution
     split_size = max(1, len(path) // len(probs))

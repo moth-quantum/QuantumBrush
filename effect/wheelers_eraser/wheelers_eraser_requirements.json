@@ -1,6 +1,6 @@
 {
     "name": "Wheeler's Eraser",
-    "id": "wheelers_delayed_choice_quantum_eraser",
+    "id": "wheelers_eraser",
     "author": "Matvei",
     "version": "1.0.0",
     "long_description": "Delayed-Choice Quantum Eraser effect...",
