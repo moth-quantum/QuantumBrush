@@ -34,11 +34,7 @@ import {
   Zap
 } from 'lucide-react';
 
-const WORKFLOW_STEPS = [
-  { label: 'Canvas', idx: '01' },
-  { label: 'Effect', idx: '02' },
-  { label: 'Stroke', idx: '03' }
-];
+
 
 /* dropdown */
 function UnifiedDropdown({ options, value, onChange }) {
@@ -291,7 +287,7 @@ function App() {
   const colorPickerRef = useRef(null);
   const [layersListAnimateRef] = useAutoAnimate();
   const [mainMenuAnimateRef] = useAutoAnimate();
-  const isTerminalOpen = activeStep === 3 || runningStrokeId;
+  const isTerminalOpen = activeStep === 1 || runningStrokeId;
 
   // Load initial settings
   useEffect(() => {
@@ -634,7 +630,7 @@ function App() {
 
     // pan trigger on Space+Click, Middle click, or Right click
     const isPanAction = isSpacePressed || e.button === 1 || e.button === 2 || (!isDrawingMode && e.button === 0);
-    const allowDraw = isDrawingMode && (activeStep === 0 || activeStep === 1) && !isPanAction;
+    const allowDraw = isDrawingMode && activeStep === 0 && !isPanAction;
 
     if (isPanAction) {
       setIsPanning(true);
@@ -836,7 +832,7 @@ function App() {
         setActivePaths([]);
         await loadProject(currentProject.metadata.project_id);
 
-        setActiveStep(3);
+        setActiveStep(1);
       } else {
         throw new Error(data.error);
       }
@@ -1032,9 +1028,7 @@ function App() {
   const handleNextStepAction = () => {
     if (activeStep === 0) {
       setActiveStep(1);
-    } else if (activeStep === 1) {
-      setActiveStep(2);
-    } else if (activeStep === 2) {
+    } else {
       setActiveStep(0);
     }
   };
@@ -1097,7 +1091,7 @@ function App() {
               )}
 
               {/* console */}
-              {(activeStep === 3 || runningStrokeId) && (
+              {(activeStep === 1 || runningStrokeId) && (
                 <div className="terminal-drawer">
                   <div className="terminal-header">
                     <span>Live Simulation Shell stdout/stderr logs</span>
@@ -1332,10 +1326,9 @@ function App() {
               )}
             </div>
 
-            {/* if on s2, show effect properties inside layers  */}
-            {activeStep === 2 && (
-              <div style={{ paddingTop: 0, marginTop: 8 }}>
-                <h3 style={{ fontSize: 12, margin: '0 0 8px 0', color: 'var(--muted)', textAlign: 'left', padding: 0 }}>EFFECT PARAMETERS</h3>
+            {/* Effect properties inside layers */}
+            <div style={{ paddingTop: 0, marginTop: 8 }}>
+              <h3 style={{ fontSize: 12, margin: '0 0 8px 0', color: 'var(--muted)', textAlign: 'left', padding: 0 }}>EFFECT PARAMETERS</h3>
                 <div style={{ marginBottom: 12 }}>
                   <UnifiedDropdown
                     options={effects.map(eff => ({ value: eff.id, label: eff.name }))}
@@ -1409,33 +1402,15 @@ function App() {
                   <Plus size={14} /> Add Stroke Layer
                 </button>
               </div>
-            )}
 
           </div>
         )}
 
         {/* next below header on right side */}
         <div className="workflow-widget" style={{ top: "auto", bottom: isTerminalOpen ? 184 : 16, right: 16, transition: 'bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-          <div className="workflow-steps-topbar" style={{ border: 'none', background: 'transparent' }}>
-            {WORKFLOW_STEPS.map((step, idx) => (
-              <button
-                type="button"
-                key={step.label}
-                className="step-badge"
-                data-active={activeStep === idx}
-                onClick={() => handleWorkflowStepClick(idx)}
-              >
-                <span className="step-num">{step.idx}</span>
-                <span className="step-text">{step.label}</span>
-              </button>
-            ))}
-          </div>
-
           <button className="primary-action" type="button" onClick={handleNextStepAction}>
             <span>
-              {activeStep === 0 ? 'Next: Choose Effect' : ''}
-              {activeStep === 1 ? 'Next: Review Strokes' : ''}
-              {activeStep === 2 ? 'Back to Canvas' : ''}
+              {activeStep === 0 ? 'Next: Live Simulation' : 'Back to Canvas'}
             </span>
             <ChevronRight size={16} />
           </button>
