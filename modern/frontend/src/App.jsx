@@ -873,8 +873,8 @@ function App() {
           strokes: prev.strokes.map(s => s.stroke_id === strokeId ? { ...s, processing_status: 'failed' } : s)
         };
       });
-      setTimeout(() => loadProject(projectId), 1000);
-    }, 60000);
+      setTimeout(() => loadProject(projectId), 3000);
+    }, 90000);
 
     sse.addEventListener('log', (e) => {
       const data = JSON.parse(e.data);
@@ -1078,23 +1078,24 @@ function App() {
               )}
 
               {/* console */}
-              {(showTerminal || runningStrokeId) && (
-                <div className="terminal-drawer">
-                  <div className="terminal-header">
-                    <span>Live Simulation Shell stdout/stderr logs</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {runningStrokeId && <span style={{ color: 'var(--warning)', fontWeight: 600 }}>Executing... (Backend generation may take up to a minute)</span>}
-                      <button className="round-icon-btn" style={{ background: 'transparent' }} onClick={() => setShowTerminal(false)} title="Close Terminal">
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="terminal-output">
-                    {logs || 'Ready to run strokes. Open the Layers menu and click the Play button next to a stroke card to see output logs.'}
-                    <div ref={terminalEndRef} />
+              <div 
+                className={`terminal-drawer ${showTerminal || runningStrokeId ? 'open' : ''}`}
+                onWheel={(e) => e.stopPropagation()}
+              >
+                <div className="terminal-header">
+                  <span>Live Simulation Shell stdout/stderr logs</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {runningStrokeId && <span style={{ color: 'var(--warning)', fontWeight: 600 }}>Executing... (Backend generation may take up to a minute)</span>}
+                    <button className="round-icon-btn" style={{ background: 'transparent', marginRight: -8 }} onClick={() => setShowTerminal(false)} title="Close Terminal">
+                      <X size={16} />
+                    </button>
                   </div>
                 </div>
-              )}
+                <div className="terminal-output">
+                  {logs || 'Ready to run strokes. Open the Layers menu and click the Play button next to a stroke card to see output logs.'}
+                  <div ref={terminalEndRef} />
+                </div>
+              </div>
             </div>
           </div>
         </section>
