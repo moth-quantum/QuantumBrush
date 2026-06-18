@@ -2,7 +2,7 @@
   "name": "quantum-brush-modern",
   "version": "1.0.0",
   "description": "Modern web/desktop interface for Quantum Brush",
-  "author": "Matvei <matvei@quantumbrush.com>",
+  "author": "Matvei <iqumnov@proton.me>",
   "main": "main.js",
   "scripts": {
     "install-all": "npm install && npm install --prefix frontend",

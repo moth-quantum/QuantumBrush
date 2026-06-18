@@ -1,0 +1,54 @@
+{
+    "name": "Wheeler's Eraser",
+    "id": "wheelers_delayed_choice_quantum_eraser",
+    "author": "Matvei",
+    "version": "1.0.0",
+    "long_description": "Delayed-Choice Quantum Eraser effect...",
+    "description": "...",
+    "dependencies": {
+        "numpy": "1.26.4",
+        "qiskit": "1.0.2"
+    },
+    "user_input": {
+        "Radius": {
+            "type": "int",
+            "min": 1,
+            "max": 100,
+            "default": 10
+        },
+        "Strength": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.8
+        },
+        "Color": {
+            "type": "color",
+            "default": "#FF0000"
+        },
+        "Measurement": {
+            "type": "str",
+            "options": ["interference", "which-path"],
+            "default": "interference"
+        },
+        "Slit Count": {
+            "type": "int",
+            "min": 1,
+            "max": 20,
+            "default": 3
+        },
+        "Coherence": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 1.0
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}

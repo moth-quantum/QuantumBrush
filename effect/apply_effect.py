@@ -15,7 +15,6 @@ import base64
 import io
 from utils import *
 import contextlib
-
 if getattr(sys, 'frozen', False):
     # If running as a PyInstaller bundle, sys.executable is the standalone binary (e.g., effect/apply_effect.exe)
     app_path = Path(sys.executable).parent.parent

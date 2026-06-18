@@ -1201,6 +1201,44 @@ function App() {
                       />
                     </div>
                   )}
+                  {selectedEffect.user_input && selectedEffect.user_input['Coherence'] && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }} title="Quantum Coherence">
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>Coh:</span>
+                      <input
+                        type="range"
+                        className="slider-input"
+                        style={{ width: 60 }}
+                        min={selectedEffect.user_input['Coherence'].min}
+                        max={selectedEffect.user_input['Coherence'].max}
+                        step="0.05"
+                        value={effectParams['Coherence'] ?? selectedEffect.user_input['Coherence'].default}
+                        onChange={(e) => setEffectParams(prev => ({ ...prev, 'Coherence': parseFloat(e.target.value) }))}
+                      />
+                    </div>
+                  )}
+                  {selectedEffect.user_input && selectedEffect.user_input['Slit Count'] && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }} title="Slit Count / Fringes">
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>Slits:</span>
+                      <input
+                        type="number"
+                        className="form-input"
+                        style={{ width: 44, padding: '2px 4px', fontSize: 11, textAlign: 'center' }}
+                        min={selectedEffect.user_input['Slit Count'].min}
+                        max={selectedEffect.user_input['Slit Count'].max}
+                        value={effectParams['Slit Count'] ?? selectedEffect.user_input['Slit Count'].default}
+                        onChange={(e) => setEffectParams(prev => ({ ...prev, 'Slit Count': parseInt(e.target.value) }))}
+                      />
+                    </div>
+                  )}
+                  {selectedEffect.user_input && selectedEffect.user_input['Measurement'] && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }} title="Measurement Mode">
+                      <UnifiedDropdown
+                        options={selectedEffect.user_input['Measurement'].options.map(opt => ({ value: opt, label: opt === 'which-path' ? 'Particle (Collapse)' : 'Wave (Interference)' }))}
+                        value={effectParams['Measurement'] ?? selectedEffect.user_input['Measurement'].default}
+                        onChange={(val) => setEffectParams(prev => ({ ...prev, 'Measurement': val }))}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>
