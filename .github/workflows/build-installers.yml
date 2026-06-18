@@ -49,6 +49,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           VERSION=${GITHUB_REF_NAME#v}
           npm run dist -- --${{ matrix.os == 'windows-latest' && 'win' || matrix.os == 'macos-latest' && 'mac' || 'linux' }} -c.extraMetadata.version=$VERSION
 
