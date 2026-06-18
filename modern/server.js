@@ -316,7 +316,7 @@ app.post('/api/projects/:projectId/strokes', (req, res) => {
       effect_received: 'null',
       effect_processed: 'null',
       effect_success: 'null',
-      processing_status: 'pending'
+      processing_status: 'ready'
     };
 
     if (hardwareSnapshot) {

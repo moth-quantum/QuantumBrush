@@ -798,7 +798,7 @@ input[type="number"] {
   flex-shrink: 0;
 }
 
-.layer-badge.pending {
+.layer-badge.ready {
   background: var(--line);
   color: var(--muted);
 }

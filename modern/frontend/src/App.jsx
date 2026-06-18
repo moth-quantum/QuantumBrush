@@ -98,13 +98,14 @@ function UnifiedDropdown({ options, value, onChange }) {
   );
 }
 
-function SortableLayerItem({ stroke, isRunning, isHidden, toggleStrokeVisibility, runStroke, deleteStroke, runningStrokeId, draggedLayerId }) {
+function SortableLayerItem({ stroke, isRunning, isHidden, toggleStrokeVisibility, runStroke, deleteStroke, runningStrokeId, draggedLayerId, effects }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: stroke.stroke_id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     touchAction: 'none'
   };
+  const effectName = effects?.find(e => e.id === stroke.effect_id)?.name || stroke.effect_id;
   return (
     <div
       ref={setNodeRef}
@@ -115,7 +116,7 @@ function SortableLayerItem({ stroke, isRunning, isHidden, toggleStrokeVisibility
     >
       <div className="layer-info">
         <div className="layer-title-row">
-          <span className="layer-title">{stroke.effect_id}</span>
+          <span className="layer-title">{effectName}</span>
           <span className={`layer-badge ${stroke.processing_status}`}>{stroke.processing_status}</span>
         </div>
       </div>
@@ -1305,6 +1306,7 @@ function App() {
                         deleteStroke={deleteStroke}
                         runningStrokeId={runningStrokeId}
                         draggedLayerId={draggedLayerId}
+                        effects={effects}
                       />
                     );
                   })}
