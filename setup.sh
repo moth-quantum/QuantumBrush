@@ -17,6 +17,38 @@ case "$(uname -s)" in
     *) die "Unsupported OS: $(uname -s)" ;;
 esac
 
+find_winget() {
+    command -v winget.exe &>/dev/null && { echo winget.exe; return 0; }
+    local p
+    for p in \
+        "$HOME/AppData/Local/Microsoft/WindowsApps/winget.exe" \
+        "/c/Users/$USER/AppData/Local/Microsoft/WindowsApps/winget.exe"; do
+        [ -f "$p" ] && { echo "$p"; return 0; }
+    done
+    for p in /c/Program\ Files/WindowsApps/Microsoft.DesktopAppInstaller_*/winget.exe; do
+        [ -f "$p" ] && { echo "$p"; return 0; }
+    done
+    return 1
+}
+
+add_conda_dir() {
+    local dir="$1"
+    for exe in conda conda.bat conda.exe; do
+        if [ -f "$dir/$exe" ]; then
+            export PATH="$dir:$PATH"
+            return 0
+        fi
+    done
+    return 1
+}
+
+add_conda_prefix() {
+    local root="$1"
+    add_conda_dir "$root/condabin" \
+        || add_conda_dir "$root/Scripts" \
+        || add_conda_dir "$root/bin"
+}
+
 java_ok() {
     command -v java &>/dev/null || return 1
     [ "$(java -version 2>&1 | head -1 | cut -d'"' -f2 | cut -d. -f1)" -ge 11 ] 2>/dev/null
@@ -42,10 +74,11 @@ install_java() {
             fi
             ;;
         windows)
-            command -v winget.exe &>/dev/null \
+            local winget
+            winget=$(find_winget) \
                 || die "winget not found. Install Java manually: https://learn.microsoft.com/en-us/java/openjdk/download"
             info "A UAC prompt may appear — click Yes."
-            winget.exe install Microsoft.OpenJDK.21 --accept-package-agreements --accept-source-agreements
+            "$winget" install Microsoft.OpenJDK.21 --accept-package-agreements --accept-source-agreements
             RESTART=true; return 0
             ;;
     esac
@@ -54,26 +87,35 @@ install_java() {
 
 require_conda() {
     if ! command -v conda &>/dev/null; then
-        for p in \
-            "$HOME/miniconda3/bin/conda" \
-            "$HOME/anaconda3/bin/conda" \
-            "$HOME/miniforge3/bin/conda" \
-            "/opt/anaconda3/bin/conda" \
-            "/opt/miniconda3/bin/conda" \
-            "/opt/homebrew/Caskroom/miniconda/base/bin/conda"; do
-            [ -f "$p" ] && { export PATH="$(dirname "$p"):$PATH"; break; }
-        done
         if [ "$OS" = "windows" ]; then
-            local win
+            local win appdata prefix
             # Use the inherited $USERPROFILE env var rather than shelling out to
             # cmd.exe — invoking cmd.exe from mintty (Git Bash) can hang the
             # session indefinitely waiting on console I/O.
-            win=$(cygpath -u "$USERPROFILE" 2>/dev/null)
+            win=$(cygpath -u "${USERPROFILE:-$HOME}" 2>/dev/null)
+            win=${win:-$HOME}
+            appdata=$(cygpath -u "${LOCALAPPDATA:-}" 2>/dev/null)
+            for prefix in \
+                "$win/miniconda3" \
+                "$win/Miniconda3" \
+                "$win/anaconda3" \
+                "$win/AppData/Local/miniconda3" \
+                "${appdata:+$appdata/miniconda3}" \
+                "${appdata:+$appdata/Continuum/miniconda3}" \
+                "/c/ProgramData/miniconda3" \
+                "/c/ProgramData/Miniconda3" \
+                "/c/Program Files/miniconda3" \
+                "/c/Program Files/Miniconda3"; do
+                [ -n "$prefix" ] && [ -d "$prefix" ] && add_conda_prefix "$prefix" && break
+            done
+        else
             for p in \
-                "$win/miniconda3/condabin/conda" \
-                "$win/Miniconda3/condabin/conda" \
-                "$win/anaconda3/condabin/conda" \
-                "$win/AppData/Local/miniconda3/condabin/conda"; do
+                "$HOME/miniconda3/bin/conda" \
+                "$HOME/anaconda3/bin/conda" \
+                "$HOME/miniforge3/bin/conda" \
+                "/opt/anaconda3/bin/conda" \
+                "/opt/miniconda3/bin/conda" \
+                "/opt/homebrew/Caskroom/miniconda/base/bin/conda"; do
                 [ -f "$p" ] && { export PATH="$(dirname "$p"):$PATH"; break; }
             done
         fi
@@ -102,11 +144,28 @@ install_conda() {
             ok "Miniconda installed"
             ;;
         windows)
-            command -v winget.exe &>/dev/null \
-                || die "winget not found. Install Miniconda manually: https://docs.anaconda.com/miniconda/"
-            info "A UAC prompt may appear — click Yes."
-            winget.exe install Anaconda.Miniconda3 --accept-package-agreements --accept-source-agreements
-            RESTART=true
+            local winget win dest windest tmp
+            win=$(cygpath -u "${USERPROFILE:-$HOME}" 2>/dev/null)
+            win=${win:-$HOME}
+            dest="$win/miniconda3"
+            if winget=$(find_winget); then
+                info "A UAC prompt may appear — click Yes."
+                "$winget" install Anaconda.Miniconda3 --accept-package-agreements --accept-source-agreements
+                RESTART=true
+            else
+                warn "winget not found — downloading Miniconda directly..."
+                tmp="${TMPDIR:-/tmp}/miniconda-installer.exe"
+                curl -fSL -o "$tmp" \
+                    "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe" \
+                    || die "Miniconda download failed"
+                windest=$(cygpath -w "$dest")
+                info "Running silent installer (this may take a few minutes)..."
+                "$tmp" //InstallationType=JustMe //RegisterPython=0 //AddToPath=1 //S "//D=${windest}" \
+                    || die "Miniconda installation failed"
+                rm -f "$tmp"
+                require_conda || { RESTART=true; return 0; }
+                ok "Miniconda installed"
+            fi
             ;;
     esac
 }
@@ -205,10 +264,14 @@ RESTART=false
 if java_ok; then
     ok "Java $(java -version 2>&1 | head -1 | cut -d'"' -f2) found"
 else
-    printf "Java 11+ required. Install now? (Y/n): "
+    printf "Java 21+ required. Install now? (Y/n): "
     read -r -n 1 REPLY; echo
-    [[ $REPLY =~ ^[Nn]$ ]] && warn "QuantumBrush requires Java 11+" \
-        || install_java || exit 1
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_java || exit 1
+    else
+        warn "QuantumBrush requires Java 21+ — setup aborted"
+        exit 1
+    fi
 fi
 
 if require_conda; then
@@ -216,8 +279,14 @@ if require_conda; then
 else
     printf "Miniconda required. Install now? (Y/n): "
     read -r -n 1 REPLY; echo
-    [[ $REPLY =~ ^[Nn]$ ]] && warn "Conda is required for Python dependencies!" \
-        || install_conda || exit 1
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        warn "Conda is required for Python dependencies!"
+    else
+        install_conda || exit 1
+        if [ "$RESTART" != true ] && ! require_conda; then
+            die "Conda still not found after install. Close this window, open a new Git Bash, and run ./setup.sh again."
+        fi
+    fi
 fi
 
 if [ "$RESTART" = true ]; then
