@@ -6,8 +6,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.io.*;
+import java.net.URISyntaxException;
+import java.nio.file.*;
+import java.util.jar.*;
 
 public class QuantumBrush extends PApplet {
+    private static File appRootDirectory = new File(".").getAbsoluteFile();
+
     // Managers
     private CanvasManager canvas;
     private EffectManager effects;
@@ -55,7 +60,74 @@ public class QuantumBrush extends PApplet {
     private float strokeWeight = 2.0f;
     
     public static void main(String[] args) {
+        configureAppRoot();
+        ensureBundledEffectsAvailable();
         PApplet.main("QuantumBrush");
+    }
+
+    public static File getAppRootDirectory() {
+        return appRootDirectory;
+    }
+
+    public static File appFile(String path) {
+        File file = new File(path);
+        return file.isAbsolute() ? file : new File(appRootDirectory, path);
+    }
+
+    private static void configureAppRoot() {
+        try {
+            File codeSource = new File(
+                QuantumBrush.class.getProtectionDomain().getCodeSource().getLocation().toURI()
+            );
+            appRootDirectory = codeSource.isFile()
+                ? codeSource.getParentFile().getAbsoluteFile()
+                : new File(".").getAbsoluteFile();
+            System.setProperty("user.dir", appRootDirectory.getAbsolutePath());
+        } catch (URISyntaxException e) {
+            appRootDirectory = new File(".").getAbsoluteFile();
+        }
+    }
+
+    private static void ensureBundledEffectsAvailable() {
+        File effectDir = appFile("effect");
+        if (effectDir.isDirectory()) {
+            return;
+        }
+
+        try {
+            File codeSource = new File(
+                QuantumBrush.class.getProtectionDomain().getCodeSource().getLocation().toURI()
+            );
+            if (!codeSource.isFile()) {
+                return;
+            }
+
+            try (JarFile jar = new JarFile(codeSource)) {
+                Enumeration<JarEntry> entries = jar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    String name = entry.getName();
+                    if (!name.startsWith("effect/") || name.contains("__pycache__")) {
+                        continue;
+                    }
+
+                    File output = appFile(name);
+                    if (entry.isDirectory()) {
+                        output.mkdirs();
+                    } else {
+                        File parent = output.getParentFile();
+                        if (parent != null) {
+                            parent.mkdirs();
+                        }
+                        try (InputStream in = jar.getInputStream(entry)) {
+                            Files.copy(in, output.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not extract bundled effects: " + e.getMessage());
+        }
     }
     
     public void settings() {

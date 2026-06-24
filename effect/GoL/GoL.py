@@ -140,7 +140,7 @@ def game_of_life(nhood):
     qc = QuantumCircuit(qr,name='conway')
     v = np.array(nhood).reshape(9,2)
     for qubit,state in enumerate(v):
-        qc.initialize(state,qubit)
+        qc.initialize(state, qubit, normalize=True)
     for q in [0,1,2,3,4,5,6,7,8]:
         pass
         if q!=4:

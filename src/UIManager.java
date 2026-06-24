@@ -573,11 +573,23 @@ public class UIManager {
         if (projectId != null) {
             // Input Image
             String inputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_input.png";
-            addImageWithOverlay(imagesPanel, inputPath, "Input", stroke);
+            if (QuantumBrush.appFile(inputPath).exists()) {
+                addImageWithOverlay(imagesPanel, QuantumBrush.appFile(inputPath).getAbsolutePath(), "Input", stroke);
+            } else if (strokeManager.hasInMemoryInput(stroke.getId())) {
+                addPImageWithOverlay(imagesPanel, strokeManager.getInMemoryInput(stroke.getId()), "Input", stroke);
+            } else {
+                addImagePlaceholder(imagesPanel, "Input will be captured when run", "Input");
+            }
 
             // Output Image
             String outputPath = "project/" + projectId + "/stroke/" + stroke.getId() + "_output.png";
-            addImageWithOverlay(imagesPanel, outputPath, "Output", null);
+            if (QuantumBrush.appFile(outputPath).exists()) {
+                addImageWithOverlay(imagesPanel, QuantumBrush.appFile(outputPath).getAbsolutePath(), "Output", null);
+            } else if (strokeManager.hasInMemoryResult(stroke.getId())) {
+                addPImageWithOverlay(imagesPanel, strokeManager.getInMemoryResult(stroke.getId()), "Output", null);
+            } else {
+                addImagePlaceholder(imagesPanel, "Not processed yet", "Output");
+            }
         }
         detailsPanel.add(imagesPanel);
         detailsPanel.add(Box.createVerticalStrut(10));
@@ -649,11 +661,60 @@ public class UIManager {
         }
     }
 
+    private void addPImageWithOverlay(JPanel container, PImage image, String title, StrokeManager.Stroke stroke) {
+        if (image == null) {
+            addImagePlaceholder(container, "Image not available", title);
+            return;
+        }
+
+        BufferedImage bImg = pImageToBufferedImage(image);
+        if (stroke != null) {
+            bImg = createImageWithExactPathOverlay(bImg, stroke);
+        }
+
+        addBufferedImagePreview(container, bImg, title);
+    }
+
+    private BufferedImage pImageToBufferedImage(PImage image) {
+        BufferedImage bufferedImage = new BufferedImage(
+            image.width,
+            image.height,
+            BufferedImage.TYPE_INT_ARGB
+        );
+        image.loadPixels();
+        for (int y = 0; y < image.height; y++) {
+            for (int x = 0; x < image.width; x++) {
+                bufferedImage.setRGB(x, y, image.pixels[y * image.width + x]);
+            }
+        }
+        return bufferedImage;
+    }
+
+    private void addBufferedImagePreview(JPanel container, BufferedImage bImg, String title) {
+        int maxSize = 300;
+        float scale = Math.min(1, (float)maxSize / Math.max(bImg.getWidth(), bImg.getHeight()));
+        int displayWidth = (int)(bImg.getWidth() * scale);
+        int displayHeight = (int)(bImg.getHeight() * scale);
+
+        ImageIcon icon = new ImageIcon(bImg.getScaledInstance(displayWidth, displayHeight, Image.SCALE_SMOOTH));
+        JLabel label = new JLabel(icon);
+        label.setBorder(BorderFactory.createTitledBorder(title));
+        container.add(label);
+    }
+
     private BufferedImage createImageWithExactPathOverlay(BufferedImage baseImage, StrokeManager.Stroke stroke) {
         BufferedImage overlayImage = new BufferedImage(baseImage.getWidth(), baseImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = overlayImage.createGraphics();
         g2d.drawImage(baseImage, 0, 0, null);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        float scaleX = 1.0f;
+        float scaleY = 1.0f;
+        PImage currentImage = app.getCurrentImage();
+        if (currentImage != null && currentImage.width > 0 && currentImage.height > 0) {
+            scaleX = (float) baseImage.getWidth() / currentImage.width;
+            scaleY = (float) baseImage.getHeight() / currentImage.height;
+        }
 
         for (Path path : stroke.getPaths()) {
             // Draw path line
@@ -663,15 +724,22 @@ public class UIManager {
             for (int i = 0; i < points.size() - 1; i++) {
                 PVector p1 = points.get(i);
                 PVector p2 = points.get(i + 1);
-                g2d.drawLine((int)p1.x, (int)p1.y, (int)p2.x, (int)p2.y);
+                g2d.drawLine(
+                    Math.round(p1.x * scaleX),
+                    Math.round(p1.y * scaleY),
+                    Math.round(p2.x * scaleX),
+                    Math.round(p2.y * scaleY)
+                );
             }
             // Draw click point
             PVector clickPoint = path.getClickPoint();
             if (clickPoint != null) {
+                int clickX = Math.round(clickPoint.x * scaleX);
+                int clickY = Math.round(clickPoint.y * scaleY);
                 g2d.setColor(Color.YELLOW);
-                g2d.fillOval((int)clickPoint.x - 5, (int)clickPoint.y - 5, 10, 10);
+                g2d.fillOval(clickX - 5, clickY - 5, 10, 10);
                 g2d.setColor(Color.BLACK);
-                g2d.drawOval((int)clickPoint.x - 5, (int)clickPoint.y - 5, 10, 10);
+                g2d.drawOval(clickX - 5, clickY - 5, 10, 10);
             }
         }
         g2d.dispose();
