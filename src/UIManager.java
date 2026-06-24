@@ -708,6 +708,14 @@ public class UIManager {
         g2d.drawImage(baseImage, 0, 0, null);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+        float scaleX = 1.0f;
+        float scaleY = 1.0f;
+        PImage currentImage = app.getCurrentImage();
+        if (currentImage != null && currentImage.width > 0 && currentImage.height > 0) {
+            scaleX = (float) baseImage.getWidth() / currentImage.width;
+            scaleY = (float) baseImage.getHeight() / currentImage.height;
+        }
+
         for (Path path : stroke.getPaths()) {
             // Draw path line
             g2d.setColor(Color.RED);
@@ -716,15 +724,22 @@ public class UIManager {
             for (int i = 0; i < points.size() - 1; i++) {
                 PVector p1 = points.get(i);
                 PVector p2 = points.get(i + 1);
-                g2d.drawLine((int)p1.x, (int)p1.y, (int)p2.x, (int)p2.y);
+                g2d.drawLine(
+                    Math.round(p1.x * scaleX),
+                    Math.round(p1.y * scaleY),
+                    Math.round(p2.x * scaleX),
+                    Math.round(p2.y * scaleY)
+                );
             }
             // Draw click point
             PVector clickPoint = path.getClickPoint();
             if (clickPoint != null) {
+                int clickX = Math.round(clickPoint.x * scaleX);
+                int clickY = Math.round(clickPoint.y * scaleY);
                 g2d.setColor(Color.YELLOW);
-                g2d.fillOval((int)clickPoint.x - 5, (int)clickPoint.y - 5, 10, 10);
+                g2d.fillOval(clickX - 5, clickY - 5, 10, 10);
                 g2d.setColor(Color.BLACK);
-                g2d.drawOval((int)clickPoint.x - 5, (int)clickPoint.y - 5, 10, 10);
+                g2d.drawOval(clickX - 5, clickY - 5, 10, 10);
             }
         }
         g2d.dispose();
