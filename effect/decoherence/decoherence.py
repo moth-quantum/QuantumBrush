@@ -18,31 +18,29 @@ utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 
 
-def scale_to_range(x, in_min=1, in_max=100, out_min=2, out_max=8):
-    """
-    Linearly scale x from [in_min, in_max] to [out_min, out_max].
-    """
-    if not (in_min <= x <= in_max):
-        raise ValueError(f"Input {x} is out of range [{in_min}, {in_max}]")
-    return int(round(out_min + (x - in_min) * (out_max - out_min) / (in_max - in_min)))
-
-
 def build_decoherence_circuit(initial_angles, env_angles, amp_rate, phase_rate, steps):
     """
     Build a quantum circuit applying Trotterized amplitude and phase damping.
 
-    Amplitude damping follows the ancilla-coupled channel used in damping.py,
-    extended with controlled rotations toward the environment Bloch angles.
-    Phase damping applies incremental RZ dephasing each Trotter step.
+    T1 (amplitude damping): ancilla-coupled Stinespring dilation. T1_ancilla starts in
+    |0>, CRY(2*arcsin(sqrt(gamma))) + CX implements the exact Kraus map; CRY/CRZ after
+    the CX steer relaxation toward the environment color rather than pure |0> ground state.
+
+    T2 (phase damping): separate T2_ancilla starts in |0>, CRY(2*arcsin(sqrt(lambda)))
+    controlled on each qubit contracts the off-diagonal density-matrix elements by
+    sqrt(1-lambda) per step without changing the Z/lightness component.
+
+    Both ancillae are shared across all data qubits per step (same single-ancilla
+    approximation used in damping.py). Circuit size: n_qubits + 2.
     """
     n_qubits = len(initial_angles)
-    ancilla = n_qubits
+    t1_ancilla = n_qubits
+    t2_ancilla = n_qubits + 1
     env_phi, env_theta = env_angles
 
-    qc = QuantumCircuit(n_qubits + 1)
-
-    qc.ry(env_theta, ancilla)
-    qc.rz(env_phi, ancilla)
+    # Ancillae default to |0> — do NOT pre-rotate t1_ancilla to env state;
+    # env-steering is handled by the CRY/CRZ gates inside the Trotter loop.
+    qc = QuantumCircuit(n_qubits + 2)
 
     for i, (phi, theta) in enumerate(initial_angles):
         qc.ry(theta, i)
@@ -50,40 +48,24 @@ def build_decoherence_circuit(initial_angles, env_angles, amp_rate, phase_rate, 
 
     per_step_amp = amp_rate / max(steps, 1)
     per_step_phase = phase_rate / max(steps, 1)
-    amp_rotation = 2 * np.arccos(np.clip(1 - per_step_amp, 0.0, 1.0))
+    # Stinespring rotation: sin(theta/2) = sqrt(gamma)  =>  theta = 2*arcsin(sqrt(gamma))
+    amp_rotation = 2 * np.arcsin(np.sqrt(np.clip(per_step_amp, 0.0, 1.0)))
+    phase_rotation = 2 * np.arcsin(np.sqrt(np.clip(per_step_phase, 0.0, 1.0)))
 
     for _ in range(steps):
         for i in range(n_qubits):
             if amp_rate > 0:
-                qc.cry(amp_rotation, target_qubit=ancilla, control_qubit=i)
-                qc.cx(target_qubit=i, control_qubit=ancilla)
-                qc.cry(per_step_amp * env_theta, target_qubit=i, control_qubit=ancilla)
-                qc.crz(per_step_amp * env_phi, target_qubit=i, control_qubit=ancilla)
+                # T1: Stinespring unitary for amplitude damping toward env color
+                qc.cry(amp_rotation, control_qubit=i, target_qubit=t1_ancilla)
+                qc.cx(control_qubit=t1_ancilla, target_qubit=i)
+                qc.cry(per_step_amp * env_theta, control_qubit=t1_ancilla, target_qubit=i)
+                qc.crz(per_step_amp * env_phi, control_qubit=t1_ancilla, target_qubit=i)
 
             if phase_rate > 0:
-                qc.rz(per_step_phase * np.pi, i)
+                # T2: Stinespring unitary for phase damping (contracts XY Bloch components)
+                qc.cry(phase_rotation, control_qubit=i, target_qubit=t2_ancilla)
 
     return qc
-
-
-def angles_from_observables(obs, num_qubits):
-    """
-    Convert Pauli expectation values into Bloch angles (phi, theta).
-    """
-    x_expectations = obs[:num_qubits]
-    y_expectations = obs[num_qubits:2 * num_qubits]
-    z_expectations = obs[2 * num_qubits:]
-
-    phi_expectations = [
-        np.arctan2(y, x) % (2 * np.pi)
-        for x, y in zip(x_expectations, y_expectations)
-    ]
-    theta_expectations = [
-        np.arctan2(np.sqrt(x ** 2 + y ** 2), z)
-        for x, y, z in zip(x_expectations, y_expectations, z_expectations)
-    ]
-
-    return list(zip(phi_expectations, theta_expectations))
 
 
 def run_decoherence_circuit(initial_angles, env_angles, amp_rate, phase_rate, steps, params=None):
@@ -108,8 +90,10 @@ def run_decoherence_circuit(initial_angles, env_angles, amp_rate, phase_rate, st
 
         qc = build_decoherence_circuit(initial_angles, env_angles, amp_rate, phase_rate, steps)
 
+        # Circuit has n_qubits + 2 qubits (T1 ancilla + T2 ancilla); Pauli strings
+        # must be length n_qubits + 2 with ancilla positions as 'I'.
         ops = [
-            SparsePauliOp(Pauli('I' * (num_qubits - i) + p + 'I' * i))
+            SparsePauliOp(Pauli('I' * (num_qubits + 1 - i) + p + 'I' * i))
             for p in ['X', 'Y', 'Z']
             for i in range(num_qubits)
         ]
@@ -122,7 +106,15 @@ def run_decoherence_circuit(initial_angles, env_angles, amp_rate, phase_rate, st
             cost_estimate_out=p.get("cost_accumulator"),
         )
 
-        final_angles = angles_from_observables(obs, num_qubits)
+        x_expectations = obs[:num_qubits]
+        y_expectations = obs[num_qubits:2 * num_qubits]
+        z_expectations = obs[2 * num_qubits:]
+
+        # phi = arctan2(Y, X), theta = arctan2(r_xy, Z)
+        phi_expectations = [np.arctan2(y, x) % (2 * np.pi) for x, y in zip(x_expectations, y_expectations)]
+        theta_expectations = [np.arctan2(np.sqrt(x ** 2 + y ** 2), z) for x, y, z in zip(x_expectations, y_expectations, z_expectations)]
+
+        final_angles = list(zip(phi_expectations, theta_expectations))
         print(f"final angles: {final_angles}")
         return final_angles
 
@@ -135,8 +127,16 @@ def classical_decoherence(initial_angles, env_angles, amp_rate, phase_rate, step
     """
     Classical fallback when qubit count exceeds simulator budget.
 
-    Approximates amplitude damping as HLS interpolation toward the environment
-    and phase damping as progressive hue diffusion.
+    T1 (amplitude damping): hue and lightness interpolate toward the environment
+    color — both channels decay because amplitude damping contracts the full Bloch
+    vector toward the thermal-bath fixed point.
+
+    T2 (phase damping): hue decays toward the maximally-mixed azimuthal value (0.5)
+    without a target color, mirroring Bloch-vector XY contraction. Lightness is
+    unchanged by T2 (Z component is preserved under pure dephasing).
+
+    ponytail: scalar HLS can't represent Bloch-vector shortening (mixed states).
+    This is the best single-color approximation. Upgrade: per-pixel density matrix.
     """
     env_phi, env_theta = env_angles
     env_h = env_phi / (2 * np.pi)
@@ -151,31 +151,18 @@ def classical_decoherence(initial_angles, env_angles, amp_rate, phase_rate, step
         lum = theta / np.pi
 
         for _ in range(steps):
-            h = (1 - per_step_phase) * h + per_step_phase * (h + 0.5 * (env_h - h))
+            # T1: both hue and lightness drift toward env (full Bloch-vector relaxation)
+            h = (1 - per_step_amp) * h + per_step_amp * env_h
             h = h % 1.0
             lum = (1 - per_step_amp) * lum + per_step_amp * env_l
+
+            # T2: hue loses azimuthal coherence (no env target), lightness unchanged
+            h = (1 - per_step_phase) * h + per_step_phase * 0.5
+            h = h % 1.0
 
         final_angles.append((h * 2 * np.pi, lum * np.pi))
 
     return final_angles
-
-
-def split_path(path, n_segments):
-    """
-    Split a stroke path into n_segments contiguous subpaths.
-    """
-    path_length = len(path)
-    if path_length == 0:
-        return []
-
-    n_segments = max(1, min(n_segments, path_length))
-    split_size = max(1, path_length // n_segments)
-    split_paths = [
-        path[i * split_size:(i + 1) * split_size]
-        for i in range(n_segments - 1)
-    ]
-    split_paths.append(path[(n_segments - 1) * split_size:])
-    return split_paths
 
 
 # The only thing that you need to change is this function
@@ -220,9 +207,8 @@ def run(params):
     env_angles = (env_phi, env_theta)
     print(f"Environment color: {env_color}, angles: {env_angles}")
 
-    n_segments = min(scale_to_range(radius), len(path))
-    n_segments = max(1, n_segments)
-    split_paths = split_path(path, n_segments)
+    n_segments = min(int(round(np.interp(radius, [1, 100], [2, 8]))), len(path))
+    split_paths = np.array_split(path, n_segments)
 
     initial_angles = []
     pixels = []

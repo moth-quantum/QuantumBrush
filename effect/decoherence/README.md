@@ -15,9 +15,9 @@ When you drag a stroke, the brush divides the path into segments. Each segment s
 θ = π  · mean(lightness)
 ```
 
-Your chosen **Environment Color** is encoded the same way, onto an ancilla qubit that represents the thermal bath.
+Your chosen **Environment Color** is converted to Bloch angles (φ_env, θ_env) and used to steer the T1 relaxation target inside the circuit — not pre-encoded on the ancilla, but applied through controlled rotations in each Trotter step.
 
-Then the decoherence circuit runs. It couples each color-qubit to the environment ancilla over several Trotter steps, applying T1 and T2 noise incrementally. After the circuit finishes, the brush measures ⟨X⟩, ⟨Y⟩, ⟨Z⟩ for each qubit, reconstructs the new Bloch angles, and uses the angular shifts to update the hue and lightness of every pixel in that segment. The result gets blended with the original canvas according to **Strength**.
+Then the decoherence circuit runs. It couples each color-qubit to two dedicated ancillae (one for T1, one for T2) over several Trotter steps, applying amplitude and phase damping incrementally. After the circuit finishes, the brush measures ⟨X⟩, ⟨Y⟩, ⟨Z⟩ for each qubit, reconstructs the new Bloch angles, and uses the angular shifts to update the hue and lightness of every pixel in that segment. The result gets blended with the original canvas according to **Strength**.
 
 ---
 
@@ -27,18 +27,18 @@ Then the decoherence circuit runs. It couples each color-qubit to the environmen
 
 T1 is the time it takes for an excited qubit to release its energy to the environment and relax toward equilibrium. On the Bloch sphere, this shows up as the state vector contracting toward a fixed point — whichever state the environment "wants" the qubit to be in.
 
-The brush implements T1 using an ancilla-coupling approach based on the Stinespring dilation. For each qubit and each Trotter step:
+The brush implements T1 using the Stinespring dilation for amplitude damping. The T1 ancilla starts in |0⟩. For each qubit and each Trotter step:
 
 ```python
-amp_rotation = 2 * arccos(1 - per_step_amp)
+amp_rotation = 2 * arcsin(sqrt(per_step_amp))   # exact Stinespring: sin(θ/2) = sqrt(γ)
 
-qc.cry(amp_rotation, target=ancilla, control=qubit_i)  # partial energy transfer to bath
-qc.cx(target=qubit_i, control=ancilla)                 # bath feeds back into qubit
-qc.cry(per_step_amp * env_θ, target=qubit_i, control=ancilla)
-qc.crz(per_step_amp * env_φ, target=qubit_i, control=ancilla)
+qc.cry(amp_rotation, control=qubit_i, target=t1_ancilla)  # partial energy transfer to bath
+qc.cx(control=t1_ancilla, target=qubit_i)                 # bath feeds back into qubit
+qc.cry(per_step_amp * env_θ, control=t1_ancilla, target=qubit_i)
+qc.crz(per_step_amp * env_φ, control=t1_ancilla, target=qubit_i)
 ```
 
-The `CRY + CX` pair is the Stinespring unitary that produces the Kraus map for amplitude damping when you trace out the ancilla. The final `CRY/CRZ` rotations steer the relaxation toward your chosen **Environment Color** rather than the default |0⟩ ground state — which is what makes this a generalized thermal bath rather than just energy loss to zero.
+The `CRY(2·arcsin(√γ)) + CX` pair on a |0⟩ ancilla is the exact Stinespring unitary for amplitude damping: tracing out the ancilla yields Kraus operators K₀ = [[1,0],[0,√(1-γ)]], K₁ = [[0,√γ],[0,0]]. The final `CRY/CRZ` rotations steer relaxation toward your chosen **Environment Color** rather than the default |0⟩ ground state — making this a generalized thermal bath rather than just energy loss to zero.
 
 **Visually:** colors drift toward the bath color. Like a photograph left in sunlight, they slowly forget what they were and settle toward the environment.
 
@@ -46,15 +46,17 @@ The `CRY + CX` pair is the Stinespring unitary that produces the Kraus map for a
 
 T2 is faster and stranger than T1. It destroys the *phase* of a quantum state — the off-diagonal coherences in the density matrix — without necessarily changing the energy at all. The qubit gradually loses track of where it is around the Bloch sphere equator, even while its north–south position stays the same.
 
-In the brush, each Trotter step applies a small RZ rotation to accumulate phase drift:
+The brush implements T2 using the Stinespring dilation for the phase damping channel. A dedicated T2 ancilla starts in |0⟩. For each qubit and each Trotter step:
 
 ```python
-qc.rz(per_step_phase * π, qubit_i)
+phase_rotation = 2 * arcsin(sqrt(per_step_phase))   # exact Stinespring: sin(θ/2) = sqrt(λ)
+
+qc.cry(phase_rotation, control=qubit_i, target=t2_ancilla)
 ```
 
-This is a deterministic approximation of stochastic dephasing — it captures the same net angular shift in the ⟨X⟩, ⟨Y⟩ expectation values that random phase noise would produce on average.
+`CRY(2·arcsin(√λ))` controlled on qubit_i entangles the qubit with the T2 ancilla. Tracing out the ancilla yields the phase damping channel: ρ₀₀ and ρ₁₁ unchanged, ρ₀₁ and ρ₁₀ multiplied by √(1−λ) per step. This is pure Bloch-vector XY contraction — the Z component (lightness) is invariant, but the off-diagonal coherences (hue identity) decay. No energy is exchanged.
 
-**Visually:** hue shifts and smears along the stroke, independently of lightness. At high Phase Rate you can get strong color rotations — blues become purples, reds become oranges — while the brightness of the stroke stays intact.
+**Visually:** at high Phase Rate, colors lose their hue identity and trend toward desaturated/neutral tones while brightness stays intact.
 
 ### Trotterization — why take multiple steps?
 
@@ -85,9 +87,11 @@ This reconstructs the Bloch vector position without needing full state tomograph
 
 There are two things this brush does that have no classical equivalent.
 
-**Bloch sphere contraction.** When you apply amplitude damping and trace out the ancilla, the Bloch vector gets shorter — |⟨X⟩² + ⟨Y⟩² + ⟨Z⟩²| < 1. This is the signature of a mixed quantum state, and it cannot come from any unitary operation or any classical color manipulation. It only happens because information genuinely flows from the qubit into the environment.
+**Bloch sphere contraction.** When you apply the T1 or T2 Stinespring unitary and trace out the ancilla, the Bloch vector gets shorter — |⟨X⟩² + ⟨Y⟩² + ⟨Z⟩²| < 1. This is the signature of a mixed quantum state, and it cannot come from any unitary operation or any classical color manipulation. It only happens because information genuinely flows from the qubit into the environment.
 
-**Curved color trajectories from entanglement.** The `CRY + CX` coupling temporarily entangles each color-qubit with the ancilla. This creates a color evolution path on the Bloch sphere that is curved and environment-dependent — not a straight interpolation toward the target, but a trajectory shaped by the quantum correlations between system and bath. Different environment colors produce qualitatively different paths, not just different endpoints.
+**Independent two-channel contraction.** T1 contracts the full Bloch vector toward the bath fixed point (all three components change). T2 contracts only the XY components (Z/lightness is invariant). These are two separate Stinespring unitaries on two separate ancillae, running simultaneously in each Trotter step. No classical color blend can produce both contractions independently with the right Kraus structure.
+
+**Curved color trajectories from entanglement.** The `CRY + CX` coupling (T1) temporarily entangles each color-qubit with the T1 ancilla. This creates a color evolution path on the Bloch sphere shaped by quantum correlations between system and bath — not a straight interpolation toward the target. Different environment colors produce qualitatively different trajectories, not just different endpoints.
 
 ---
 

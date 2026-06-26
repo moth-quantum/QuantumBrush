@@ -7,7 +7,6 @@
     "description": "Fade stroke colors through amplitude and phase damping channels, modeling NISQ decoherence as artistic memory loss.",
     "dependencies": {
         "numpy": ">=2.1.0",
-        "colorsys": "",
         "qiskit": ">=1.0.0",
         "qiskit_aer": ">=0.17.0",
         "scipy": ">=1.10.0"
