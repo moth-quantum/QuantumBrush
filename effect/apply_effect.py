@@ -151,9 +151,6 @@ def apply_effect(req: dict, instructions: dict = None, instr_path: str = None):
 
     new_image = effect_module.run(req)
 
-    mask = np.all(new_image == input_image, axis=-1)
-    new_image[mask] = [0, 0, 0, 0]
-
     # output strategy
     use_in_memory = (instructions is not None) and (instr_path is not None)
 

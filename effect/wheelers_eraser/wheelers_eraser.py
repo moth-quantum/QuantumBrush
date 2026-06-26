@@ -144,47 +144,33 @@ def run(params):
         # Apply Coherence (quantum decoherence limits interference contrast)
         prob = 0.5 + (prob - 0.5) * coherence
         
-        # Calculate visual shift based on measurement mode
-        if measurement == "interference":
-            # Wave behavior: probability smoothly modulates the color
-            shift = (prob - 0.5) * strength
-            
-            # Shift Hue slightly for a chromatic quantum wave effect, and modulate L/S
-            new_h = (h + shift * 0.5) % 1.0
-            new_l = max(0, min(1, l + shift * 0.8)) # Modulate lightness
-            new_s = max(0, min(1, s + shift * 0.4)) # Modulate saturation
-            
-            # Create a glowing continuous brush stroke
-            new_rgb = colorsys.hls_to_rgb(new_h, new_l, new_s)
-            new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
-            
-            # Screen blending for a glowing neon energy look
-            new_patch[...,:3] = 1.0 - (1.0 - new_patch[...,:3]) * (1.0 - np.array(new_rgb))
-            
-            image[region[:, 0], region[:, 1]] = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch, blur=True, distance=distances)
-            
-        else:
-            # Particle behavior: Which-path wave function collapsed.
-            # We simulate particle strikes using random binomial scatter based on the probability.
-            
-            hit_prob = prob * (strength * 0.5) * np.exp(-distances**2) # Scale hit probability by Gaussian falloff
-            hit_mask = np.random.rand(len(region)) < hit_prob
-            
-            if np.any(hit_mask):
-                new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
-                
-                # Introduce slight chromatic variation for particles
-                particle_h = (h + (np.random.rand() - 0.5) * strength * 0.3) % 1.0
-                new_rgb = colorsys.hls_to_rgb(particle_h, l, s)
-                
-                # Screen blend the particles to make them glow
-                glow_patch = 1.0 - (1.0 - new_patch[hit_mask, :3]) * (1.0 - np.array(new_rgb))
-                new_patch[hit_mask, :3] = glow_patch
-                
-                # Blend only the exact pixels hit
-                orig_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
-                blended_patch = np.where(hit_mask[:, None], new_patch, orig_patch)
-                image[region[:, 0], region[:, 1]] = (blended_patch * 255).astype(np.uint8)
+        # WAVE RECOVERY: By erasing the which-path measurement (the image), 
+        # we recover the pure quantum interference wave.
+        shift = (prob - 0.5) * strength
+        new_l = max(0, min(1, l + shift * 0.8)) # Modulate lightness
+        new_s = max(0, min(1, s + shift * 0.4)) # Modulate saturation
+        
+        # ACTUAL ERASER: The quantum wave destroys the image's alpha channel.
+        # We use the exact math to map the quantum wave to an "erase power"
+        brush_falloff = np.clip(1.0 - distances, 0, 1) ** 2
+        erase_power = prob * strength * brush_falloff
+        
+        orig_alpha = image[region[:, 0], region[:, 1], 3].astype(np.float32) / 255.0
+        new_alpha = np.clip(orig_alpha - erase_power, 0, 1)
+        
+        # GLOWING QUANTUM EDGES: Pixels that are being erased (but not fully gone)
+        # absorb the quantum interference colors and glow brightly.
+        affected_amount = orig_alpha - new_alpha 
+        tint_factor = np.clip(affected_amount * 3.0, 0, 1) 
+        
+        new_rgb = np.array(colorsys.hls_to_rgb(h, new_l, new_s))
+        orig_rgb = image[region[:, 0], region[:, 1], :3].astype(np.float32) / 255.0
+        
+        # Screen blend the quantum color over the original color to create the "burn" glow
+        screened_rgb = 1.0 - (1.0 - orig_rgb) * (1.0 - new_rgb * tint_factor[:, None])
+        
+        image[region[:, 0], region[:, 1], :3] = (screened_rgb * 255).astype(np.uint8)
+        image[region[:, 0], region[:, 1], 3] = (new_alpha * 255).astype(np.uint8)
 
     print("Wheeler's Eraser effect applied successfully")
     return image

@@ -1201,3 +1201,12 @@ input[type=number] {
     max-height: 90vh;
   }
 }
+/* Smooth theme transitions */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 0.3s !important;
+  transition-timing-function: ease !important;
+}

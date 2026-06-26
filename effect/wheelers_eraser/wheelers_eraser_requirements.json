@@ -26,11 +26,6 @@
             "type": "color",
             "default": "#FF0000"
         },
-        "Measurement": {
-            "type": "str",
-            "options": ["interference", "which-path"],
-            "default": "interference"
-        },
         "Slit Count": {
             "type": "int",
             "min": 1,

@@ -193,6 +193,7 @@ function App() {
 
   // zoom pan state
   const [zoom, setZoom] = useState(1.6);
+  const [baseZoom, setBaseZoom] = useState(1.6);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
@@ -242,6 +243,7 @@ function App() {
     const scale = Math.min(scaleH, scaleW);
 
     setZoom(scale);
+    setBaseZoom(scale);
     setPan({
       x: (viewportRef.current.clientWidth - targetW * scale) / 2,
       y: (viewportRef.current.clientHeight - targetH * scale) / 2
@@ -299,7 +301,15 @@ function App() {
 
   // sync document theme class
   useEffect(() => {
-    document.documentElement.className = `theme-${theme}`;
+    document.documentElement.classList.remove('theme-light', 'theme-dark');
+    document.documentElement.classList.add(`theme-${theme}`);
+    
+    document.documentElement.classList.add('theme-transitioning');
+    const timeout = setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 300);
+
+    return () => clearTimeout(timeout);
   }, [theme]);
 
   // global Keyboard Shortcuts (Ctrl+Z, Ctrl+D, Ctrl+0, +, -, Space drag)
@@ -541,16 +551,24 @@ function App() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // base image
-    ctx.drawImage(baseImgObj, 0, 0);
-
-    //  Completed Stroke output (excluding hidden)
+    // Since the backend now returns fully accumulated images (not deltas),
+    // we only need to draw the most recent completed, non-hidden stroke.
+    let lastStrokeId = null;
     if (currentProject && currentProject.strokes) {
-      currentProject.strokes.forEach(stroke => {
+      for (let i = currentProject.strokes.length - 1; i >= 0; i--) {
+        const stroke = currentProject.strokes[i];
         if (stroke.processing_status === 'completed' && strokeImgObjs[stroke.stroke_id] && !hiddenStrokes.includes(stroke.stroke_id)) {
-          ctx.drawImage(strokeImgObjs[stroke.stroke_id], 0, 0);
+          lastStrokeId = stroke.stroke_id;
+          break;
         }
-      });
+      }
+    }
+
+    if (lastStrokeId) {
+      ctx.drawImage(strokeImgObjs[lastStrokeId], 0, 0);
+    } else {
+      // base image fallback if no strokes exist or all are hidden
+      ctx.drawImage(baseImgObj, 0, 0);
     }
 
     // helper to draw single path processing-style (yellow outline + red/core color)
@@ -1298,7 +1316,7 @@ function App() {
             <h3 style={{ fontSize: 12, margin: '0 0 12px 0', color: 'var(--muted)', textAlign: 'left', padding: 0 }}>Layers</h3>
             {/* Status Monitor */}
             <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 16, paddingBottom: 0, borderBottom: "none", fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{Math.round(zoom * 100)}%</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{Math.round((zoom / baseZoom) * 100)}%</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>X: {baseImgObj && viewportRef.current ? Math.round(((viewportRef.current.clientWidth / 2 - pan.x) / zoom) - baseImgObj.width / 2) : 0} Y: {baseImgObj && viewportRef.current ? Math.round(((viewportRef.current.clientHeight / 2 - pan.y) / zoom) - baseImgObj.height / 2) : 0}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Paintbrush size={10} /> {activePaths.length}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Cpu size={10} /> {hardware.provider === 'local_simulator' ? 'Local Aer' : hardware.device}</span>
