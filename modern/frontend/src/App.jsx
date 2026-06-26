@@ -1118,7 +1118,7 @@ function App() {
 
         {/* Header */}
         <div className="floating-top-header">
-          <button className="round-icon-btn main-menu-btn" title="Main Menu" onClick={() => setShowMainMenu(!showMainMenu)}>
+          <button className={`round-icon-btn main-menu-btn ${showMainMenu ? 'active' : ''}`} title="Main Menu" onClick={() => setShowMainMenu(!showMainMenu)}>
             <Menu size={18} />
           </button>
 
@@ -1177,14 +1177,13 @@ function App() {
             <button className="round-icon-btn" onClick={resetPanZoom} title="Reset Pan & Zoom"><RotateCcw size={16} /></button>
           </div>
 
-          <button className="round-icon-btn layers-btn" title="Layers" onClick={() => setShowLayersMenu(!showLayersMenu)}>
+          <button className={`round-icon-btn layers-btn ${showLayersMenu ? 'active' : ''}`} title="Layers" onClick={() => setShowLayersMenu(!showLayersMenu)}>
             <LayersIcon size={18} />
           </button>
         </div>
 
         {/* main menu */}
-        {showMainMenu && (
-          <div className="dropdown-popover left" style={{ top: 16, left: 16, width: 280 }} ref={mainMenuRef}>
+        <div className={`dropdown-popover left ${showMainMenu ? 'open' : ''}`} style={{ top: 16, left: 16, width: 280 }} ref={mainMenuRef}>
             <h3 style={{ fontSize: 12, marginBottom: 12, color: 'var(--muted)', wordBreak: 'break-all' }}>{currentProject ? currentProject.metadata.project_name : 'MAIN MENU'}</h3>
             <div ref={mainMenuAnimateRef} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
@@ -1292,12 +1291,10 @@ function App() {
                 {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />} Toggle Theme
               </button>
             </div>
-          </div>
+        </div>
 
-        )}
         {/* layers and effects */}
-        {showLayersMenu && (
-          <div className="dropdown-popover right" style={{ top: 16, right: 16, width: 320 }} ref={layersMenuRef}>
+        <div className={`dropdown-popover right ${showLayersMenu ? 'open' : ''}`} style={{ top: 16, right: 16, width: 320 }} ref={layersMenuRef}>
             <h3 style={{ fontSize: 12, margin: '0 0 12px 0', color: 'var(--muted)', textAlign: 'left', padding: 0 }}>Layers</h3>
             {/* Status Monitor */}
             <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 16, paddingBottom: 0, borderBottom: "none", fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
@@ -1414,8 +1411,6 @@ function App() {
               </div>
 
           </div>
-        )}
-
 
       </div>
     </>

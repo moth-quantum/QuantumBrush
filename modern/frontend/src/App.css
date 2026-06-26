@@ -432,19 +432,18 @@ input[type="number"] {
   z-index: 200;
   width: 280px;
 
-  animation: popoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.98);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
 }
 
-@keyframes popoverIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.dropdown-popover.open {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transform: translateY(0) scale(1);
 }
 
 .dropdown-popover.left {
@@ -941,18 +940,11 @@ input[type="number"] {
 
 /* color picker */
 .color-picker-popover {
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
-  transform: translateX(-50%) translateY(-10px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  transform: translateX(-50%) translateY(-8px) scale(0.98);
 }
 
-.color-picker-popover.open {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
+.dropdown-popover.color-picker-popover.open {
+  transform: translateX(-50%) translateY(0) scale(1);
 }
 
 /* no react colorful */

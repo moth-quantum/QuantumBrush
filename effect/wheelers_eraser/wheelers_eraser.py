@@ -146,20 +146,25 @@ def run(params):
         
         # Calculate visual shift based on measurement mode
         if measurement == "interference":
-            # Wave behavior: probability smoothly modulates the color intensity/lightness
+            # Wave behavior: probability smoothly modulates the color
             shift = (prob - 0.5) * strength
+            
+            # Shift Hue slightly for a chromatic quantum wave effect, and modulate L/S
+            new_h = (h + shift * 0.5) % 1.0
             new_l = max(0, min(1, l + shift * 0.8)) # Modulate lightness
             new_s = max(0, min(1, s + shift * 0.4)) # Modulate saturation
             
-            # Create a smooth continuous brush stroke
-            new_rgb = colorsys.hls_to_rgb(h, new_l, new_s)
+            # Create a glowing continuous brush stroke
+            new_rgb = colorsys.hls_to_rgb(new_h, new_l, new_s)
             new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
-            new_patch[...,:3] = new_rgb
+            
+            # Screen blending for a glowing neon energy look
+            new_patch[...,:3] = 1.0 - (1.0 - new_patch[...,:3]) * (1.0 - np.array(new_rgb))
+            
             image[region[:, 0], region[:, 1]] = utils.apply_patch_to_image(image[region[:, 0], region[:, 1]], new_patch, blur=True, distance=distances)
             
         else:
             # Particle behavior: Which-path wave function collapsed.
-            # Instead of a smooth wave, we get individual photon impacts (discrete points).
             # We simulate particle strikes using random binomial scatter based on the probability.
             
             hit_prob = prob * (strength * 0.5) * np.exp(-distances**2) # Scale hit probability by Gaussian falloff
@@ -167,8 +172,14 @@ def run(params):
             
             if np.any(hit_mask):
                 new_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
-                new_rgb = colorsys.hls_to_rgb(h, l, s)
-                new_patch[hit_mask, :3] = new_rgb
+                
+                # Introduce slight chromatic variation for particles
+                particle_h = (h + (np.random.rand() - 0.5) * strength * 0.3) % 1.0
+                new_rgb = colorsys.hls_to_rgb(particle_h, l, s)
+                
+                # Screen blend the particles to make them glow
+                glow_patch = 1.0 - (1.0 - new_patch[hit_mask, :3]) * (1.0 - np.array(new_rgb))
+                new_patch[hit_mask, :3] = glow_patch
                 
                 # Blend only the exact pixels hit
                 orig_patch = image[region[:, 0], region[:, 1]].astype(np.float32)/255
