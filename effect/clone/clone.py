@@ -83,24 +83,35 @@ def run(params):
     width = image.shape[1]
 
     # Extract the copy and past points
-    clicks = params["stroke_input"]["clicks"]
-    assert len(clicks) == 2, "The number of clicks must 2, i.e. copy and paste"
+    all_clicks = params["stroke_input"].get("clicks", [])
+    if len(all_clicks) < 2:
+        print("Clone (Collage) requires exactly 2 paths/clicks (Copy and Paste destinations). Defaulting to returning original image.")
+        return image
 
-    offset = clicks[1]-clicks[0]
+    clicks = all_clicks[-2:]
+    offset = clicks[1] - clicks[0]
 
     # Extract the lasso path
     path = params["stroke_input"]["path"]
     
-    # Remove any leftover points
-    while np.all(path[-1] != clicks[-1]):
-        path = path[:-1]
-    path = path[:-1] #Remove the last click
+    # The path array contains points from ALL paths. We only want the copy path (the lasso).
+    # Since clicks contains the starting points of each path, we can split it using utils.
+    split_paths = utils.split_path_from_clicks(path, all_clicks)
+    if len(split_paths) >= 2:
+        path = split_paths[-2] # The second to last drawn path is the lasso
+    elif len(split_paths) > 0:
+        path = split_paths[0]
 
     # Create the region around those points
     copy_region = utils.points_within_lasso(path, border = (height, width))
 
     # Get the RGB values of the copy region
     copy_selection = image[copy_region[:, 0], copy_region[:, 1],:3]
+
+    if len(copy_selection) == 0:
+        print("Clone (Collage) copy region is empty. Make sure you draw a closed loop for the lasso!")
+        return image
+
     copy_selection = copy_selection.astype(np.float32) / 255.0
 
     U,S,V = utils.svd(copy_selection)

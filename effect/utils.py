@@ -122,21 +122,29 @@ def points_within_lasso(points,border = None):
 
     return result
 
-def split_path_from_clicks(path,clicks):
+def split_path_from_clicks(path, clicks):
     split_paths = []
     click_indices = []
-    c = 0
-    for i, p in enumerate(path):
-        if np.all(p == clicks[c]):
-            click_indices.append(i)
-            c += 1
-            if c >= len(clicks):
-                break
+    
+    # Find closest points in path to each click
+    for click in clicks:
+        if len(path) == 0:
+            break
+        # Compute euclidean distance from this click to all points in path
+        distances = np.linalg.norm(np.array(path) - np.array(click), axis=1)
+        closest_idx = np.argmin(distances)
+        # Only add if it makes a valid sequential split (and avoid duplicates)
+        if not click_indices or closest_idx > click_indices[-1]:
+            click_indices.append(closest_idx)
+
+    if not click_indices:
+        return [path]
 
     for idx, start in enumerate(click_indices):
         end = click_indices[idx + 1] if idx + 1 < len(click_indices) else len(path)
-        interp_path = interpolate_pixels(path[start:end])
-        split_paths.append(interp_path)
+        if start < end:
+            interp_path = interpolate_pixels(path[start:end])
+            split_paths.append(interp_path)
     
     return split_paths
 

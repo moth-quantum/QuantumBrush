@@ -629,8 +629,8 @@ function App() {
       e.preventDefault();
     }
 
-    // pan trigger on Space+Click, Middle click, or Right click
-    const isPanAction = isSpacePressed || e.button === 1 || e.button === 2 || (!isDrawingMode && e.button === 0);
+    // pan trigger on Space+Click, Ctrl+Click, Middle click, or Right click
+    const isPanAction = isSpacePressed || (e.ctrlKey && e.button === 0) || e.button === 1 || e.button === 2 || (!isDrawingMode && e.button === 0);
     const allowDraw = isDrawingMode && !isPanAction;
 
     if (isPanAction) {
@@ -697,7 +697,23 @@ function App() {
 
   const handleWheel = (e) => {
     if (!baseImgObj) return;
+    if (showTerminal || runningStrokeId) {
+      // already stopped propagation on terminal drawer
+    }
     e.preventDefault();
+
+    // In modern browsers, pinch-to-zoom or Ctrl+Scroll sets e.ctrlKey = true
+    // Standard two-finger trackpad scroll does NOT set e.ctrlKey.
+    if (!e.ctrlKey) {
+      if (Math.abs(e.deltaX) > 0 || Math.abs(e.deltaY) > 0) {
+        // It's a two-finger trackpad pan (or standard mouse scroll)
+        setPan(prev => ({
+          x: prev.x - e.deltaX,
+          y: prev.y - e.deltaY
+        }));
+      }
+      return;
+    }
 
     const zoomFactor = 1.1;
     let newZoom = zoom;

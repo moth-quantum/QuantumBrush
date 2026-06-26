@@ -112,6 +112,9 @@ def run_heisenberg_hardware(dt_list, radius, phi, theta):
         # Run the estimator
         values=utils.run_estimator(circuits, observables, backend=None)
 
+        if len(circuits) == 1:
+            values = [values]
+
         values=np.array([val[0] for val in values])
 
         print(f"Values: {values}")
