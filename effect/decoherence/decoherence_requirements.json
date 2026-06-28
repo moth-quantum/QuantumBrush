@@ -1,0 +1,57 @@
+{
+    "name": "Quantum Decoherence",
+    "id": "decoherence",
+    "author": "QuantumBrush Contributor",
+    "version": "1.0.0",
+    "long_description": "This brush models open-system quantum dynamics on your stroke colors. Each segment along the path is encoded as a qubit on the Bloch sphere. Amplitude damping (T1) relaxes colors toward an environment bath, while phase damping (T2) smears hue coherence without transferring energy.\n\nRepeated damping steps along the stroke simulate how quantum information dissolves on NISQ hardware — producing ghost trails, faded memory, and dephased color halos.\n\n - Radius controls brush size and how many path segments become qubits\n - Environment Color is the thermal bath the stroke relaxes toward\n - Amplitude Rate sets T1-style energy loss\n - Phase Rate sets T2-style coherence loss\n - Steps sets how many damping iterations are applied\n - Strength blends quantum-evolved colors with the original canvas",
+    "description": "Fade stroke colors through amplitude and phase damping channels, modeling NISQ decoherence as artistic memory loss.",
+    "dependencies": {
+        "numpy": ">=2.1.0",
+        "qiskit": ">=1.0.0",
+        "qiskit_aer": ">=0.17.0",
+        "scipy": ">=1.10.0"
+    },
+    "user_input": {
+        "Radius": {
+            "type": "int",
+            "min": 1,
+            "max": 100,
+            "default": 15
+        },
+        "Strength": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.6
+        },
+        "Environment Color": {
+            "type": "color",
+            "default": "#808080"
+        },
+        "Amplitude Rate": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.5
+        },
+        "Phase Rate": {
+            "type": "float",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.3
+        },
+        "Steps": {
+            "type": "int",
+            "min": 1,
+            "max": 20,
+            "default": 5
+        }
+    },
+    "stroke_input": {
+        "image_rgba": "array",
+        "path": "array"
+    },
+    "flags": {
+        "smooth_path": true
+    }
+}
