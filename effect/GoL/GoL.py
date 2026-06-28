@@ -9,7 +9,18 @@ from qiskit_aer import Aer, statevector_simulator
 from qiskit.quantum_info import partial_trace
 import colorsys
 
-spec = importlib.util.spec_from_file_location("utils", "effect/utils.py")
+import sys
+import importlib.util
+from pathlib import Path
+
+if getattr(sys, 'frozen', False):
+    app_path = Path(sys.executable).parent.parent
+else:
+    app_path = Path(__file__).resolve().parent.parent.parent
+
+utils_path = app_path / 'effect' / 'utils.py'
+
+spec = importlib.util.spec_from_file_location('utils', str(utils_path))
 utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 #%%
@@ -135,28 +146,41 @@ def SCGOL(nhood):
     value = value/np.linalg.norm(value)
     return value
 
+from qiskit.quantum_info import Operator, Statevector
+
+# Precompute the unitary matrix for the Conway's Game of Life circuit
+# This drastically speeds up execution instead of simulating it per pixel.
+_gol_qc = QuantumCircuit(9)
+for q in range(9):
+    if q != 4:
+        _gol_qc.crx(np.pi/2, 4, q)
+    _gol_qc.cry(2*np.pi/(q+1), q, (q+1)%9)
+    _gol_qc.crz(2*np.pi/((q+4)%9+1), q, (q+1)%9)
+    if q != 4:
+        _gol_qc.cx(q, 4)
+GOL_UNITARY = Operator(_gol_qc).data
+
 def game_of_life(nhood):
-    qr = QuantumRegister(9,'qr')
-    qc = QuantumCircuit(qr,name='conway')
     v = np.array(nhood).reshape(9,2)
-    for qubit,state in enumerate(v):
-        qc.initialize(state,qubit)
-    for q in [0,1,2,3,4,5,6,7,8]:
-        pass
-        if q!=4:
-            qc.crx(np.pi/2,4,q)
-        qc.cry(2*np.pi/(q+1),q,(q+1)%9)
-        qc.crz(2*np.pi/((q+4)%9+1),q,(q+1)%9)
-        if q!=4:
-            qc.cx(q,4)
-
+    # Ensure all inputs are normalized
+    norms = np.linalg.norm(v, axis=1, keepdims=True)
+    v = np.where(norms > 0, v / norms, v)
     
-    job = Aer.get_backend('statevector_simulator').run(qc)
-    results = job.result().get_statevector()
-    value = partial_trace(results,[0,1,2,3,5,6,7,8])
-    value,purity = find_closest_pure_state(value.data) #make sure vlaue is a normalized complex vector of length 2.
-
-    return value,purity
+    # Build the 9-qubit statevector
+    # Qiskit uses little-endian, so q_n \otimes ... \otimes q_0
+    sv = v[0]
+    for i in range(1, 9):
+        sv = np.kron(v[i], sv)
+        
+    # Apply the unitary operator
+    sv_out = GOL_UNITARY @ sv
+    
+    # Trace out all qubits except qubit 4
+    sv_obj = Statevector(sv_out)
+    rho = partial_trace(sv_obj, [0,1,2,3,5,6,7,8])
+    
+    value, purity = find_closest_pure_state(rho.data)
+    return value, purity
 
 def run(params):
     """

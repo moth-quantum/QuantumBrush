@@ -4,7 +4,18 @@ from qiskit import QuantumCircuit, QuantumRegister, generate_preset_pass_manager
 from qiskit.quantum_info import SparsePauliOp
 import importlib.util
 
-spec = importlib.util.spec_from_file_location("utils", "effect/utils.py")
+import sys
+import importlib.util
+from pathlib import Path
+
+if getattr(sys, 'frozen', False):
+    app_path = Path(sys.executable).parent.parent
+else:
+    app_path = Path(__file__).resolve().parent.parent.parent
+
+utils_path = app_path / 'effect' / 'utils.py'
+
+spec = importlib.util.spec_from_file_location('utils', str(utils_path))
 utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 
@@ -101,6 +112,9 @@ def run_heisenberg_hardware(dt_list, radius, phi, theta):
         # Run the estimator
         values=utils.run_estimator(circuits, observables, backend=None)
 
+        if len(circuits) == 1:
+            values = [values]
+
         values=np.array([val[0] for val in values])
 
         print(f"Values: {values}")
@@ -148,15 +162,23 @@ def run(params):
     strength = params["user_input"]["Strength"]
     assert strength > 0, "Strength must be greater than 0"
 
-    clicks = params["stroke_input"]["clicks"]
-    assert len(clicks) < 11, "There can be no more than 10 clicks in a stroke"
+    clicks = params["stroke_input"].get("clicks", [])
+    
+    if len(clicks) > 10:
+        clicks = clicks[:10]
 
     split_paths = utils.split_path_from_clicks(path,clicks)
+    if not split_paths:
+        return image
 
     normalized_distances = [0.1] * len(split_paths) #dt*path_length
   
     # Run Heisenberg simulation to get colors
     color_shifts = run_heisenberg_hardware(normalized_distances, radius, phi, theta)
+    
+    if color_shifts is None:
+        print("Heisenberg hardware run failed. Returning original image.")
+        return image
 
     new_hls = np.array([[(h + shift) % 1.0, (l + shift) % 1, (s + shift) % 1.0] for shift in color_shifts])
     new_hls = np.array([(1 - strength) * np.array([h,l,s]) + strength * new for new in new_hls])

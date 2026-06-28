@@ -1,0 +1,697 @@
+[     487ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[  793208ms] ReferenceError: mainMenuRef is not defined
+    at App (http://localhost:5173/src/App.jsx?t=1781622614845:1131:96)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12422:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12406:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:11825:37)
+[  793189ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:6963
+[ 1013704ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[ 1023722ms] ReferenceError: mainMenuRef is not defined
+    at App (http://localhost:5173/src/App.jsx?t=1781622614845:1131:96)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12422:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12406:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:11825:37)
+[ 1023721ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:6963
+[ 1435477ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[ 1475203ms] ReferenceError: Zap is not defined
+    at App (http://localhost:5173/src/App.jsx?t=1781623058310:1046:38)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12422:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12406:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:11825:37)
+[ 1475203ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:6963
+[ 1477933ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[ 1481639ms] ReferenceError: Zap is not defined
+    at App (http://localhost:5173/src/App.jsx?t=1781623058310:1046:38)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12422:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12406:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:11825:37)
+[ 1481639ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:6963
+[ 1495604ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[ 1804908ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[ 1809793ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[ 1812095ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[ 2213790ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781624081256:0
+[ 2213792ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[ 2346693ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781624214212:0
+[ 2346694ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[16618919ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16618975ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16618990ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619007ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619023ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619039ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619056ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619071ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619091ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619105ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619122ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619139ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619152ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619166ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619180ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619195ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619209ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619224ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619486ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619527ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619561ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619589ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619624ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619673ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619708ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619725ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619735ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619740ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619752ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619763ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619768ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619781ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619795ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619825ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619881ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619923ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619958ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16619975ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16620002ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16620034ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16620298ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16620346ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16620603ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16621173ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16621493ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16621686ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627468ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627485ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627503ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627525ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627539ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627556ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627572ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627599ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627616ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627641ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627660ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627675ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627692ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627709ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627728ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627742ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627758ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627773ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627804ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627818ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627831ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627848ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627871ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627897ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627909ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627926ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627941ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627952ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627960ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627968ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627974ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627981ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627989ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16627994ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628003ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628010ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628016ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628022ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628030ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628041ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628120ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628128ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628134ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628143ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628150ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628156ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628162ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628173ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628179ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628189ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628201ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628210ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628235ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628244ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628277ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628332ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628343ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628353ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628364ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628375ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628384ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16628391ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630425ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630437ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630447ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630458ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630467ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630477ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630488ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630513ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630526ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630555ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630589ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630624ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630652ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630694ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630707ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630728ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630742ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630756ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630772ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630791ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630895ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630911ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630922ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630934ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630949ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630965ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630976ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630981ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630987ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16630995ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631002ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631008ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631016ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631023ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631029ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631037ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631051ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631110ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631270ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631409ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631451ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631485ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631555ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631617ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631651ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631665ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16631701ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[16632325ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17320958ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[17322469ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[17323754ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[17987534ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987546ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987560ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987576ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987591ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987606ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987622ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987636ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987650ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987665ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987680ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987698ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987731ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987745ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987759ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987783ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987800ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987849ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987932ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987981ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17987997ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988010ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988025ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988039ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988055ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988068ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988073ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988085ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988092ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988108ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988148ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988280ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988759ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988801ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988828ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988842ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988857ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988872ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988887ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988904ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988921ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988960ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17988977ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989002ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989017ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989032ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989046ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989061ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989081ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989106ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989127ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989158ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989196ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989230ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989273ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989335ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989370ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989384ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989405ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989418ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989432ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989446ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989460ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989474ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989488ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989509ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989523ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989536ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989550ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989557ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989571ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989585ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989606ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989807ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989842ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989858ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989877ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989889ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989905ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989922ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989937ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989953ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989969ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17989992ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990029ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990071ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990120ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990162ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990203ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990266ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990321ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990349ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990363ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990390ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990425ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990467ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990523ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990557ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990574ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17990605ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17991176ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17991280ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17991314ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17991342ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17991376ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[17991800ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18132177ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781639999370:0
+[18132182ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[18175648ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781640042982:0
+[18175649ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[18200310ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781640067819:0
+[18200311ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[18369436ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781640236834:0
+[18369471ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[18376872ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781640244330:0
+[18376873ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[18511908ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[18513761ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[18514747ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[18515503ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[18516490ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[18517891ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[18907661ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907661ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907681ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907701ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907721ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907741ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907741ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907760ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907778ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907797ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907816ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907840ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907858ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907875ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907893ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907910ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907928ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907942ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907946ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907959ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907966ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907973ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907980ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907987ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18907994ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908001ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908008ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908014ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908021ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908028ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908035ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908042ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908049ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908056ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908063ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908070ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908077ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908084ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908091ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908098ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908105ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908112ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908121ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908132ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908139ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908146ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908153ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908160ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908167ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908174ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908181ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908188ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908195ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908202ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908209ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908216ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908223ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18908286ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[18980613ms] [ERROR] Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:3526
+[19981404ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781641848907:0
+[19981413ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[20038142ms] ReferenceError: CustomSelect is not defined
+    at App (http://localhost:5173/src/App.jsx?t=1781641905399:1284:38)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12422:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12406:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:11825:37)
+[20038124ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:6963
+[29100214ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100269ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100494ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100512ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100542ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100579ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100608ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100634ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100665ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100700ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100731ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100756ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100775ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100845ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29100860ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104505ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104524ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104547ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104702ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104723ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104742ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104764ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104786ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104807ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104828ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104854ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104870ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104903ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29104956ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29105019ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29105049ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29105080ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106206ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106223ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106242ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106265ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106287ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106311ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106333ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106362ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106388ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106434ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106456ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106497ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106539ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106557ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106575ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106651ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106682ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106726ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106768ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106805ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106858ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106902ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106935ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29106958ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29107000ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29107032ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29107039ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132168ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132184ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132208ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132227ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132245ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132264ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132280ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132299ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132319ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132341ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132359ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132377ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132395ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132411ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132429ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132458ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132473ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132497ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132519ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132587ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132629ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132670ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132712ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132737ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132756ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132773ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132796ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132833ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132853ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132863ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132874ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132889ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132896ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132909ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132917ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132932ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132938ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132950ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132966ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29132974ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133031ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133054ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133191ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133240ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133250ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133285ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133319ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133357ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133374ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133394ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133423ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133440ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133462ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133486ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133507ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133531ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133554ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133575ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133614ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133625ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133656ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133667ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133698ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133728ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133775ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133851ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133892ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133927ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133962ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133976ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133985ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29133993ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134024ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134026ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134066ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134087ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134149ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134268ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134277ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134323ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134372ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29134395ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29146045ms] ReferenceError: CustomSelect is not defined
+    at App (http://localhost:5173/src/App.jsx?t=1781642076429:1284:38)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12422:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12406:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:11825:37)
+[29146038ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:6963
+[29152653ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[29503741ms] ReferenceError: CustomSelect is not defined
+    at App (http://localhost:5173/src/App.jsx?t=1781642076429:1284:38)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:18507:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:5652:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:7473:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:8523:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:995:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12559:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12422:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:12406:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:11825:37)
+[29503741ms] [WARNING] %s
+
+%s
+ An error occurred in the <App> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:6963
+[29505660ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[29584431ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584450ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584471ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584494ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584514ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584534ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584559ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584580ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584599ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584618ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584641ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29584660ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866007ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866022ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866044ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866063ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866084ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866101ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866119ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866134ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866150ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[29866194ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[30559503ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[30602515ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[30684157ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[30686017ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[30699232ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[30700357ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[30701586ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[30702662ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[31203059ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781653070332:0
+[31203061ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[31229625ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.jsx?t=1781653097027:0
+[31229627ms] [ERROR] [vite] Failed to reload /src/App.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:881
+[47180060ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:963
+[47180485ms] [ERROR] WebSocket connection to 'ws://localhost:5173/' failed: Error in connection establishment: net::ERR_NETWORK_IO_SUSPENDED @ http://localhost:5173/@vite/client:1034
+[64495233ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[64514419ms] [ERROR] Failed to load resource: net::ERR_PROXY_CONNECTION_FAILED @ https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap:0
+[64514458ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:20100
+[64559794ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[64561516ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/:0
+[64601994ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602039ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602063ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602087ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602113ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602136ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602158ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602179ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602201ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602225ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602246ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602263ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602287ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602452ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602482ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602504ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602533ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602556ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602583ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602605ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602628ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602649ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602672ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602693ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602720ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602746ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602776ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602810ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602842ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602864ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602898ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64602973ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64603077ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64603647ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64603765ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64603903ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604563ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604582ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604609ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604631ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604656ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604677ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604703ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64604924ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64605007ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64605063ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701
+[64605784ms] [ERROR] Unable to preventDefault inside passive event listener invocation. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=e3312fbb:2701

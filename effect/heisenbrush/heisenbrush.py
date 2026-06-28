@@ -4,7 +4,18 @@ from qiskit import QuantumCircuit, QuantumRegister, generate_preset_pass_manager
 from qiskit.quantum_info import SparsePauliOp
 import importlib.util
 
-spec = importlib.util.spec_from_file_location("utils", "effect/utils.py")
+import sys
+import importlib.util
+from pathlib import Path
+
+if getattr(sys, 'frozen', False):
+    app_path = Path(sys.executable).parent.parent
+else:
+    app_path = Path(__file__).resolve().parent.parent.parent
+
+utils_path = app_path / 'effect' / 'utils.py'
+
+spec = importlib.util.spec_from_file_location('utils', str(utils_path))
 utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 
@@ -153,6 +164,10 @@ def run(params):
   
     # Run Heisenberg simulation to get colors
     color_shifts = run_heisenberg_hardware(normalized_distances, radius, phi, theta)
+    
+    if color_shifts is None:
+        print("Heisenberg hardware run failed. Returning original image.")
+        return image
 
     new_hls = np.array([[(h + shift) % 1.0, (l + shift) % 1, (s + shift) % 1.0] for shift in color_shifts])
     new_hls = np.array([(1 - strength) * np.array([h,l,s]) + strength * new for new in new_hls])

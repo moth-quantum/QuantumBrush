@@ -15,6 +15,22 @@ Quantum Brush is a standalone Java application with `Processing (Java)` framewor
 
 After clone this repository, you can edit the code and build an app from scratch to test your contribution. Using [`Eclipse IDE`](https://eclipseide.org/) is highly recommended. I used `2025-03` version.
 
+## Command-line validation
+
+For reviewers who do not want to set up Eclipse, the source branch can also be compiled and checked from a terminal:
+
+```bash
+./scripts/test.sh
+```
+
+To create a small review package with the runnable Java checkpoint and the modern workspace prototype artifacts:
+
+```bash
+./scripts/package.sh
+```
+
+The package is written under `build/package/quantumbrush-modern-workspace/`, and `build/quantumbrush-modern-workspace.zip` is created when `zip` is available.
+
 ## One more thing before setting up the IDE
 
 To set up the devleopment environment easily, I recommend go to [the `dist` branch](https://github.com/moth-quantum/QuantumBrush/tree/dist) of the repository and install the app on your system. Follow the instructions there! Then, the installer script will install `miniconda3` and the `conda` environment with all required Python libraries, including `openJDK`.

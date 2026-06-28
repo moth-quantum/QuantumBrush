@@ -11,13 +11,12 @@ from scipy.ndimage import distance_transform_edt
 
 def svd(matrix=None,U=None,S=None,Vt=None):
     if U is not None:
-        S_matrix = np.diag(S)  # Convert singular values into a diagonal matrix
+        S_matrix = np.diag(S)
         mat = U @ S_matrix @ Vt
         return mat
 
-    """Compute the Ordered Singular Value Decomposition (SVD) of a matrix."""
     U, S, Vt = np.linalg.svd(matrix, full_matrices=False)
-    sorted_indices = np.argsort(S)[::-1]  # Sort singular values in descending order
+    sorted_indices = np.argsort(S)[::-1] 
     return U[:, sorted_indices], S[sorted_indices], Vt[sorted_indices, :]
 
 
@@ -55,13 +54,10 @@ def points_within_radius_old(points, radius, border = None):
     assert radius > 0, "Radius must be positive"
     assert isinstance(points, np.ndarray), "Points must be a numpy array"
 
-    # Precompute offsets within the radius
     y, x = np.ogrid[-radius:radius+1, -radius:radius+1]
     mask = x**2 + y**2 <= radius**2
     offsets = np.stack(np.nonzero(mask), axis=-1) - radius
-    # Broadcast add offsets to all points
     all_points = points[:, None, :] + offsets[None, :, :]
-    # Reshape and get unique points
     result = np.unique(all_points.reshape(-1, 2), axis=0)
 
     if border is not None:
@@ -77,28 +73,25 @@ def points_within_radius(points, radius=10, border = None, return_distance = Fal
     returns all pixel coordinates within `offset` pixels of the line.
     """
     points = np.array(points, dtype=int)
-    #print("initial points ", points)
-    # Compute canvas bounds
+    if points.size == 0 or points.ndim != 2:
+        if return_distance:
+            return np.array([]), np.array([])
+        return np.array([])
     min_yx = points.min(axis=0) - radius - 1
     max_yx = points.max(axis=0) + radius + 1
     height, width = (max_yx - min_yx + 1)
 
-    # Shift line to start at (0, 0)
+    # Shift line to start at 0, 0
     shifted = points - min_yx
     #print("shifted points ", shifted[:10])
-    # Create binary mask
     mask = np.zeros((height, width), dtype=bool)
     mask[shifted[:, 0], shifted[:, 1]] = True  # y, x
-    
-    # Distance transform
+
     dist = distance_transform_edt(~mask)
-    # Find pixels within offset
     region_mask = dist <= radius
     ys, xs = np.nonzero(region_mask)
 
-    # Shift back to original coordinates
     coords = np.stack([ys, xs], axis=1) + min_yx
-    #print(coords)
     if border is not None:
         coords = np.clip(coords, [0, 0], [border[0] - 1, border[1] - 1])
 
@@ -109,18 +102,19 @@ def points_within_radius(points, radius=10, border = None, return_distance = Fal
     return coords
 
 def points_within_lasso(points,border = None):
+    points = np.array(points)
+    if points.size == 0 or points.ndim != 2:
+        return np.array([])
     min_x = np.min(points[:,1])
     max_x = np.max(points[:,1])+1
     min_y = np.min(points[:,0])
     max_y = np.max(points[:,0])+1
 
     grid = list(product(np.arange(min_y,max_y), np.arange(min_x,max_x)))
-    # Create path from polygon
+    # path from polygon
     path = plt_path(points)
-    # Test which points are inside the path
     mask = path.contains_points(grid)
 
-    # Get the pixel coordinates that are inside
     result = np.array(grid)[mask]
 
     if border is not None:
@@ -128,22 +122,29 @@ def points_within_lasso(points,border = None):
 
     return result
 
-def split_path_from_clicks(path,clicks):
+def split_path_from_clicks(path, clicks):
     split_paths = []
-    # Split path into subpaths, each starting with a click
     click_indices = []
-    c = 0
-    for i, p in enumerate(path):
-        if np.all(p == clicks[c]):
-            click_indices.append(i)
-            c += 1
-            if c >= len(clicks):
-                break
+    
+    # Find closest points in path to each click
+    for click in clicks:
+        if len(path) == 0:
+            break
+        # Compute euclidean distance from this click to all points in path
+        distances = np.linalg.norm(np.array(path) - np.array(click), axis=1)
+        closest_idx = np.argmin(distances)
+        # Only add if it makes a valid sequential split (and avoid duplicates)
+        if not click_indices or closest_idx > click_indices[-1]:
+            click_indices.append(closest_idx)
+
+    if not click_indices:
+        return [path]
 
     for idx, start in enumerate(click_indices):
         end = click_indices[idx + 1] if idx + 1 < len(click_indices) else len(path)
-        interp_path = interpolate_pixels(path[start:end])
-        split_paths.append(interp_path)
+        if start < end:
+            interp_path = interpolate_pixels(path[start:end])
+            split_paths.append(interp_path)
     
     return split_paths
 
@@ -219,7 +220,7 @@ def bresenham_line(x1, y1, x2, y2):
                 err += dy
             y1 += sy
 
-    points.append([x2, y2])  # Add the last point
+    points.append([x2, y2]) 
     return points
 
 
@@ -230,7 +231,6 @@ def interpolate_pixels(pixel_list, numpy = True):
         return []
 
     interpolated_pixels = [[pixel_list[0][0], pixel_list[0][1]]]
-    # Remove consecutive duplicate pixels
     last = pixel_list[0]
     for px in pixel_list[1:]:
         if np.any(px != last):

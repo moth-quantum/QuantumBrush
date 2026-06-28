@@ -6,7 +6,18 @@ from qiskit.quantum_info import Pauli, SparsePauliOp, Statevector, entropy, part
 import importlib.util
 from scipy.stats import circmean
 
-spec = importlib.util.spec_from_file_location("utils", "effect/utils.py")
+import sys
+import importlib.util
+from pathlib import Path
+
+if getattr(sys, 'frozen', False):
+    app_path = Path(sys.executable).parent.parent
+else:
+    app_path = Path(__file__).resolve().parent.parent.parent
+
+utils_path = app_path / 'effect' / 'utils.py'
+
+spec = importlib.util.spec_from_file_location('utils', str(utils_path))
 utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(utils)
 
@@ -87,9 +98,9 @@ def run(params):
     n_drops = params["user_input"]["Number of Drops"]
     assert n_drops > 0, "Number of drops must be greater than 0"
 
-    # Split a path into n_drops smaller paths
     path_length = len(path)
-    assert path_length > n_drops, "The number of pixels in the stroke must be bigger than the number of drops"
+    if path_length <= n_drops:
+        return image
 
     split_size = max(1, path_length // n_drops)
     split_paths = [path[i * split_size : (i + 1) * split_size] for i in range(n_drops - 1)]
@@ -100,6 +111,9 @@ def run(params):
     assert radius > 0, "Radius must be greater than 0"
 
     target_color = params["user_input"]["Target Color"]
+    if isinstance(target_color, str):
+        target_color = target_color.lstrip('#')
+        target_color = [int(target_color[i:i+2], 16) for i in (0, 2, 4)]
     target_color = utils.rgb_to_hls(np.array(target_color)/255.0)
     target_angle = (2 * np.pi * target_color[0], np.pi * target_color[1])
     print("target angle", target_angle)

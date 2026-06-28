@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quantum Brush Modern Workspace Prototype</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #202735;
+      --muted: #697386;
+      --line: #d9d3c6;
+      --blue: #245ea8;
+      --teal: #178271;
+      --red: #cf3f3f;
+      --amber: #c98620;
+      --green: #2f7d4f;
+      --shadow: 0 18px 45px rgba(32, 39, 53, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.4;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 248px 1fr 320px;
+      min-height: 100vh;
+      gap: 18px;
+      padding: 20px;
+    }
+
+    .sidebar,
+    .inspector {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      min-height: calc(100vh - 40px);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      gap: 22px;
+    }
+
+    .brand {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #202735;
+      color: #fffdf8;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink);
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .nav button[data-active="true"] {
+      background: #eef5f2;
+      border-color: #bdd8cf;
+      color: var(--teal);
+      font-weight: 700;
+    }
+
+    .project-card {
+      margin-top: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fbf7ee;
+    }
+
+    .project-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .project-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    main {
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .actions button,
+    .primary-action {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      color: var(--ink);
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .actions button:first-child,
+    .primary-action {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: 92px 1fr;
+      min-height: calc(100vh - 98px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #faf7f0;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .step[data-active="true"] {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(36, 94, 168, 0.13);
+    }
+
+    .step small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .step strong {
+      display: block;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .canvas-wrap {
+      display: grid;
+      grid-template-columns: 1fr 264px;
+      min-height: 0;
+    }
+
+    .canvas {
+      position: relative;
+      margin: 22px;
+      border: 1px solid #c9d1dc;
+      border-radius: 14px;
+      background:
+        linear-gradient(90deg, rgba(32, 39, 53, 0.06) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(32, 39, 53, 0.06) 1px, transparent 1px),
+        #f8fbff;
+      background-size: 28px 28px;
+      overflow: hidden;
+    }
+
+    .image-layer {
+      position: absolute;
+      inset: 78px 108px 86px 108px;
+      border: 1px solid #aab5c4;
+      border-radius: 10px;
+      background:
+        radial-gradient(circle at 26% 30%, rgba(207, 63, 63, 0.18), transparent 22%),
+        radial-gradient(circle at 70% 35%, rgba(23, 130, 113, 0.18), transparent 21%),
+        linear-gradient(135deg, #fff, #e8eef6);
+      box-shadow: 0 14px 35px rgba(32, 39, 53, 0.16);
+    }
+
+    .path {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .tool-palette {
+      border-left: 1px solid var(--line);
+      padding: 18px;
+      background: #f7f5ef;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+    }
+
+    .tool-group {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .tool-group h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 0;
+      border-top: 1px solid #ece6db;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .option-row:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 2px 9px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .chip.blue { background: var(--blue); }
+    .chip.green { background: var(--green); }
+    .chip.amber { background: var(--amber); }
+    .chip.red { background: var(--red); }
+
+    .inspector {
+      padding: 18px;
+      display: grid;
+      align-content: start;
+      gap: 16px;
+    }
+
+    .inspector h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .inspector p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .status-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .status-item {
+      display: grid;
+      grid-template-columns: 10px 1fr;
+      gap: 10px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-top: 5px;
+      background: var(--teal);
+    }
+
+    .status-item strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .status-item span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .frame-note {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar,
+      .inspector {
+        min-height: auto;
+      }
+
+      .canvas-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-palette {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">QB</div>
+        <div>
+          <strong>Quantum Brush</strong>
+          <span>Modern workspace prototype</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Prototype steps">
+        <button type="button" data-step="0">Project <span>01</span></button>
+        <button type="button" data-step="1">Canvas <span>02</span></button>
+        <button type="button" data-step="2">Effect <span>03</span></button>
+        <button type="button" data-step="3">Stroke <span>04</span></button>
+        <button type="button" data-step="4">Export <span>05</span></button>
+      </nav>
+
+      <div class="project-card">
+        <strong id="sidebar-title">Create project</strong>
+        <p id="sidebar-copy">Start by importing an image and naming the project before drawing.</p>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div class="title">
+          <h1 id="screen-title">Project setup</h1>
+          <p id="screen-copy">A compact workspace makes the current Java/Processing flow easier to discover.</p>
+        </div>
+        <div class="actions">
+          <button type="button" data-step="0">New Project</button>
+          <button type="button" data-step="1">Draw</button>
+          <button type="button" data-step="3">Review Stroke</button>
+          <button type="button" data-step="4">Export</button>
+        </div>
+      </div>
+
+      <section class="workspace" aria-label="Quantum Brush workspace">
+        <div class="workflow">
+          <div class="step" data-step-card="0"><small>01</small><strong>Project</strong></div>
+          <div class="step" data-step-card="1"><small>02</small><strong>Canvas</strong></div>
+          <div class="step" data-step-card="2"><small>03</small><strong>Effect</strong></div>
+          <div class="step" data-step-card="3"><small>04</small><strong>Stroke</strong></div>
+          <div class="step" data-step-card="4"><small>05</small><strong>Export</strong></div>
+        </div>
+
+        <div class="canvas-wrap">
+          <div class="canvas">
+            <div class="image-layer"></div>
+            <svg class="path" viewBox="0 0 900 560" aria-hidden="true">
+              <path id="draw-path" d="M235 342 C300 255, 395 422, 464 310 S616 214, 688 310" fill="none" stroke="#cf3f3f" stroke-width="8" stroke-linecap="round"></path>
+              <circle id="dot-a" cx="310" cy="260" r="9" fill="#178271"></circle>
+              <circle id="dot-b" cx="609" cy="226" r="9" fill="#178271"></circle>
+            </svg>
+          </div>
+
+          <aside class="tool-palette">
+            <div class="tool-group">
+              <h2>Tools</h2>
+              <div class="option-row"><span>Mode</span><span id="mode-chip" class="chip blue">Project</span></div>
+              <div class="option-row"><span>Brush</span><span>Path + dot</span></div>
+              <div class="option-row"><span>Line snap</span><span>Enabled</span></div>
+            </div>
+            <div class="tool-group">
+              <h2>Effect</h2>
+              <div class="option-row"><span>Selected</span><span id="effect-name">Choose effect</span></div>
+              <div class="option-row"><span>Backend</span><span>Local first</span></div>
+              <div class="option-row"><span>Status</span><span id="effect-status">Waiting</span></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <aside class="inspector">
+      <div>
+        <h2 id="inspector-title">Project status</h2>
+        <p id="inspector-copy">Clear status messages keep actions from being hidden in separate windows.</p>
+      </div>
+
+      <div class="status-list">
+        <div class="status-item">
+          <span class="dot"></span>
+          <div><strong id="status-one-title">Image ready</strong><span id="status-one-copy">No project file has been created yet.</span></div>
+        </div>
+        <div class="status-item">
+          <span class="dot"></span>
+          <div><strong id="status-two-title">Canvas tools</strong><span id="status-two-copy">Path and dot drawing stay visible next to the canvas.</span></div>
+        </div>
+        <div class="status-item">
+          <span class="dot"></span>
+          <div><strong id="status-three-title">Save target</strong><span id="status-three-copy">Export remains a first-class workflow step.</span></div>
+        </div>
+      </div>
+
+      <button class="primary-action" type="button" id="next-button">Next step</button>
+      <div class="frame-note" id="frame-note">Frame 1 of 5: project creation and image import.</div>
+    </aside>
+  </div>
+
+  <script>
+    const screens = [
+      {
+        title: "Project setup",
+        copy: "Create a project by importing an image, then show the project name and save target immediately.",
+        sidebarTitle: "Create project",
+        sidebarCopy: "Import image and name the project before drawing.",
+        mode: ["Project", "blue"],
+        effect: "Choose effect",
+        effectStatus: "Waiting",
+        inspectorTitle: "Project status",
+        inspectorCopy: "The current source flow starts from image import and project metadata.",
+        status: [
+          ["Image ready", "Project image imported into the canvas."],
+          ["Project metadata", "Name, project id, and modified time are visible."],
+          ["Next action", "Move to canvas drawing without hunting through menus."]
+        ],
+        note: "Frame 1 of 5: project creation and image import."
+      },
+      {
+        title: "Canvas drawing",
+        copy: "Keep dots, free paths, constrained lines, zoom, and pan in the same workspace frame.",
+        sidebarTitle: "Draw lines and dots",
+        sidebarCopy: "The existing CanvasManager behavior stays central.",
+        mode: ["Canvas", "green"],
+        effect: "Choose effect",
+        effectStatus: "Waiting",
+        inspectorTitle: "Canvas status",
+        inspectorCopy: "Users can see what is selected and whether paths are ready for a stroke.",
+        status: [
+          ["Path captured", "One free path and two anchor dots selected."],
+          ["Line snap", "Constrained line drawing remains discoverable."],
+          ["Zoom", "Canvas scale and pan status stay readable."]
+        ],
+        note: "Frame 2 of 5: line and dot drawing on the image."
+      },
+      {
+        title: "Effect setup",
+        copy: "Effect selection and parameters sit next to the canvas instead of feeling like a disconnected dialog.",
+        sidebarTitle: "Choose effect",
+        sidebarCopy: "Parameter controls reuse the existing effect metadata.",
+        mode: ["Effect", "amber"],
+        effect: "Heisenbrush",
+        effectStatus: "Parameters ready",
+        inspectorTitle: "Effect status",
+        inspectorCopy: "Show whether the chosen effect can run locally or through configured hardware.",
+        status: [
+          ["Effect selected", "Heisenbrush is selected from the existing effect list."],
+          ["Parameters", "Validated controls are ready to create a stroke."],
+          ["Hardware", "Provider status is visible before submitting work."]
+        ],
+        note: "Frame 3 of 5: effect selection and parameter review."
+      },
+      {
+        title: "Stroke review",
+        copy: "Created strokes should be easy to run, inspect, apply, or cancel without opening a mystery window.",
+        sidebarTitle: "Review stroke",
+        sidebarCopy: "The existing Stroke Manager becomes a workspace destination.",
+        mode: ["Stroke", "red"],
+        effect: "Heisenbrush",
+        effectStatus: "Output ready",
+        inspectorTitle: "Stroke status",
+        inspectorCopy: "A clear review panel makes input/output images and costs visible.",
+        status: [
+          ["Stroke created", "Input image and path overlay are available."],
+          ["Processing", "Run, cancel, and apply actions remain explicit."],
+          ["Output preview", "Result preview is ready before applying to canvas."]
+        ],
+        note: "Frame 4 of 5: created stroke review and output inspection."
+      },
+      {
+        title: "Save and export",
+        copy: "The final workspace state makes saved project data and exported image paths explicit.",
+        sidebarTitle: "Export work",
+        sidebarCopy: "Project save and image export are visible end states.",
+        mode: ["Export", "green"],
+        effect: "Heisenbrush",
+        effectStatus: "Applied",
+        inspectorTitle: "Export status",
+        inspectorCopy: "Users get confirmation that project state and the image export are complete.",
+        status: [
+          ["Project saved", "Current image and metadata are written to project storage."],
+          ["Image exported", "The selected file path is confirmed after export."],
+          ["Ready to continue", "Open, duplicate, or start a new project from the same header."]
+        ],
+        note: "Frame 5 of 5: save confirmation and export."
+      }
+    ];
+
+    let activeStep = Number(new URLSearchParams(window.location.search).get("step") || 0);
+    if (!Number.isInteger(activeStep) || activeStep < 0 || activeStep >= screens.length) {
+      activeStep = 0;
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    function setStep(index) {
+      activeStep = index;
+      const screen = screens[index];
+      setText("screen-title", screen.title);
+      setText("screen-copy", screen.copy);
+      setText("sidebar-title", screen.sidebarTitle);
+      setText("sidebar-copy", screen.sidebarCopy);
+      setText("effect-name", screen.effect);
+      setText("effect-status", screen.effectStatus);
+      setText("inspector-title", screen.inspectorTitle);
+      setText("inspector-copy", screen.inspectorCopy);
+      setText("status-one-title", screen.status[0][0]);
+      setText("status-one-copy", screen.status[0][1]);
+      setText("status-two-title", screen.status[1][0]);
+      setText("status-two-copy", screen.status[1][1]);
+      setText("status-three-title", screen.status[2][0]);
+      setText("status-three-copy", screen.status[2][1]);
+      setText("frame-note", screen.note);
+
+      const modeChip = document.getElementById("mode-chip");
+      modeChip.textContent = screen.mode[0];
+      modeChip.className = "chip " + screen.mode[1];
+
+      document.querySelectorAll("[data-step]").forEach((button) => {
+        button.dataset.active = String(Number(button.dataset.step) === index);
+      });
+      document.querySelectorAll("[data-step-card]").forEach((card) => {
+        card.dataset.active = String(Number(card.dataset.stepCard) === index);
+      });
+
+      const path = document.getElementById("draw-path");
+      path.style.opacity = index >= 1 ? "1" : "0.18";
+      document.getElementById("dot-a").style.opacity = index >= 1 ? "1" : "0.18";
+      document.getElementById("dot-b").style.opacity = index >= 1 ? "1" : "0.18";
+    }
+
+    document.querySelectorAll("[data-step]").forEach((button) => {
+      button.addEventListener("click", () => setStep(Number(button.dataset.step)));
+    });
+
+    document.getElementById("next-button").addEventListener("click", () => {
+      setStep((activeStep + 1) % screens.length);
+    });
+
+    setStep(activeStep);
+  </script>
+</body>
+</html>
