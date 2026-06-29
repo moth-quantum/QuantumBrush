@@ -11,8 +11,9 @@ import sys
 import argparse
 import os
 import time
-from utils import *
 import contextlib
+import struct
+from io import BytesIO
 
 app_path = Path(sys.path[0] + "/..") # Path to the app folder
 
@@ -51,7 +52,48 @@ def process_variable(var_type: str, variable: any):
             raise ValueError(f"Unsupported type: {var_type}")
 
 
-def process_effect(instr: dict):
+def image_from_png_bytes(image_bytes: bytes) -> np.ndarray:
+    with Image.open(BytesIO(image_bytes)) as img:
+        return np.array(img.convert("RGBA"))
+
+
+def image_to_png_bytes(image: np.ndarray) -> bytes:
+    buffer = BytesIO()
+    Image.fromarray(image.astype(np.uint8)).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def read_exact(stream, size: int) -> bytes:
+    chunks = []
+    remaining = size
+    while remaining > 0:
+        chunk = stream.read(remaining)
+        if not chunk:
+            raise EOFError("Unexpected end of stream while reading binary request.")
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
+
+
+def read_binary_request(stream) -> tuple[dict, bytes]:
+    json_size = struct.unpack(">I", read_exact(stream, 4))[0]
+    instructions = json.loads(read_exact(stream, json_size).decode("utf-8"))
+
+    image_size = struct.unpack(">I", read_exact(stream, 4))[0]
+    image_bytes = read_exact(stream, image_size)
+    return instructions, image_bytes
+
+
+def write_binary_response(stream, response: dict, image_bytes: bytes = b""):
+    response_bytes = json.dumps(response).encode("utf-8")
+    stream.write(struct.pack(">I", len(response_bytes)))
+    stream.write(response_bytes)
+    stream.write(struct.pack(">I", len(image_bytes)))
+    stream.write(image_bytes)
+    stream.flush()
+
+
+def process_effect(instr: dict, image_rgba: np.ndarray | None = None):
     # Extract stroke_id and project_id from instructions
     stroke_id = instr.get("stroke_id", False)
     project_id = instr.get("project_id", False)
@@ -67,7 +109,7 @@ def process_effect(instr: dict):
     effect_path = app_path / f"effect/{effect_id}"
     req_path = effect_path / f"{effect_id}_requirements.json"
 
-    with open(req_path, 'r') as req_file:
+    with open(req_path, 'r', encoding='utf-8') as req_file:
         req = json.load(req_file)
 
     # Check dependencies with version control
@@ -79,14 +121,18 @@ def process_effect(instr: dict):
         except ImportError as e:
             raise ImportError(f"Failed to load dependency {dependency}: {e}")
 
-    # Process image
-    image_path = project_path / f"stroke/{stroke_id}_input.png"
+    # Process image. In the stdio path Java sends the canvas image in memory.
+    # The legacy file path remains as a fallback for older callers.
+    if image_rgba is not None:
+        req["stroke_input"]["image_rgba"] = image_rgba
+    else:
+        image_path = project_path / f"stroke/{stroke_id}_input.png"
 
-    if not image_path.is_file():
-        raise FileNotFoundError(f"Image file not found at {image_path}")
-    
-    with Image.open(image_path) as img:
-        req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA")) # Ensure the image is in RGBA format
+        if not image_path.is_file():
+            raise FileNotFoundError(f"Image file not found at {image_path}")
+
+        with Image.open(image_path) as img:
+            req["stroke_input"]["image_rgba"] = np.array(img.convert("RGBA")) # Ensure the image is in RGBA format
 
 
     # Process user_input and stroke_input
@@ -125,7 +171,7 @@ def process_effect(instr: dict):
 
     return req
 
-def apply_effect(req: dict):
+def apply_effect(req: dict, write_output: bool = True):
     # Save the input image to apply mask
     input_image = copy(req["stroke_input"]["image_rgba"])
 
@@ -141,11 +187,12 @@ def apply_effect(req: dict):
     mask = np.all(new_image == input_image, axis=-1)  
     new_image[mask] = [0, 0, 0, 0]  # Set differing pixels to [0, 0, 0, 0]
     
-    output_path = req["stroke_output_path"]
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
-    Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
+    if write_output:
+        output_path = req["stroke_output_path"]
+        output_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
+        Image.fromarray(new_image.astype(np.uint8)).save(output_path, format="PNG")
 
-    return True
+    return new_image.astype(np.uint8)
 
 def record_error(error):
     log_file = app_path / "log/error.log"
@@ -156,7 +203,7 @@ def record_error(error):
     with open(log_file, "a") as log:
         log.write(error_message)
 
-    print(error_message)    
+    print(error_message, file=sys.stderr)
 
 def dump_json(data, file_path):
     # Make sure the directory exists
@@ -191,23 +238,55 @@ class Tee:
 
 
 if __name__ == "__main__":
-    
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Apply an effect to a stroke in a project.")
+    parser.add_argument("stroke_path", nargs="?", type=str, help="The ID of the stroke.")
+    parser.add_argument(
+        "--stdio",
+        action="store_true",
+        help="Read an in-memory request from stdin and write JSON response to stdout.",
+    )
+    args = parser.parse_args()
+
     log_output_file = app_path / "log/console_output.log"
     log_output_file.parent.mkdir(parents=True, exist_ok=True)
     log_fh = open(log_output_file, "a")
+    binary_stdout = sys.__stdout__.buffer
 
-    sys.stdout = Tee(sys.stdout, log_fh)
-    sys.stderr = Tee(sys.stderr, log_fh)
-    
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Apply an effect to a stroke in a project.")
-    parser.add_argument("stroke_path", type=str, help="The ID of the stroke.")
-    args = parser.parse_args()
+    if args.stdio:
+        # stdout is reserved for the binary response protocol in stdio mode.
+        # Send any debug prints from effects/dependencies to stderr instead.
+        sys.stdout = Tee(sys.stderr, log_fh)
+        sys.stderr = Tee(sys.stderr, log_fh)
+    else:
+        sys.stdout = Tee(sys.stdout, log_fh)
+        sys.stderr = Tee(sys.stderr, log_fh)
+
+    from utils import *
 
     success = False
     instructions = {}
 
     try:
+        if args.stdio:
+            instructions, image_bytes = read_binary_request(sys.stdin.buffer)
+            image_rgba = image_from_png_bytes(image_bytes)
+
+            data = process_effect(instructions, image_rgba=image_rgba)
+            result_image = apply_effect(data, write_output=False)
+            result_bytes = image_to_png_bytes(result_image)
+
+            response = {
+                "effect_success": "true",
+                "width": int(result_image.shape[1]),
+                "height": int(result_image.shape[0]),
+            }
+            write_binary_response(binary_stdout, response, result_bytes)
+            sys.exit(0)
+
+        if args.stroke_path is None:
+            raise ValueError("stroke_path is required unless --stdio is used.")
+
         if not Path(args.stroke_path).is_file():
             raise FileNotFoundError(f"Stroke file not found at {args.stroke_path}")
 
@@ -239,20 +318,23 @@ if __name__ == "__main__":
 
     except FileNotFoundError as e:
         record_error(e)
-        if instructions:
+        if instructions and not args.stdio:
             instructions["effect_received"] = False
             dump_json(instructions, args.stroke_path)
         success = False
     except Exception as e:
         record_error(e)
-        if instructions:
+        if instructions and not args.stdio:
             instructions["effect_success"] = False
             dump_json(instructions, args.stroke_path)
         success = False
         # Redirect stdout and stderr to a log file
 
     
-    if success:
+    if args.stdio:
+        write_binary_response(binary_stdout, {"effect_success": "false"})
+        sys.exit(1)
+    elif success:
         print("Effect applied successfully.")
         sys.exit(0)
     else:

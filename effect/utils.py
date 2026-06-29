@@ -1,13 +1,28 @@
 import numpy as np
-from qiskit import generate_preset_pass_manager
-from qiskit.primitives import BackendEstimatorV2 as Estimator
 import os
-from qiskit_aer import AerSimulator
 import colorsys 
 from itertools import product
-import matplotlib.pyplot as plt
-from matplotlib.path import Path as plt_path
-from scipy.ndimage import distance_transform_edt
+
+try:
+    from matplotlib.path import Path as plt_path
+except ImportError:
+    plt_path = None
+
+try:
+    from scipy.ndimage import distance_transform_edt
+except ImportError:
+    distance_transform_edt = None
+
+try:
+    from qiskit import generate_preset_pass_manager
+    from qiskit.primitives import BackendEstimatorV2 as Estimator
+    from qiskit.quantum_info import Statevector
+    from qiskit_aer import AerSimulator
+except ImportError:
+    generate_preset_pass_manager = None
+    Estimator = None
+    Statevector = None
+    AerSimulator = None
 
 def svd(matrix=None,U=None,S=None,Vt=None):
     if U is not None:
@@ -89,21 +104,39 @@ def points_within_radius(points, radius=10, border = None, return_distance = Fal
     # Create binary mask
     mask = np.zeros((height, width), dtype=bool)
     mask[shifted[:, 0], shifted[:, 1]] = True  # y, x
-    
-    # Distance transform
-    dist = distance_transform_edt(~mask)
-    # Find pixels within offset
-    region_mask = dist <= radius
-    ys, xs = np.nonzero(region_mask)
 
-    # Shift back to original coordinates
-    coords = np.stack([ys, xs], axis=1) + min_yx
-    #print(coords)
+    if distance_transform_edt is not None:
+        # Distance transform
+        dist = distance_transform_edt(~mask)
+        # Find pixels within offset
+        region_mask = dist <= radius
+        ys, xs = np.nonzero(region_mask)
+
+        # Shift back to original coordinates
+        coords = np.stack([ys, xs], axis=1) + min_yx
+        distances = dist[ys, xs] / radius
+    else:
+        line_points = np.argwhere(mask)
+        grid_y, grid_x = np.indices((height, width))
+        grid = np.stack([grid_y.ravel(), grid_x.ravel()], axis=1)
+
+        min_dist_sq = np.empty(grid.shape[0], dtype=np.float64)
+        chunk_size = 2048
+        for start in range(0, grid.shape[0], chunk_size):
+            end = start + chunk_size
+            chunk = grid[start:end]
+            diff = chunk[:, None, :] - line_points[None, :, :]
+            dist_sq = np.sum(diff * diff, axis=2)
+            min_dist_sq[start:end] = dist_sq.min(axis=1)
+
+        region_mask = min_dist_sq <= radius ** 2
+        coords = grid[region_mask] + min_yx
+        distances = np.sqrt(min_dist_sq[region_mask]) / radius
+
     if border is not None:
         coords = np.clip(coords, [0, 0], [border[0] - 1, border[1] - 1])
 
     if return_distance:
-        distances = dist[ys, xs] / radius
         return coords, distances
 
     return coords
@@ -115,10 +148,24 @@ def points_within_lasso(points,border = None):
     max_y = np.max(points[:,0])+1
 
     grid = list(product(np.arange(min_y,max_y), np.arange(min_x,max_x)))
-    # Create path from polygon
-    path = plt_path(points)
-    # Test which points are inside the path
-    mask = path.contains_points(grid)
+    if plt_path is not None:
+        # Create path from polygon
+        path = plt_path(points)
+        # Test which points are inside the path
+        mask = path.contains_points(grid)
+    else:
+        x = np.array([point[1] for point in grid], dtype=float)
+        y = np.array([point[0] for point in grid], dtype=float)
+        poly_x = points[:, 1].astype(float)
+        poly_y = points[:, 0].astype(float)
+        mask = np.zeros(len(grid), dtype=bool)
+        j = len(points) - 1
+        for i in range(len(points)):
+            intersects = ((poly_y[i] > y) != (poly_y[j] > y)) & (
+                x < (poly_x[j] - poly_x[i]) * (y - poly_y[i]) / (poly_y[j] - poly_y[i] + 1e-12) + poly_x[i]
+            )
+            mask ^= intersects
+            j = i
 
     # Get the pixel coordinates that are inside
     result = np.array(grid)[mask]
@@ -152,7 +199,31 @@ def run_estimator(circuits, operators, backend=None, options = None):
     It can receive a single circuit or a list of circuits.
     It can receive a single operator or a list of operators or a list of list of operators (one for each circuit).
     '''
-    
+    if Statevector is None:
+        raise ImportError("Qiskit and qiskit-aer are required to run estimator-based effects.")
+
+    circuit_list = circuits if isinstance(circuits, list) else [circuits]
+    n_circuits = len(circuit_list)
+
+    if isinstance(operators, list):
+        if operators and isinstance(operators[0], list):
+            assert len(operators) == n_circuits, "Number of circuits and operators must match"
+            operator_lists = operators
+        else:
+            operator_lists = [operators for _ in range(n_circuits)]
+    else:
+        operator_lists = [[operators] for _ in range(n_circuits)]
+
+    obs = []
+    for circuit, ops in zip(circuit_list, operator_lists):
+        state = Statevector.from_instruction(circuit)
+        obs.append(np.array([np.real(state.expectation_value(op)) for op in ops]))
+
+    if n_circuits == 1:
+        return obs[0]
+
+    return obs
+
     #iqm_server_url = "https://cocos.resonance.meetiqm.com/garnet:mock"  # Replace this with the correct URL
     #provider = IQMProvider(iqm_server_url)
     #backend = provider.get_backend('garnet')
@@ -352,4 +423,3 @@ def apply_patch_to_image(original_image: np.ndarray, new_patch: np.ndarray, blur
     new_patch[..., :3] = (1 - alpha) * original_float[..., :3] + alpha * new_patch[..., :3]
 
     return (new_patch * 255).astype(np.uint8)
-    
